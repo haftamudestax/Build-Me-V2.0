@@ -1,0 +1,12 @@
+{
+  "name": "@build-me/e2e-tests",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "test:e2e": "start-server-and-test \"pnpm --filter @about-me/web dev\" http://localhost:5173 \"cypress run\""
+  },
+  "devDependencies": {
+    "cypress": "^15.20.1",
+    "start-server-and-test": "^3.0.11"
+  }
+}
