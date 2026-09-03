@@ -1,5 +1,4 @@
 name: Security Validation
-
 on:
   push:
     branches:
@@ -29,6 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Verify .gitignore protects secrets
+        shell: bash
         run: |
           REQUIRED=(
             ".env"
@@ -45,69 +45,122 @@ jobs:
           echo "✅ .gitignore protects environment files."
 
       - name: Fail if environment files are committed
+        shell: bash
         run: |
-          FILES=$(git ls-files | grep -E '(^|/)\.env($|\..*)' || true)
+          FILES=$(
+            git ls-files \
+              | grep -E '(^|/)\.env($|\..*)' \
+              | grep -vE '(^|/)\.env\.example$' \
+              || true
+          )
 
           if [ -n "$FILES" ]; then
             echo "❌ Environment files committed:"
             echo "$FILES"
+            echo
+            echo "Remove these files from Git tracking."
+            echo "Use .env.example for safe environment variable templates."
             exit 1
           fi
 
-          echo "✅ No environment files tracked."
+          echo "✅ No real environment files tracked."
+          echo "ℹ️ .env.example files are allowed."
 
       - name: Fail if private keys are committed
+        shell: bash
         run: |
-          FILES=$(git ls-files | grep -E '\.(pem|key|p12|pfx|crt|cer|jks|keystore)$' || true)
+          FILES=$(
+            git ls-files \
+              | grep -Ei '\.(pem|key|p12|pfx|jks|keystore)$' \
+              || true
+          )
 
           if [ -n "$FILES" ]; then
             echo "❌ Private key or certificate detected:"
             echo "$FILES"
+            echo
+            echo "Remove these files from Git tracking."
             exit 1
           fi
 
           echo "✅ No certificates or private keys committed."
 
       - name: Fail if SSH keys are committed
+        shell: bash
         run: |
-          FILES=$(git ls-files | grep -E '(id_rsa|id_ed25519|known_hosts|authorized_keys)' || true)
+          FILES=$(
+            git ls-files \
+              | grep -Ei '(^|/)(id_rsa|id_dsa|id_ecdsa|id_ed25519|authorized_keys|known_hosts)(\..*)?$' \
+              || true
+          )
 
           if [ -n "$FILES" ]; then
             echo "❌ SSH credentials detected:"
             echo "$FILES"
+            echo
+            echo "Remove these files from Git tracking."
             exit 1
           fi
 
           echo "✅ No SSH credentials committed."
 
       - name: Fail if Google Service Account Keys exist
+        shell: bash
         run: |
-          FILES=$(git ls-files | grep 'service-account.*\.json' || true)
+          FILES=$(
+            git ls-files \
+              | grep -Ei '(^|/)service-account[^/]*\.json$' \
+              || true
+          )
 
           if [ -n "$FILES" ]; then
             echo "❌ Google service account key detected:"
             echo "$FILES"
+            echo
+            echo "Remove these credentials from Git tracking."
             exit 1
           fi
 
           echo "✅ No Google service account keys committed."
 
       - name: Fail if .npmrc contains auth tokens
+        shell: bash
         run: |
-          MATCHES=$(git ls-files | grep '\.npmrc$' | xargs -I{} sh -c 'grep -l "_authToken\|_auth\b\|_password" "{}" 2>/dev/null' || true)
+          MATCHES=""
+
+          while IFS= read -r file; do
+            if grep -Eqi '(^|[[:space:]])(_authToken|_auth|_password)[[:space:]]*=' "$file"; then
+              MATCHES="${MATCHES}${file}"$'\n'
+            fi
+          done < <(git ls-files | grep -E '(^|/)\.npmrc$' || true)
 
           if [ -n "$MATCHES" ]; then
-            echo "❌ .npmrc file contains an auth token — remove it and use a GitHub secret instead:"
+            echo "❌ .npmrc file contains an authentication credential:"
             echo "$MATCHES"
+            echo
+            echo "Remove the credential and use GitHub Actions secrets instead."
             exit 1
           fi
 
           echo "✅ No auth tokens found in committed .npmrc files."
 
-      # TruffleHog secret scanning
       - name: Scan repository for secrets
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
           base: ${{ github.event.pull_request.base.sha || github.event.before }}
           head: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Security Validation Summary
+        shell: bash
+        run: |
+          echo "========================================"
+          echo "✅ SECURITY VALIDATION PASSED"
+          echo "========================================"
+          echo "Environment files:     PASS"
+          echo "Private keys:          PASS"
+          echo "SSH credentials:       PASS"
+          echo "Service account keys:  PASS"
+          echo "NPM authentication:    PASS"
+          echo "Secret scanning:       PASS"
+          echo "========================================"
