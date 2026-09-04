@@ -1,0 +1,5 @@
+$kind: collection
+description: "System health check plus authentication/authorization behavior across admin-protected endpoints. Note: there is no dedicated /api/auth/login endpoint yet — auth is currently a single shared bearer token (ADMIN_TOKEN), not per-user login. This collection verifies that protected routes correctly reject missing/invalid tokens and accept a valid one."
+variables:
+  baseUrl: http://localhost:4000
+  authToken: ""

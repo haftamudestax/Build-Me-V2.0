@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/leads"
+method: GET
+headers:
+  Authorization: Bearer {{authToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200 or 401', function () {
+        pm.expect([200, 401]).to.include(pm.response.code);
+      });
+    language: text/javascript
+order: 2000

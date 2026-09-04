@@ -1,0 +1,68 @@
+name: CD - Development
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+concurrency:
+  group: cd-development
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-web-development:
+    name: Deploy Web (Development)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'development'
+
+    steps:
+      - name: Checkout CI Commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel
+
+      - name: Pull Vercel Environment
+        working-directory: apps/web
+        run: |
+          vercel pull \
+            --yes \
+            --environment=preview \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.WEB_PROJECT_ID }}
+
+      - name: Build
+        working-directory: apps/web
+        run: |
+          vercel build \
+            --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Development
+        working-directory: apps/web
+        run: |
+          vercel deploy \
+            --prebuilt \
+            --token=${{ secrets.VERCEL_TOKEN }}

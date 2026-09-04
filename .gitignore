@@ -1,18 +1,38 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+# Dependencies
+node_modules/
 
-# Other files and folders
-.settings/
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
+# Build output
+dist/
+**/dist/
+build/
+**/build/
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# Turborepo
+.turbo/
+**/.turbo/
+
+# Vercel
+.vercel/
+**/.vercel/
+
+# Python
+
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# IDE
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Miscellaneous
+.DS_Store
+*.log
+reports/

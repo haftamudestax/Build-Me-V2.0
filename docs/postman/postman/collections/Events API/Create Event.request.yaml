@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/api/events"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "eventType": "page_view",
+      "target": "/"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 201', function () {
+        pm.response.to.have.status(201);
+      });
+
+      pm.test('Response matches EventCreated schema', function () {
+        const body = pm.response.json();
+        pm.expect(body).to.have.property('id');
+        pm.expect(body).to.have.property('createdAt');
+      });
+    language: text/javascript
+order: 1000

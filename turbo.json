@@ -1,0 +1,66 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+
+    "lint": {
+      "outputs": []
+    },
+
+    "typecheck": {
+      "outputs": []
+    },
+
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
+
+    "test:integration": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": []
+    },
+
+    "test:e2e": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": []
+    },
+
+    "test:contract": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": []
+    },
+
+    "db:generate": {
+      "cache": false,
+      "outputs": ["migrations/**"]
+    },
+
+    "db:migrate": {
+      "cache": false,
+      "outputs": []
+    },
+
+    "db:push": {
+      "cache": false,
+      "outputs": []
+    },
+
+    "db:studio": {
+      "cache": false,
+      "persistent": true
+    },
+
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
