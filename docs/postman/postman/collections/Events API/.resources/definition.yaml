@@ -1,0 +1,5 @@
+$kind: collection
+description: Analytics events — page views and clicks, powering the admin Overview dashboard.
+variables:
+  baseUrl: http://localhost:4000
+  authToken: ""

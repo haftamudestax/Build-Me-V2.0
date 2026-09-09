@@ -1,0 +1,22 @@
+# Use this workspace to collaborate
+workspace:
+  id: 5e774578-2924-4a34-b2e0-f21818787054
+
+localResources:
+  collections:
+    - ../collections/authentication-api.postman_collection.json
+    - ../collections/bookings-api.postman_collection.json
+    - ../collections/events-api.postman_collection.json
+    - ../collections/leads-api.postman_collection.json
+  environments:
+    - ../environments/local.postman_environment.json
+    - ../environments/production.postman_environment.json
+    - ../environments/staging.postman_environment.json
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/Bookings API: 064b90fa-ddae-448f-acca-d9827c10a1e2
+    ../postman/collections/Events API: eacfa741-941b-4ba0-b738-2f00c0ab323b
+    ../postman/collections/Leads API: ad0a1f4b-42d7-4c78-b783-57a147f28d5f
