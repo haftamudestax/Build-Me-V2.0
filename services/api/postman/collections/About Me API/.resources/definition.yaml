@@ -1,0 +1,7 @@
+$kind: collection
+name: About Me API
+variables:
+  - key: baseUrl
+    value: 'http://localhost:4000'
+  - key: authToken
+    value: ''

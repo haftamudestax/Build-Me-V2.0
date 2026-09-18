@@ -1,0 +1,76 @@
+{
+  "info": {
+    "_postman_id": "c1a2b3d4-3333-4222-8333-333333333333",
+    "name": "Events API",
+    "description": "Analytics events — page views and clicks, powering the admin Overview dashboard.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Event",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response matches EventCreated schema', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('id');",
+              "  pm.expect(body).to.have.property('createdAt');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"eventType\": \"page_view\",\n  \"target\": \"/\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/events",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "events"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Events (admin)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200 or 401', function () {",
+              "  pm.expect([200, 401]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/events",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "events"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "authToken", "value": "" }
+  ]
+}

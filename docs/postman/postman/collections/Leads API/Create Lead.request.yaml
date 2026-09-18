@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{baseUrl}}/api/leads"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "message": "I'd like to talk about a project.",
+      "source": "contact"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 201', function () {
+        pm.response.to.have.status(201);
+      });
+
+      pm.test('Response matches LeadCreated schema', function () {
+        const body = pm.response.json();
+        pm.expect(body).to.have.property('id');
+        pm.expect(body).to.have.property('createdAt');
+      });
+    language: text/javascript
+order: 1000
