@@ -37,6 +37,27 @@
       "cache": false,
       "outputs": []
     },
+    "test:auth": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": []
+    },
+    "test:api": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": []
+    },
+    "test:security": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": []
+    },
+
+    "test:performance": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": []
+    },
 
     "db:generate": {
       "cache": false,
