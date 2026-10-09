@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -42,6 +43,12 @@ jobs:
 
       - name: Install Playwright Browsers
         run: pnpm --filter @about-me/web exec playwright install --with-deps chromium
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Verify k6 Installation
+        run: k6 version
 
       - name: Lint
         run: pnpm turbo run lint
