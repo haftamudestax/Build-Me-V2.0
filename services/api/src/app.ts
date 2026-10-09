@@ -27,20 +27,29 @@ app.get("/api/leads", async (_req: Request, res: Response) => {
 });
 
 // Return a controlled JSON response for oversized payloads.
+
 app.use(
   (
-    err: any,
+    err: unknown,
     _req: Request,
     res: Response,
     next: express.NextFunction
   ) => {
-    if (err?.type === "entity.too.large") {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "type" in err &&
+      err.type === "entity.too.large"
+    ) {
       return res.status(413).json({
         error: "Payload too large",
       });
     }
 
-    if (err instanceof SyntaxError && "body" in err) {
+    if (
+      err instanceof SyntaxError &&
+      "body" in err
+    ) {
       return res.status(400).json({
         error: "Invalid JSON",
       });
