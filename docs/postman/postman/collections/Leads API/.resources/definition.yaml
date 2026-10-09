@@ -1,0 +1,5 @@
+$kind: collection
+description: Lead creation and retrieval — covers contact form submissions and audit requests, unified under /api/leads.
+variables:
+  baseUrl: http://localhost:4000
+  authToken: ""

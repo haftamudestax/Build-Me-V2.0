@@ -1,0 +1,27 @@
+{
+  "name": "@build-me/contract-tests",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "test:contract": "start-server-and-test \"pnpm --filter @about-me/api dev\" http://localhost:4000/health \"pnpm run test:contract:all:local\"",
+    "test:contract:all:local": "pnpm run test:contract:auth:local && pnpm run test:contract:leads:local && pnpm run test:contract:bookings:local && pnpm run test:contract:events:local",
+    "test:contract:auth:local": "newman run collections/authentication-api.postman_collection.json -e environments/local.postman_environment.json",
+    "test:contract:leads:local": "newman run collections/leads-api.postman_collection.json -e environments/local.postman_environment.json",
+    "test:contract:bookings:local": "newman run collections/bookings-api.postman_collection.json -e environments/local.postman_environment.json",
+    "test:contract:events:local": "newman run collections/events-api.postman_collection.json -e environments/local.postman_environment.json",
+    "test:contract:staging": "pnpm run test:contract:auth:staging && pnpm run test:contract:leads:staging && pnpm run test:contract:bookings:staging && pnpm run test:contract:events:staging",
+    "test:contract:auth:staging": "newman run collections/authentication-api.postman_collection.json -e environments/staging.postman_environment.json",
+    "test:contract:leads:staging": "newman run collections/leads-api.postman_collection.json -e environments/staging.postman_environment.json",
+    "test:contract:bookings:staging": "newman run collections/bookings-api.postman_collection.json -e environments/staging.postman_environment.json",
+    "test:contract:events:staging": "newman run collections/events-api.postman_collection.json -e environments/staging.postman_environment.json",
+    "test:contract:production": "pnpm run test:contract:auth:production && pnpm run test:contract:leads:production && pnpm run test:contract:bookings:production && pnpm run test:contract:events:production",
+    "test:contract:auth:production": "newman run collections/authentication-api.postman_collection.json -e environments/production.postman_environment.json",
+    "test:contract:leads:production": "newman run collections/leads-api.postman_collection.json -e environments/production.postman_environment.json",
+    "test:contract:bookings:production": "newman run collections/bookings-api.postman_collection.json -e environments/production.postman_environment.json",
+    "test:contract:events:production": "newman run collections/events-api.postman_collection.json -e environments/production.postman_environment.json"
+  },
+  "devDependencies": {
+    "newman": "^6.2.1",
+    "start-server-and-test": "^2.0.4"
+  }
+}
