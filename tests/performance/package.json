@@ -1,0 +1,16 @@
+{
+  "name": "@build-me/perf-tests",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "load": "k6 run load/login-load.js",
+    "stress": "k6 run stress/api-stress.js",
+    "diagnostics": "k6 run diagnostics/endpoint-profile.js",
+    "validation": "k6 run validation/sla-check.js",
+    "regression": "k6 run regression/baseline-compare.js",
+    "test": "pnpm run load && pnpm run stress",
+    "test:performance": "k6 run diagnostics/endpoint-profile.js",
+    "test:load": "k6 run load/login-load.js",
+    "test:stress": "k6 run stress/api-stress.js"
+  }
+}

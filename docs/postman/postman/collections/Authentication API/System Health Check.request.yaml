@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/health"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', function () {
+        pm.response.to.have.status(200);
+      });
+
+      pm.test('Response matches HealthResponse schema', function () {
+        const body = pm.response.json();
+        pm.expect(body).to.have.property('status');
+        pm.expect(body.status).to.eql('ok');
+      });
+    language: text/javascript
+order: 1000

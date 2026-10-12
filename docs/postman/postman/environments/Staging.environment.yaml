@@ -1,0 +1,6 @@
+name: Staging
+values:
+  - key: baseUrl
+    value: 'https://REPLACE-WITH-YOUR-STAGING-URL.vercel.app'
+  - key: authToken
+    value: ''

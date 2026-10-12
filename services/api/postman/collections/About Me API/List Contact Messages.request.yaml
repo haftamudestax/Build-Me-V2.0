@@ -1,0 +1,10 @@
+$kind: http-request
+name: List Contact Messages
+method: GET
+url: '{{baseUrl}}/contact'
+order: 3000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
