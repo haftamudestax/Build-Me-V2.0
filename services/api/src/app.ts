@@ -3,7 +3,6 @@ import express, { Request, Response } from "express";
 
 const app = express();
 
-// Reject JSON request bodies larger than 1 MB with HTTP 413.
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/", (_req, res) => {
@@ -25,8 +24,6 @@ app.get("/api/events", async (_req: Request, res: Response) => {
 app.get("/api/leads", async (_req: Request, res: Response) => {
   res.json({ message: "Leads API endpoint is working" });
 });
-
-// Return a controlled JSON response for oversized payloads.
 
 app.use(
   (
