@@ -7,8 +7,8 @@
   "types": "./src/index.ts",
   "exports": {
   "./navbar": {
-    "types": "./src/components/navbar/index.ts",
-    "import": "./src/components/navbar/index.ts"
+    "types": "./src/components/Navbar/index.ts",
+    "import": "./src/components/Navbar/index.ts"
   }
 },
   "scripts": {
