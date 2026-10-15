@@ -1,5 +1,5 @@
 {
-  "name": "@about-me/web",
+  "name": "@build-me/web",
   "private": true,
   "type": "module",
   "scripts": {
