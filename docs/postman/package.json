@@ -21,7 +21,6 @@
     "test:contract:events:production": "newman run collections/events-api.postman_collection.json -e environments/production.postman_environment.json"
   },
   "devDependencies": {
-    "newman": "^6.2.1",
     "start-server-and-test": "^2.0.4"
   }
 }

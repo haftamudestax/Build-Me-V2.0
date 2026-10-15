@@ -11,6 +11,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@about-me/web": path.resolve(rootDir, "../../apps/web/src"),
+      "@build-me/ui/navbar": path.resolve(
+        rootDir,
+        "../../packages/ui/src/components/navbar/index.ts"
+      ),
     },
   },
 
