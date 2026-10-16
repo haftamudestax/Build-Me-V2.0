@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Browsers
-        run: pnpm --filter @about-me/web exec playwright install --with-deps chromium
+        run: pnpm --filter @build-me/web exec playwright install --with-deps chromium
 
       - name: Install k6
         uses: grafana/setup-k6-action@v1
@@ -56,13 +56,22 @@ jobs:
         run: pnpm turbo run typecheck
 
       - name: Start API for Performance Tests
+        shell: bash
         run: |
-          pnpm --filter @about-me/api dev > /tmp/build-me-api.log 2>&1 &
+          pnpm --filter @build-me/api dev > /tmp/build-me-api.log 2>&1 &
+          API_PID=$!
+          echo "$API_PID" > /tmp/build-me-api.pid
 
           for i in {1..30}; do
             if curl --fail --silent http://localhost:4000/health; then
               echo "API is ready"
               exit 0
+            fi
+
+            if ! kill -0 "$API_PID" 2>/dev/null; then
+              echo "API process exited unexpectedly."
+              cat /tmp/build-me-api.log
+              exit 1
             fi
 
             sleep 2
@@ -77,3 +86,11 @@ jobs:
 
       - name: Build
         run: pnpm turbo run build
+
+      - name: Stop API
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/build-me-api.pid ]; then
+            kill "$(cat /tmp/build-me-api.pid)" 2>/dev/null || true
+          fi
