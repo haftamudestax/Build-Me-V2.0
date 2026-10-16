@@ -40,7 +40,7 @@ export function HeroIntro() {
               mb: 2,
             }}
           >
-            Build Better
+            Build Better{" "}
             <Box
               component="span"
               sx={{

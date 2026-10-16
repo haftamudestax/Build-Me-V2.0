@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { HeroSection } from "../../../apps/web/src/components/hero/HeroSection";
+import { HeroSection } from "../../../apps/web/src/components/Hero/HeroSection";
 
 describe("Hero Left Section integration", () => {
   it("renders all hero content within the same section", () => {
