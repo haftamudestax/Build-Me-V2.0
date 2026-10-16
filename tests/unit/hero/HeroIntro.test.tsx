@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { HeroIntro } from "../../../apps/web/src/components/hero/HeroIntro";
+import { HeroIntro } from "../../../apps/web/src/components/Hero/HeroIntro";
 
 describe("HeroIntro", () => {
   it("renders the Technology Ownership label", () => {

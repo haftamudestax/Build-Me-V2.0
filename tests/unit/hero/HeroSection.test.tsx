@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { HeroSection } from "../../../apps/web/src/components/hero/HeroSection";
+import { HeroSection } from "../../../apps/web/src/components/Hero/HeroSection";
 
 describe("HeroSection", () => {
   const heroRegionName = /Build Better\s*Digital Experiences/i;
@@ -36,10 +36,8 @@ describe("HeroSection", () => {
       name: heroRegionName,
     });
 
-    // Eyebrow label
     expect(within(hero).getByText("TECHNOLOGY OWNERSHIP")).toBeInTheDocument();
 
-    // Main heading and its nested second line
     const heading = within(hero).getByRole("heading", { level: 1 });
 
     expect(heading).toHaveTextContent(/Build Better\s*Digital Experiences/i);
@@ -47,7 +45,6 @@ describe("HeroSection", () => {
       within(heading).getByText("Digital Experiences"),
     ).toBeInTheDocument();
 
-    // Supporting heading
     expect(
       within(hero).getByRole("heading", {
         level: 2,
@@ -55,7 +52,6 @@ describe("HeroSection", () => {
       }),
     ).toBeInTheDocument();
 
-    // Description with explicit line breaks
     const paragraphs = within(hero).getAllByText(
       (_, element) => element?.tagName.toLowerCase() === "p",
     );
