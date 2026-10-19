@@ -65,6 +65,8 @@ jobs:
 
       - name: Run Python Analytics Tests
         working-directory: services/analytics
+        env:
+          PYTHONPATH: ${{ github.workspace }}/services/analytics
         run: uv run pytest ../../tests/analytics/ -v
 
       - name: Start API for Performance Tests
