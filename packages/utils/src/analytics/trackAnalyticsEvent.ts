@@ -1,4 +1,3 @@
-
 import type { TrackAnalyticsEventOptions } from "@build-me/types";
 import { getAnalyticsConfig } from "./analyticsClient";
 
@@ -24,7 +23,12 @@ export async function trackAnalyticsEvent(
     metadata: options.metadata ?? {},
   };
 
-  const baseUrl = config.baseUrl.replace(/\/+$/, "");
+  // Remove trailing slashes without using a regular expression.
+  let baseUrl = config.baseUrl;
+
+  while (baseUrl.endsWith("/")) {
+    baseUrl = baseUrl.slice(0, -1);
+  }
 
   const response = await fetch(`${baseUrl}/api/events`, {
     method: "POST",
