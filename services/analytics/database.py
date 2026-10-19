@@ -17,6 +17,7 @@ import os
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 from uuid import UUID
+from datetime import datetime
 
 import asyncpg
 from asyncpg import Pool, Record
@@ -132,6 +133,7 @@ async def validate_visitor_session(
     return bool(exists)
 
 
+
 async def insert_event(
     connection: asyncpg.Connection,
     *,
@@ -142,6 +144,7 @@ async def insert_event(
     feature: str,
     journey: str | None,
     metadata: dict,
+    timestamp: datetime | None = None,
 ) -> Record:
     """Persist an event using the existing Drizzle-managed schema."""
     import json
@@ -155,9 +158,14 @@ async def insert_event(
             event_type,
             feature,
             journey,
+            timestamp,
             metadata
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+        VALUES (
+            $1, $2, $3, $4, $5, $6,
+            COALESCE($7, NOW()),
+            $8::jsonb
+        )
         RETURNING
             id,
             visitor_id,
@@ -175,6 +183,7 @@ async def insert_event(
         event_type,
         feature,
         journey,
+        timestamp,
         json.dumps(metadata),
     )
 

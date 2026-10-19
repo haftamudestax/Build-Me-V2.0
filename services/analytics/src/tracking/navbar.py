@@ -3,6 +3,8 @@ import logging
 import os
 import secrets
 from typing import Annotated
+from src.events.hero import HeroEventIn
+from src.tracking.hero import persist_hero_event
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
@@ -63,18 +65,26 @@ async def require_admin(
         )
 
 
+
 @router.post("", status_code=201)
-async def create_navbar_event(event: NavbarEventIn):
+async def create_navbar_event(event: NavbarEventIn | HeroEventIn):
+    """Persist Navbar, Hero visibility, or page-view analytics."""
+
     try:
-        record = await persist_navbar_event(event)
+        if isinstance(event, HeroEventIn):
+            record = await persist_hero_event(event)
+        else:
+            record = await persist_navbar_event(event)
+
         return jsonable_encoder(dict(record))
+
     except HTTPException:
         raise
     except Exception as exc:
-        logger.exception("Failed to persist Navbar event")
+        logger.exception("Failed to persist analytics event")
         raise HTTPException(
             status_code=503,
-            detail="Navbar analytics is temporarily unavailable.",
+            detail="Analytics is temporarily unavailable.",
         ) from exc
 
 

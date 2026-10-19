@@ -1,10 +1,27 @@
 {
-  "name": "types",
+  "name": "@build-me/types",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "Shared TypeScript types and contracts for Build Me",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./analytics": {
+      "types": "./src/analytics/index.ts",
+      "default": "./src/analytics/index.ts"
+    }
+  },
   "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "echo \"No tests defined for @build-me/types\""
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
   },
   "keywords": [],
   "author": "",
