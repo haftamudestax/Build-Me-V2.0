@@ -13,6 +13,8 @@
     "@about-me/web": "link:",
     "@build-me/config": "workspace:*",
     "@build-me/ui": "workspace:*",
+    "@build-me/types": "workspace:*",
+    "@build-me/utils": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^9.2.0",

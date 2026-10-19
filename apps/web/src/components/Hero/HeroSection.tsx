@@ -1,14 +1,48 @@
+import { useState } from "react";
+import { Box, Container } from "@mui/material";
 import { HeroIntro } from "./HeroIntro";
+import { useVisibilityAnalytics } from "../../hooks/useTracking/useVisibilityAnalytics";
 
 export function HeroSection() {
+  const [heroElement, setHeroElement] = useState<HTMLElement | null>(null);
+
+  // Track when the page containing this Hero is entered.
+  useVisibilityAnalytics(heroElement, {
+    eventName: "page.viewed",
+    enabled: true,
+  });
+
+  // Track when the Hero section becomes visible.
+  useVisibilityAnalytics(heroElement, {
+    eventName: "hero.viewed",
+    enabled: true,
+  });
+
   return (
-    <section
-      id="home"
-      className="flex min-h-screen w-full items-center bg-linear-to-r from-slate-50 via-cyan-50 to-teal-50 px-6 pb-16 pt-24"
+    <Box
+      ref={setHeroElement}
+      component="section"
+      id="hero"
+      aria-labelledby="hero-title"
+      sx={{
+        width: "100%",
+        py: { xs: 6, sm: 8, md: 12 },
+        backgroundColor: "background.default",
+      }}
     >
-      <div className="mx-auto flex w-full max-w-5xl flex-col-reverse items-center gap-12 md:flex-row md:items-center md:justify-between">
-        <HeroIntro />
-      </div>
-    </section>
+      <Container
+        maxWidth="lg"
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          gap: { xs: 3, md: 5 },
+        }}
+      >
+        <Box sx={{ width: "100%", maxWidth: "900px" }}>
+          <HeroIntro />
+        </Box>
+      </Container>
+    </Box>
   );
 }

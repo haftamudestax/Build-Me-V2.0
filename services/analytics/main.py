@@ -11,6 +11,7 @@ from database import close_pool, get_connection
 from src.reporting.navbar import router as navbar_reporting_router
 from src.tracking.navbar import router as navbar_tracking_router
 from src.tracking.visitors import router as visitors_router
+from src.reporting.hero import router as hero_reporting_router
 
 
 load_dotenv()
@@ -52,6 +53,7 @@ app.add_middleware(
 
 app.include_router(navbar_tracking_router)
 app.include_router(navbar_reporting_router)
+app.include_router(hero_reporting_router)
 app.include_router(visitors_router)
 
 
