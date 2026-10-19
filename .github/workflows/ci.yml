@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -40,6 +41,14 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+
       - name: Install Playwright Browsers
         run: pnpm --filter @build-me/web exec playwright install --with-deps chromium
 
@@ -54,6 +63,9 @@ jobs:
 
       - name: Type Check
         run: pnpm turbo run typecheck
+
+      - name: Run Python Analytics Tests
+        run: uv run --project services/analytics pytest tests/analytics/ -v
 
       - name: Start API for Performance Tests
         shell: bash
