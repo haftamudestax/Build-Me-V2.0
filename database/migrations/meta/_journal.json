@@ -8,6 +8,13 @@
       "when": 1785348170503,
       "tag": "0000_shallow_starbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791978764105,
+      "tag": "0001_nifty_triton",
+      "breakpoints": true
     }
   ]
 }
