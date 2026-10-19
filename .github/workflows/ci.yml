@@ -1,4 +1,3 @@
-
 name: CI
 
 on:
@@ -65,7 +64,8 @@ jobs:
         run: pnpm turbo run typecheck
 
       - name: Run Python Analytics Tests
-        run: uv run --project services/analytics pytest tests/analytics/ -v
+        working-directory: services/analytics
+        run: uv run pytest ../../tests/analytics/ -v
 
       - name: Start API for Performance Tests
         shell: bash
