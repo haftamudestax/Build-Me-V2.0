@@ -47,6 +47,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
@@ -86,8 +88,8 @@ jobs:
           echo "PostgreSQL failed to become ready."
           exit 1
 
-      # If your API or tests require application tables, run the
-      # repository's existing Drizzle migration/schema command here.
+      # Initialize the database schema here if the API integration tests
+      # require application tables that are not created by the tests.
 
       - name: Install Playwright Browsers
         run: pnpm --filter @build-me/web exec playwright install --with-deps chromium
