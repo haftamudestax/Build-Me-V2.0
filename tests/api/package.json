@@ -1,0 +1,17 @@
+{
+  "name": "@build-me/api-tests",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:unit": "vitest run unit",
+    "test:integration": "vitest run integration"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/pg": "^8.20.0",
+    "@types/supertest": "^7.2.1",
+    "dotenv": "^18.0.8",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.10"
+  }
+}

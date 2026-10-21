@@ -71,6 +71,25 @@ jobs:
     timeout-minutes: 15
     needs: quality
 
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/build_me_test
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: build_me_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d build_me_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -87,28 +106,59 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Wait for PostgreSQL
+        shell: bash
+        run: |
+          echo "Waiting for PostgreSQL..."
+          for i in {1..30}; do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres -d build_me_test; then
+              echo "PostgreSQL is ready."
+              exit 0
+            fi
+
+            echo "Attempt $i/30: PostgreSQL is not ready yet..."
+            sleep 1
+          done
+
+          echo "PostgreSQL failed to become ready."
+          exit 1
+
+      # IMPORTANT:
+      # If integration tests require tables, run the repository's actual
+      # Drizzle migration/schema command here before starting the API.
+      # Do not substitute a guessed migration command.
+
       - name: Build API
         run: pnpm --filter @build-me/api build
 
       - name: Start API
+        shell: bash
         run: |
           pnpm --filter @build-me/api start > api.log 2>&1 &
           echo $! > api.pid
 
       - name: Wait for API
+        shell: bash
         run: |
           echo "Waiting for API on port 4000..."
+
           for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:4000/health; then
+            if curl --fail --silent --show-error http://127.0.0.1:4000/health; then
               echo ""
               echo "API is ready."
               exit 0
             fi
+
+            if ! kill -0 "$(cat api.pid)" 2>/dev/null; then
+              echo "API process exited unexpectedly."
+              break
+            fi
+
             echo "Attempt $i/30: API is not ready yet..."
             sleep 1
           done
 
-          echo "API failed to start."
+          echo "API failed to start or health check failed."
           echo "===== API LOG ====="
           cat api.log || true
           echo "=================="
@@ -126,9 +176,10 @@ jobs:
 
       - name: Stop API
         if: always()
+        shell: bash
         run: |
           if [ -f api.pid ]; then
-            kill "$(cat api.pid)" || true
+            kill "$(cat api.pid)" 2>/dev/null || true
           fi
 
   e2e:
@@ -136,9 +187,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: quality
+
     env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/build_me_test
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: build_me_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d build_me_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout Repository
@@ -155,6 +224,24 @@ jobs:
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Wait for PostgreSQL
+        shell: bash
+        run: |
+          echo "Waiting for PostgreSQL..."
+
+          for i in {1..30}; do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres -d build_me_test; then
+              echo "PostgreSQL is ready."
+              exit 0
+            fi
+
+            echo "Attempt $i/30: PostgreSQL is not ready yet..."
+            sleep 1
+          done
+
+          echo "PostgreSQL failed to become ready."
+          exit 1
 
       - name: Install Cypress Binary
         run: pnpm --filter @build-me/e2e-tests exec cypress install

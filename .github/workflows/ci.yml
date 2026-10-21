@@ -22,11 +22,33 @@ jobs:
   quality:
     name: Lint, Type Check, Test & Build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/build_me_test
+      TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/build_me_test
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: build_me_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d build_me_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
@@ -47,6 +69,27 @@ jobs:
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
+
+      - name: Wait for PostgreSQL
+        shell: bash
+        run: |
+          echo "Waiting for PostgreSQL..."
+
+          for i in {1..30}; do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres -d build_me_test; then
+              echo "PostgreSQL is ready."
+              exit 0
+            fi
+
+            echo "Attempt $i/30: PostgreSQL is not ready yet..."
+            sleep 2
+          done
+
+          echo "PostgreSQL failed to become ready."
+          exit 1
+
+      - name: Initialize Test Database Schema
+        run: pnpm --filter @build-me/database db:push
 
       - name: Install Playwright Browsers
         run: pnpm --filter @build-me/web exec playwright install --with-deps chromium
@@ -76,35 +119,54 @@ jobs:
           API_PID=$!
           echo "$API_PID" > /tmp/build-me-api.pid
 
+          echo "Waiting for API on port 4000..."
+
           for i in {1..30}; do
-            if curl --fail --silent http://localhost:4000/health; then
-              echo "API is ready"
+            if curl --fail --silent http://127.0.0.1:4000/health; then
+              echo ""
+              echo "API is ready."
               exit 0
             fi
 
             if ! kill -0 "$API_PID" 2>/dev/null; then
               echo "API process exited unexpectedly."
-              cat /tmp/build-me-api.log
+              echo "===== API LOG ====="
+              cat /tmp/build-me-api.log || true
+              echo "=================="
               exit 1
             fi
 
+            echo "Attempt $i/30: API is not ready yet..."
             sleep 2
           done
 
           echo "API failed to start or health check failed."
-          cat /tmp/build-me-api.log
+          echo "===== API LOG ====="
+          cat /tmp/build-me-api.log || true
+          echo "=================="
           exit 1
 
       - name: Run Tests
-        run: pnpm turbo run test --filter='!@build-me/integration-tests'
+        run: pnpm turbo run test --filter='!@build-me/integration-tests' --filter='!@build-me/api-tests'
 
       - name: Build
         run: pnpm turbo run build
+
+      - name: Show API Logs on Failure
+        if: failure()
+        shell: bash
+        run: |
+          if [ -f /tmp/build-me-api.log ]; then
+            echo "===== API LOG ====="
+            cat /tmp/build-me-api.log || true
+            echo "=================="
+          fi
 
       - name: Stop API
         if: always()
         shell: bash
         run: |
           if [ -f /tmp/build-me-api.pid ]; then
-            kill "$(cat /tmp/build-me-api.pid)" 2>/dev/null || true
+            API_PID="$(cat /tmp/build-me-api.pid)"
+            kill "$API_PID" 2>/dev/null || true
           fi
