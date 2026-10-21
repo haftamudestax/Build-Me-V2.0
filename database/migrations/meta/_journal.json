@@ -15,6 +15,13 @@
       "when": 1791978764105,
       "tag": "0001_nifty_triton",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792560779424,
+      "tag": "0002_wild_green_goblin",
+      "breakpoints": true
     }
   ]
 }

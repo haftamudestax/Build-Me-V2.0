@@ -1,5 +1,6 @@
 
 import express, { Request, Response } from "express";
+import bookingRoutes from "./routes/Routes";
 
 const app = express();
 
@@ -13,9 +14,7 @@ app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
-app.get("/api/bookings", async (_req: Request, res: Response) => {
-  res.json({ message: "Bookings API endpoint is working" });
-});
+app.use("/api", bookingRoutes);
 
 app.get("/api/events", async (_req: Request, res: Response) => {
   res.json({ message: "Events API endpoint is working" });

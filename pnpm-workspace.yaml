@@ -7,3 +7,4 @@ packages:
   - "docs/postman"
   - "tests/performance"
   - "tests/security"
+  - "tests/api"

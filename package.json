@@ -5,8 +5,17 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "test": "turbo run test && pnpm analytics:test",
-    "analytics:test": "uv run --project services/analytics pytest tests/analytics/ -v",
+    "typecheck": "turbo run typecheck",
+
+    "test": "pnpm test:workspace && pnpm api:test && pnpm analytics:test",
+    "test:workspace": "turbo run test",
+
+    "api:test": "pnpm --filter @build-me/api-tests test",
+    "api:test:unit": "pnpm --filter @build-me/api-tests test:unit",
+    "api:test:integration": "pnpm --filter @build-me/api-tests test:integration",
+
+    "analytics:test": "uv run --project services/analytics --directory services/analytics pytest ../../tests/analytics/ -v",
+
     "db:generate": "pnpm --filter @build-me/database db:generate",
     "db:migrate": "pnpm --filter @build-me/database db:migrate"
   },
