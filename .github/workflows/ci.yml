@@ -88,8 +88,8 @@ jobs:
           echo "PostgreSQL failed to become ready."
           exit 1
 
-      # Initialize the database schema here if the API integration tests
-      # require application tables that are not created by the tests.
+      - name: Initialize Test Database Schema
+        run: pnpm --filter @build-me/database db:push
 
       - name: Install Playwright Browsers
         run: pnpm --filter @build-me/web exec playwright install --with-deps chromium
@@ -147,7 +147,7 @@ jobs:
           exit 1
 
       - name: Run Tests
-        run: pnpm turbo run test --filter='!@build-me/integration-tests'
+        run: pnpm turbo run test --filter='!@build-me/integration-tests' --filter='!@build-me/api-tests'
 
       - name: Build
         run: pnpm turbo run build
