@@ -27,6 +27,7 @@ jobs:
     env:
       NODE_ENV: test
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/build_me_test
+      TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/build_me_test
 
     services:
       postgres:
@@ -85,8 +86,8 @@ jobs:
           echo "PostgreSQL failed to become ready."
           exit 1
 
-      # If the API or tests require database tables, apply the
-      # repository's existing Drizzle migrations/schema here.
+      # If your API or tests require application tables, run the
+      # repository's existing Drizzle migration/schema command here.
 
       - name: Install Playwright Browsers
         run: pnpm --filter @build-me/web exec playwright install --with-deps chromium
