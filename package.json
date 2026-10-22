@@ -6,7 +6,7 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test && pnpm analytics:test",
-    "analytics:test": "uv run --project services/analytics pytest tests/analytics/ -v",
+    "analytics:test": "uv run --project services/analytics --directory services/analytics python -m pytest ../../tests/analytics -v",
     "db:generate": "pnpm --filter @build-me/database db:generate",
     "db:migrate": "pnpm --filter @build-me/database db:migrate"
   },
