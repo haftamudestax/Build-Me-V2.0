@@ -1,3 +1,6 @@
+const adminBaseUrl =
+  (Cypress.env("adminBaseUrl") as string | undefined) ??
+  "http://localhost:5174";
 
 const adminUser = {
   id: "e2e-admin-user",
@@ -27,30 +30,43 @@ const adminProfile = {
   role: "admin",
 };
 
+function getSupabaseStorageKey(): string {
+  const supabaseUrl = Cypress.env("supabaseUrl") as string | undefined;
+
+  if (!supabaseUrl) {
+    throw new Error(
+      "Missing supabaseUrl in Cypress configuration. " +
+        "Set VITE_SUPABASE_URL in the CI environment or in " +
+        "apps/dashboard/.env.local, and expose it as Cypress env 'supabaseUrl'.",
+    );
+  }
+
+  let projectRef: string;
+
+  try {
+    projectRef = new URL(supabaseUrl).hostname.split(".")[0];
+  } catch {
+    throw new Error(
+      `Invalid supabaseUrl: "${supabaseUrl}". Expected a valid Supabase project URL.`,
+    );
+  }
+
+  if (!projectRef) {
+    throw new Error("Could not determine the Supabase project reference.");
+  }
+
+  return `sb-${projectRef}-auth-token`;
+}
+
 describe("Admin dashboard layout", () => {
   beforeEach(() => {
-    const supabaseUrl = Cypress.env("supabaseUrl") as
-      | string
-      | undefined;
+    const storageKey = getSupabaseStorageKey();
 
-    if (!supabaseUrl) {
-      throw new Error(
-        "Missing supabaseUrl in Cypress configuration. " +
-          "Check that tests/e2e/cypress.config.ts reads " +
-          "VITE_SUPABASE_URL from apps/dashboard/.env.local.",
-      );
-    }
-
-    const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
-    const storageKey = `sb-${projectRef}-auth-token`;
-
-    // Mock Supabase requests used to restore the authenticated user.
     cy.intercept("GET", "**/auth/v1/user*", {
       statusCode: 200,
       body: adminUser,
     }).as("getAuthUser");
 
-    // Mock the user's dashboard role/profile lookup.
     cy.intercept("GET", "**/rest/v1/users*", {
       statusCode: 200,
       headers: {
@@ -59,8 +75,7 @@ describe("Admin dashboard layout", () => {
       body: [adminProfile],
     }).as("getAdminProfile");
 
-    // Load the session before React and Supabase initialize.
-    cy.visit("/dashboard", {
+    cy.visit(`${adminBaseUrl}/dashboard`, {
       onBeforeLoad(win) {
         win.localStorage.setItem(
           storageKey,
@@ -74,20 +89,14 @@ describe("Admin dashboard layout", () => {
     cy.contains("Build Me Admin").should("be.visible");
     cy.contains("Overview").should("be.visible");
     cy.contains("Dashboard").should("be.visible");
-    cy.contains("Welcome to your Build Me dashboard.").should(
-      "be.visible",
-    );
+    cy.contains("Welcome to your Build Me dashboard.").should("be.visible");
   });
 
   it("shows the Overview navigation link", () => {
-    cy.contains("Overview")
-      .should("be.visible")
-      .click();
+    cy.contains("Overview").should("be.visible").click();
 
     cy.location("pathname").should("eq", "/dashboard");
-    cy.contains("Welcome to your Build Me dashboard.").should(
-      "be.visible",
-    );
+    cy.contains("Welcome to your Build Me dashboard.").should("be.visible");
   });
 
   it("shows the Users navigation link for an admin", () => {
@@ -100,7 +109,7 @@ describe("Admin dashboard layout", () => {
   });
 
   it("navigates to the Users page", () => {
-    cy.contains("Users").click();
+    cy.contains("Users").should("be.visible").click();
 
     cy.location("pathname").should("eq", "/dashboard/users");
     cy.contains("User management").should("be.visible");
@@ -112,9 +121,10 @@ describe("Admin dashboard layout", () => {
       body: "",
     }).as("signOut");
 
-    cy.contains("Sign out").click();
+    cy.contains("Sign out").should("be.visible").click();
 
     cy.wait("@signOut");
     cy.location("pathname").should("eq", "/login");
   });
 });
+export {};

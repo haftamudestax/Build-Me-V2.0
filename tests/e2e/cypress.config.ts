@@ -1,12 +1,19 @@
+
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "cypress";
 
-function readEnvValue(filePath: string, name: string): string | undefined {
+function readEnvValue(
+  filePath: string,
+  name: string,
+): string | undefined {
   try {
     const contents = readFileSync(filePath, "utf8");
     const match = contents.match(
-      new RegExp(`^\\s*${name}\\s*=\\s*["']?([^\\r\\n"']+)["']?\\s*$`, "m"),
+      new RegExp(
+        `^\\s*${name}\\s*=\\s*["']?([^\\r\\n"']+)["']?\\s*$`,
+        "m",
+      ),
     );
 
     return match?.[1]?.trim();
@@ -20,16 +27,17 @@ const dashboardEnvPath = resolve(
   "../../apps/dashboard/.env.local",
 );
 
-const supabaseUrl = readEnvValue(
-  dashboardEnvPath,
-  "VITE_SUPABASE_URL",
-);
+const supabaseUrl =
+  process.env.VITE_SUPABASE_URL ??
+  readEnvValue(dashboardEnvPath, "VITE_SUPABASE_URL");
 
 export default defineConfig({
   e2e: {
-    baseUrl: "http://localhost:5173",
-    setupNodeEvents(on, config) {
-      config.env.supabaseUrl = supabaseUrl;
+    baseUrl: "http://localhost:5174",
+    env: {
+      supabaseUrl,
+    },
+    setupNodeEvents(_on, config) {
       return config;
     },
   },
