@@ -141,10 +141,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: quality
 
-    env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -164,6 +160,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate Supabase Secrets
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           if [ -z "$VITE_SUPABASE_URL" ]; then
             echo "::error::GitHub Actions secret VITE_SUPABASE_URL is missing."
@@ -178,6 +177,9 @@ jobs:
           echo "Required Supabase environment variables are present."
 
       - name: Start Web and Dashboard Applications
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           pnpm --filter @build-me/web dev \
             --host 127.0.0.1 --port 5173 --strictPort \
@@ -188,6 +190,14 @@ jobs:
             --host 127.0.0.1 --port 5174 --strictPort \
             > /tmp/build-me-dashboard.log 2>&1 &
           echo "$!" > /tmp/build-me-dashboard.pid
+
+          sleep 3
+
+          echo "===== WEB STARTUP ====="
+          cat /tmp/build-me-web.log
+
+          echo "===== DASHBOARD STARTUP ====="
+          cat /tmp/build-me-dashboard.log
 
       - name: Wait for Applications
         run: |
@@ -203,7 +213,7 @@ jobs:
               fi
 
               if [ -f "$pid_file" ] && ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
-                echo "Application process exited: $url"
+                echo "::error::Application process exited: $url"
                 cat "$log_file"
                 return 1
               fi
@@ -211,7 +221,7 @@ jobs:
               sleep 2
             done
 
-            echo "Timed out waiting for $url"
+            echo "::error::Timed out waiting for $url"
             cat "$log_file"
             return 1
           }
@@ -227,7 +237,7 @@ jobs:
             /tmp/build-me-dashboard.log
 
       - name: Run Cypress E2E Tests
-        run: pnpm --filter @build-me/e2e-tests exec cypress run
+        run: pnpm --filter @build-me/e2e-tests test:e2e
 
       - name: Upload Cypress Screenshots
         if: failure()
@@ -275,4 +285,3 @@ jobs:
               kill "$(cat "$pid_file")" 2>/dev/null || true
             fi
           done
-
