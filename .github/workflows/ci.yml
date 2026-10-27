@@ -71,6 +71,30 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify Analytics Project Structure
+        run: |
+          echo "Repository root:"
+          pwd
+
+          echo "Root files:"
+          ls -la
+
+          echo "Python project files:"
+          find . -maxdepth 5 \
+            \( -name pyproject.toml -o -name uv.lock \) \
+            -print
+
+          if [ ! -f services/analytics/pyproject.toml ]; then
+            echo "::error::services/analytics/pyproject.toml was not found."
+            echo "Check that the analytics project exists and is committed to this branch."
+            exit 1
+          fi
+
+          if [ ! -d tests/analytics ]; then
+            echo "::error::tests/analytics directory was not found."
+            exit 1
+          fi
+
       - name: Push Database Schema
         run: pnpm --filter @build-me/database db:push
 
@@ -84,7 +108,8 @@ jobs:
         run: pnpm typecheck
 
       - name: Run Python Analytics Tests
-        run: uv run --project services/analytics --directory services/analytics pytest ../../tests/analytics/ -v
+        working-directory: services/analytics
+        run: uv run --project . pytest ../../tests/analytics/ -v
 
       - name: Start API for Performance Tests
         run: |
@@ -178,11 +203,11 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          pnpm --filter @build-me/web dev -- --host 127.0.0.1 --port 5173 --strictPort \
+          pnpm --filter @build-me/web dev --host 127.0.0.1 --port 5173 --strictPort \
             > /tmp/build-me-web.log 2>&1 &
           echo "$!" > /tmp/build-me-web.pid
 
-          pnpm --filter @build-me/admin dev -- --host 127.0.0.1 --port 5174 --strictPort \
+          pnpm --filter @build-me/admin dev --host 127.0.0.1 --port 5174 --strictPort \
             > /tmp/build-me-dashboard.log 2>&1 &
           echo "$!" > /tmp/build-me-dashboard.pid
 
@@ -209,7 +234,10 @@ jobs:
             done
 
             echo "::error::Timed out waiting for $url"
-            cat "$log_file"
+            echo "----- Application log -----"
+            cat "$log_file" || true
+            echo "----- Listening ports -----"
+            ss -lntp || true
             return 1
           }
 
