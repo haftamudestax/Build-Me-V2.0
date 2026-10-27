@@ -13,7 +13,7 @@ async function initializeApp() {
     const baseUrl = analyticsBaseUrl.replace(/\/+$/, "");
 
     try {
-      const response = await fetch(`${baseUrl}/visitors`, {
+      const response = await fetch(`${baseUrl}/api/visitors`, {
         method: "POST",
       });
 

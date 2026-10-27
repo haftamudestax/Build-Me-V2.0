@@ -5,8 +5,17 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "test": "turbo run test && pnpm analytics:test",
-    "analytics:test": "uv run --project services/analytics --directory services/analytics python -m pytest ../../tests/analytics -v",
+    "typecheck": "turbo run typecheck",
+
+    "test": "pnpm test:workspace && pnpm api:test && pnpm analytics:test",
+    "test:workspace": "turbo run test",
+
+    "api:test": "pnpm --filter @build-me/api-tests test",
+    "api:test:unit": "pnpm --filter @build-me/api-tests test:unit",
+    "api:test:integration": "pnpm --filter @build-me/api-tests test:integration",
+
+    "analytics:test": "uv run --directory services/analytics pytest ../../tests/analytics/ -v",
+
     "db:generate": "pnpm --filter @build-me/database db:generate",
     "db:migrate": "pnpm --filter @build-me/database db:migrate"
   },
@@ -28,7 +37,12 @@
       "postman-runtime>handlebars": "^4.7.10",
       "axios": "^1.20.0",
       "joi": "^18.2.6",
-      "source-map-js": "^1.2.2"
+      "source-map-js": "^1.2.2",
+      "follow-redirects": "^1.16.1",
+      "vite": "^8.3.4",
+      "eslint-plugin-react-hooks>zod": "4.6.6",
+      "body-parser@^1.20.8": "1.20.9",
+      "body-parser@^2.3.0": "2.4.0"
     }
   },
   "devDependencies": {

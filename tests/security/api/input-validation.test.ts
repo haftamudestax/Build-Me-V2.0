@@ -3,6 +3,14 @@ import request from "supertest";
 import { describe, it, expect } from "vitest";
 import app from "../../../services/api/src/app";
 
+import { vi } from "vitest";
+
+// Mock database-backed booking functions before importing API routes.
+vi.mock("../../../services/api/src/services/bookings.service", () => ({
+  createProjectBooking: vi.fn(),
+  getProjectBookingById: vi.fn(),
+}));
+
 describe("API input validation & injection security", () => {
   it("returns 404 for login while the route is not implemented", async () => {
     const res = await request(app)

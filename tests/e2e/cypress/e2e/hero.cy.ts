@@ -1,6 +1,6 @@
 describe("Hero Left Section", () => {
   beforeEach(() => {
-    cy.visit("/");
+    cy.visit(Cypress.env("webBaseUrl"));
   });
 
   it("displays the complete hero content", () => {
@@ -69,11 +69,10 @@ describe("Hero Left Section", () => {
 
   it("renders without horizontal overflow on mobile", () => {
     cy.viewport(375, 812);
-    cy.visit("/");
 
-    cy.get("#hero").should("be.visible");
+    cy.get("#hero", { timeout: 10000 }).should("be.visible");
 
-    cy.document().then((document) => {
+    cy.document().should((document) => {
       const { documentElement, body } = document;
 
       expect(documentElement.scrollWidth).to.be.at.most(
@@ -86,11 +85,10 @@ describe("Hero Left Section", () => {
 
   it("renders without horizontal overflow on desktop", () => {
     cy.viewport(1440, 900);
-    cy.visit("/");
 
     cy.get("#hero").should("be.visible");
 
-    cy.document().then((document) => {
+    cy.document().should((document) => {
       const { documentElement, body } = document;
 
       expect(documentElement.scrollWidth).to.be.at.most(

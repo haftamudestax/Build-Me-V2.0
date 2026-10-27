@@ -13,6 +13,8 @@ from database import get_connection, insert_event, validate_visitor_session
 from src.events.navbar import NavbarEventIn
 from src.processing.navbar import process_navbar_event
 
+from src.events.delivery_project import DeliveryProjectEventIn
+from src.tracking.delivery_project import persist_delivery_project_event
 
 logger = logging.getLogger(__name__)
 
@@ -66,12 +68,17 @@ async def require_admin(
 
 
 
+
 @router.post("", status_code=201)
-async def create_navbar_event(event: NavbarEventIn | HeroEventIn):
-    """Persist Navbar, Hero visibility, or page-view analytics."""
+async def create_analytics_event(
+    event: NavbarEventIn | HeroEventIn | DeliveryProjectEventIn,
+):
+    """Persist Navbar, Hero, page-view, and Delivery Project events."""
 
     try:
-        if isinstance(event, HeroEventIn):
+        if isinstance(event, DeliveryProjectEventIn):
+            record = await persist_delivery_project_event(event)
+        elif isinstance(event, HeroEventIn):
             record = await persist_hero_event(event)
         else:
             record = await persist_navbar_event(event)
