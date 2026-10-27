@@ -1,4 +1,3 @@
-
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "cypress";
@@ -28,7 +27,7 @@ const supabaseUrl = readEnvValue(
 
 export default defineConfig({
   e2e: {
-    baseUrl: "http://localhost:5174",
+    baseUrl: "http://localhost:5173",
     setupNodeEvents(on, config) {
       config.env.supabaseUrl = supabaseUrl;
       return config;
