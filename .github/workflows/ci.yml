@@ -187,11 +187,12 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache Cypress Binary
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/Cypress
-          key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install Cypress Binary
+        run: |
+          # pnpm may skip Cypress's postinstall script, so install the binary explicitly.
+          # This is a no-op if the binary is already present.
+          pnpm --filter @build-me/e2e-tests exec cypress install
+          pnpm --filter @build-me/e2e-tests exec cypress verify
 
       - name: Validate Supabase Secrets
         env:
