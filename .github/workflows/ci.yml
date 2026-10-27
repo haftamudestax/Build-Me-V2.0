@@ -84,7 +84,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Run Python Analytics Tests
-        run: pnpm analytics:test
+        run: uv run --project services/analytics --directory services/analytics pytest ../../tests/analytics/ -v
 
       - name: Start API for Performance Tests
         run: |
@@ -178,13 +178,11 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          pnpm --filter @build-me/web dev \
-            --host 127.0.0.1 --port 5173 --strictPort \
+          pnpm --filter @build-me/web dev -- --host 127.0.0.1 --port 5173 --strictPort \
             > /tmp/build-me-web.log 2>&1 &
           echo "$!" > /tmp/build-me-web.pid
 
-          pnpm --filter @build-me/admin dev \
-            --host 127.0.0.1 --port 5174 --strictPort \
+          pnpm --filter @build-me/admin dev -- --host 127.0.0.1 --port 5174 --strictPort \
             > /tmp/build-me-dashboard.log 2>&1 &
           echo "$!" > /tmp/build-me-dashboard.pid
 
@@ -201,8 +199,8 @@ jobs:
                 return 0
               fi
 
-              if [ -f "$pid_file" ] && ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
-                echo "::error::Application process exited: $url"
+              if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
+                echo "::error::Application process exited before becoming ready: $url"
                 cat "$log_file"
                 return 1
               fi
@@ -274,4 +272,3 @@ jobs:
               kill "$(cat "$pid_file")" 2>/dev/null || true
             fi
           done
-
