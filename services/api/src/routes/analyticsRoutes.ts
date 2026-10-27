@@ -15,6 +15,8 @@ const allowedEndpoints = {
   heroEvents: "/api/analytics/hero/events",
   deliveryProjectSummary: "/api/analytics/delivery-project/summary",
   deliveryProjectEvents: "/api/analytics/delivery-project/events",
+  mentorMeSummary: "/api/analytics/mentor-me/summary",
+  mentorMeEvents: "/api/analytics/mentor-me/events",
 } as const;
 
 type EndpointKey = keyof typeof allowedEndpoints;
@@ -26,6 +28,8 @@ const allowedQueryParams: Record<EndpointKey, string[]> = {
   heroEvents: ["limit", "offset"],
   deliveryProjectSummary: ["days"],
   deliveryProjectEvents: ["limit", "offset", "event_name"],
+  mentorMeSummary: ["days"],
+  mentorMeEvents: ["limit", "offset", "event_name"],
 };
 
 async function proxyAnalytics(
@@ -108,6 +112,14 @@ router.get("/delivery-project/summary", (req, res) =>
 
 router.get("/delivery-project/events", (req, res) =>
   proxyAnalytics(req, res, "deliveryProjectEvents"),
+);
+
+router.get("/mentor-me/summary", (req, res) =>
+  proxyAnalytics(req, res, "mentorMeSummary"),
+);
+
+router.get("/mentor-me/events", (req, res) =>
+  proxyAnalytics(req, res, "mentorMeEvents"),
 );
 
 export default router;
