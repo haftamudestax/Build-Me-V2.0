@@ -21,6 +21,7 @@ jobs:
   quality:
     name: Quality Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -113,7 +114,7 @@ jobs:
 
       - name: Start API for Performance Tests
         run: |
-          pnpm --filter @build-me/api dev > /tmp/build-me-api.log 2>&1 &
+          setsid nohup pnpm --filter @build-me/api dev > /tmp/build-me-api.log 2>&1 &
           echo "$!" > /tmp/build-me-api.pid
 
           for i in $(seq 1 60); do
@@ -162,6 +163,12 @@ jobs:
     name: Cypress E2E Tests
     runs-on: ubuntu-latest
     needs: quality
+    timeout-minutes: 30
+
+    env:
+      # Make sure no runner proxy settings interfere with local server checks.
+      NO_PROXY: 127.0.0.1,localhost
+      no_proxy: 127.0.0.1,localhost
 
     steps:
       - name: Checkout Repository
@@ -180,6 +187,12 @@ jobs:
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Cache Cypress Binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Validate Supabase Secrets
         env:
@@ -203,11 +216,12 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          pnpm --filter @build-me/web dev --host 127.0.0.1 --port 5173 --strictPort \
+          # setsid + nohup fully detaches the servers from this step's shell.
+          setsid nohup pnpm --filter @build-me/web dev --host 127.0.0.1 --port 5173 --strictPort \
             > /tmp/build-me-web.log 2>&1 &
           echo "$!" > /tmp/build-me-web.pid
 
-          pnpm --filter @build-me/admin dev --host 127.0.0.1 --port 5174 --strictPort \
+          setsid nohup pnpm --filter @build-me/admin dev --host 127.0.0.1 --port 5174 --strictPort \
             > /tmp/build-me-dashboard.log 2>&1 &
           echo "$!" > /tmp/build-me-dashboard.pid
 
@@ -251,8 +265,63 @@ jobs:
             /tmp/build-me-dashboard.pid \
             /tmp/build-me-dashboard.log
 
+      - name: Verify Applications Are Still Running
+        run: |
+          # Give Vite a moment to finish any dependency re-optimization,
+          # then confirm both servers are still up right before Cypress starts.
+          sleep 5
+
+          failed=0
+
+          check_app() {
+            name="$1"
+            url="$2"
+            pid_file="$3"
+            log_file="$4"
+
+            if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
+              echo "::error::$name process is no longer running."
+              cat "$log_file" || true
+              failed=1
+              return
+            fi
+
+            status=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: text/html" "$url" || true)
+            echo "$name -> $url returned HTTP $status"
+
+            case "$status" in
+              2*|3*) ;;
+              *)
+                echo "::error::$name returned an unexpected status ($status)."
+                cat "$log_file" || true
+                failed=1
+                ;;
+            esac
+          }
+
+          check_app "Web" http://127.0.0.1:5173 /tmp/build-me-web.pid /tmp/build-me-web.log
+          check_app "Dashboard" http://127.0.0.1:5174 /tmp/build-me-dashboard.pid /tmp/build-me-dashboard.log
+
+          echo "----- Listening ports -----"
+          ss -lntp || true
+
+          exit "$failed"
+
       - name: Run Cypress E2E Tests
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: pnpm --filter @build-me/e2e-tests test:e2e
+
+      - name: Show Application Logs on Failure
+        if: failure()
+        run: |
+          for log_file in /tmp/build-me-web.log /tmp/build-me-dashboard.log; do
+            if [ -f "$log_file" ]; then
+              echo "----- $log_file -----"
+              cat "$log_file"
+            fi
+          done
 
       - name: Upload Cypress Screenshots
         if: failure()
