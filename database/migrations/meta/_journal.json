@@ -22,6 +22,20 @@
       "when": 1792560779424,
       "tag": "0002_wild_green_goblin",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792734212089,
+      "tag": "0003_old_outlaw_kid",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792759548521,
+      "tag": "0004_true_galactus",
+      "breakpoints": true
     }
   ]
 }

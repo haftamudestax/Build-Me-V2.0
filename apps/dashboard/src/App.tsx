@@ -1,8 +1,12 @@
+import { BrowserRouter } from "react-router-dom";
+
+import AppRoutes from "./routes/Routes";
+
 const App = () => {
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-sky-400">Admin Panel</h1>
-    </div>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 };
 

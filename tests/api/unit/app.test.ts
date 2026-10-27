@@ -197,7 +197,7 @@ describe("POST /api/bookings", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe(
-      "Description must be between 20 and 10000 characters.",
+      "description must be between 20 and 10000 characters.",
     );
     expect(createBookingMock).not.toHaveBeenCalled();
   });
