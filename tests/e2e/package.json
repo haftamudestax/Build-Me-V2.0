@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-   "test:e2e": "start-server-and-test \"pnpm --filter @build-me/admin dev --host 127.0.0.1 --port 5174 --strictPort\" http://127.0.0.1:5174 \"cypress run\""
+   "test:e2e": "cypress run"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
