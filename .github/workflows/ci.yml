@@ -74,9 +74,6 @@ jobs:
       - name: Push Database Schema
         run: pnpm --filter @build-me/database db:push
 
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
-
       - name: Install k6
         uses: grafana/setup-k6-action@v1
 
@@ -101,7 +98,7 @@ jobs:
             fi
 
             if ! kill -0 "$(cat /tmp/build-me-api.pid)" 2>/dev/null; then
-              echo "API process exited before becoming ready"
+              echo "::error::API process exited before becoming ready"
               cat /tmp/build-me-api.log
               exit 1
             fi
@@ -109,7 +106,7 @@ jobs:
             sleep 2
           done
 
-          echo "API did not become ready"
+          echo "::error::API did not become ready"
           cat /tmp/build-me-api.log
           exit 1
 
@@ -191,14 +188,6 @@ jobs:
             > /tmp/build-me-dashboard.log 2>&1 &
           echo "$!" > /tmp/build-me-dashboard.pid
 
-          sleep 3
-
-          echo "===== WEB STARTUP ====="
-          cat /tmp/build-me-web.log
-
-          echo "===== DASHBOARD STARTUP ====="
-          cat /tmp/build-me-dashboard.log
-
       - name: Wait for Applications
         run: |
           wait_for_url() {
@@ -208,7 +197,7 @@ jobs:
 
             for i in $(seq 1 60); do
               if curl --fail --silent "$url" >/dev/null; then
-                echo "$url is ready"
+                echo "Ready: $url"
                 return 0
               fi
 
@@ -285,3 +274,4 @@ jobs:
               kill "$(cat "$pid_file")" 2>/dev/null || true
             fi
           done
+
