@@ -1,6 +1,6 @@
 describe("Hero Left Section", () => {
   beforeEach(() => {
-    cy.visit("/");
+   cy.visit(Cypress.env("webBaseUrl"));;
   });
 
   it("displays the complete hero content", () => {

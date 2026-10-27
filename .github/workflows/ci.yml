@@ -311,17 +311,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-          DEBUG: cypress:server:*
-        run: |
-          set -o pipefail
-
-          echo "--- node http check (same stack Cypress uses) ---"
-          node -e "require('http').get('http://127.0.0.1:5174',{headers:{Accept:'text/html,*/*'}},r=>{console.log('status',r.statusCode);r.resume()}).on('error',e=>{console.log('error',e.code,e.message);process.exit(1)})" || true
-
-          echo "--- baseUrl in Cypress config ---"
-          grep -rn "baseUrl" tests/e2e/cypress.config.* || true
-
-          pnpm --filter @build-me/e2e-tests test:e2e 2>&1 | tee /tmp/cypress-debug.log
+        run: pnpm --filter @build-me/e2e-tests test:e2e
 
       - name: Show Application Logs on Failure
         if: failure()
@@ -348,15 +338,6 @@ jobs:
         with:
           name: cypress-videos
           path: tests/e2e/cypress/videos/
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Upload Cypress Debug Log
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-debug-log
-          path: /tmp/cypress-debug.log
           if-no-files-found: ignore
           retention-days: 7
 

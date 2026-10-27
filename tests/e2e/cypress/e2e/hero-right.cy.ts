@@ -26,7 +26,7 @@ describe("Hero Right — End-to-End", () => {
   }
 
   beforeEach(() => {
-    cy.visit("/");
+   cy.visit(Cypress.env("webBaseUrl"));;
   });
 
   it("displays the profile image and impact card on desktop", () => {

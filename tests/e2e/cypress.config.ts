@@ -36,6 +36,7 @@ export default defineConfig({
     env: {
       supabaseUrl,
       adminBaseUrl: "http://127.0.0.1:5174",
+      webBaseUrl: "http://127.0.0.1:5173",
     },
     setupNodeEvents(_on, config) {
       return config;
