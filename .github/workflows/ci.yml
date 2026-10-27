@@ -197,18 +197,36 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate Supabase Configuration
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        shell: bash
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ]; then
+            echo "::error::Missing GitHub Actions secret VITE_SUPABASE_URL"
+            exit 1
+          fi
+
+          if [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Missing GitHub Actions secret VITE_SUPABASE_PUBLISHABLE_KEY"
+            exit 1
+          fi
+
+          echo "Supabase public configuration is available."
+
       - name: Start Web and Dashboard Applications
         shell: bash
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          pnpm --filter @build-me/web dev -- --host 127.0.0.1 --port 5173 \
+          pnpm --filter @build-me/web dev --host 127.0.0.1 --port 5173 --strictPort \
             > /tmp/build-me-web.log 2>&1 &
           WEB_PID=$!
           echo "$WEB_PID" > /tmp/build-me-web.pid
 
-          pnpm --filter @build-me/admin dev -- --host 127.0.0.1 --port 5174 \
+          pnpm --filter @build-me/admin dev --host 127.0.0.1 --port 5174 --strictPort \
             > /tmp/build-me-dashboard.log 2>&1 &
           DASHBOARD_PID=$!
           echo "$DASHBOARD_PID" > /tmp/build-me-dashboard.pid
@@ -226,6 +244,12 @@ jobs:
                 return 0
               fi
 
+              if ! kill -0 "$4" 2>/dev/null; then
+                echo "$name process exited unexpectedly."
+                cat "$log_file" || true
+                return 1
+              fi
+
               sleep 2
             done
 
@@ -239,17 +263,19 @@ jobs:
           wait_for_url \
             http://127.0.0.1:5173 \
             "Web application" \
-            /tmp/build-me-web.log
+            /tmp/build-me-web.log \
+            "$WEB_PID"
 
           wait_for_url \
             http://127.0.0.1:5174 \
             "Dashboard application" \
-            /tmp/build-me-dashboard.log
+            /tmp/build-me-dashboard.log \
+            "$DASHBOARD_PID"
 
       - name: Run Cypress E2E Tests
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: pnpm --filter @build-me/e2e-tests exec cypress run
 
       - name: Upload Cypress Screenshots on Failure
