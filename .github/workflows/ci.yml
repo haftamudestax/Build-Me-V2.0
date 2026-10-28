@@ -166,7 +166,7 @@ jobs:
     timeout-minutes: 30
 
     env:
-      # Make sure no runner proxy settings interfere with local server checks.
+      # Prevent runner proxy settings from interfering with local requests.
       NO_PROXY: 127.0.0.1,localhost
 
     steps:
@@ -189,8 +189,7 @@ jobs:
 
       - name: Install Cypress Binary
         run: |
-          # pnpm may skip Cypress's postinstall script, so install the binary explicitly.
-          # This is a no-op if the binary is already present.
+          # pnpm may skip Cypress's postinstall script.
           pnpm --filter @build-me/e2e-tests exec cypress install
           pnpm --filter @build-me/e2e-tests exec cypress verify
 
@@ -215,12 +214,14 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_ANALYTICS_URL: http://127.0.0.1:4000
         run: |
-          # setsid + nohup fully detaches the servers from this step's shell.
+          # Start Vite with analytics registration enabled for the web app.
           setsid nohup pnpm --filter @build-me/web dev --host 127.0.0.1 --port 5173 --strictPort \
             > /tmp/build-me-web.log 2>&1 &
           echo "$!" > /tmp/build-me-web.pid
 
+          # The dashboard runs independently on port 5174.
           setsid nohup pnpm --filter @build-me/admin dev --host 127.0.0.1 --port 5174 --strictPort \
             > /tmp/build-me-dashboard.log 2>&1 &
           echo "$!" > /tmp/build-me-dashboard.pid
@@ -240,7 +241,7 @@ jobs:
 
               if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
                 echo "::error::Application process exited before becoming ready: $url"
-                cat "$log_file"
+                cat "$log_file" || true
                 return 1
               fi
 
@@ -267,8 +268,6 @@ jobs:
 
       - name: Verify Applications Are Still Running
         run: |
-          # Give Vite a moment to finish any dependency re-optimization,
-          # then confirm both servers are still up right before Cypress starts.
           sleep 5
 
           failed=0
@@ -286,7 +285,9 @@ jobs:
               return
             fi
 
-            status=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: text/html" "$url" || true)
+            status=$(curl --noproxy '*' -s -o /dev/null -w "%{http_code}" \
+              -H "Accept: text/html" "$url" || true)
+
             echo "$name -> $url returned HTTP $status"
 
             case "$status" in
@@ -311,6 +312,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_ANALYTICS_URL: http://127.0.0.1:4000
         run: pnpm --filter @build-me/e2e-tests test:e2e
 
       - name: Show Application Logs on Failure

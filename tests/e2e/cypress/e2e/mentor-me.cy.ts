@@ -23,8 +23,24 @@ describe("Mentor Me — end-to-end flow", () => {
     }).as("registerVisitor");
   }
 
+  function verifyVisitorRegistration() {
+    cy.wait("@registerVisitor").then(({ request, response }) => {
+      expect(request.method).to.equal("POST");
+      expect(request.url).to.include("/api/visitors");
+      expect(response, "visitor registration response").to.exist;
+      expect(response!.statusCode).to.equal(201);
+      expect(response!.body).to.deep.equal({
+        visitor_id: visitorId,
+        session_id: sessionId,
+      });
+    });
+  }
+
   function openMentorMeForm() {
     cy.visit("/");
+
+    // Ensure initializeApp() completes visitor registration before submission.
+    verifyVisitorRegistration();
 
     cy.get("body").should("be.visible");
 
@@ -166,7 +182,10 @@ describe("Mentor Me — end-to-end flow", () => {
     fillValidRequest();
     submitMentoringRequest();
 
-    cy.wait("@submitMentoringRequest");
+    cy.wait("@submitMentoringRequest").then(({ request, response }) => {
+      expect(request.method).to.equal("POST");
+      expect(response?.statusCode).to.equal(500);
+    });
 
     cy.get('[role="alert"]')
       .scrollIntoView({ offset: { top: -100, left: 0 } })
