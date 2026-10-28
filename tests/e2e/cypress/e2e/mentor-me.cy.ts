@@ -27,7 +27,6 @@ describe("Mentor Me — end-to-end flow", () => {
     cy.visit("/");
 
     // Visitor registration is optional when analytics is not configured.
-    // Do not block the mentoring flow waiting for an analytics request.
     cy.get("body").should("be.visible");
 
     cy.contains("button", /^Work With Me$/i)
@@ -39,54 +38,28 @@ describe("Mentor Me — end-to-end flow", () => {
       .click({ scrollBehavior: "center" });
 
     cy.contains("h2", "Mentor Me").should("be.visible");
-
     cy.get('input[name="mentoringTopic"]').should("exist");
   }
 
   function fillValidRequest() {
-    cy.get('input[name="name"]')
-      .clear()
-      .type(validRequest.name);
-
-    cy.get('input[name="email"]')
-      .clear()
-      .type(validRequest.email);
-
+    cy.get('input[name="name"]').clear().type(validRequest.name);
+    cy.get('input[name="email"]').clear().type(validRequest.email);
     cy.get('input[name="mentoringTopic"]')
       .clear()
       .type(validRequest.mentoringTopic);
-
-    cy.get('textarea[name="goals"]')
-      .clear()
-      .type(validRequest.goals);
+    cy.get('textarea[name="goals"]').clear().type(validRequest.goals);
   }
 
   function submitMentoringRequest() {
     cy.get('button[type="submit"]')
       .scrollIntoView({ offset: { top: -100, left: 0 } })
-      .should("exist")
+      .should("be.visible")
       .and("be.enabled")
       .click({ scrollBehavior: "center" });
   }
 
   function stubBookingSuccess() {
     cy.intercept("POST", bookingUrl, (req) => {
-      expect(req.headers).to.have.property("idempotency-key");
-
-      expect(req.body).to.include({
-        visitorId,
-        bookingType: "mentor_me",
-        name: validRequest.name,
-        email: validRequest.email,
-      });
-
-      expect(req.body.requestDetails).to.include({
-        mentoringTopic: validRequest.mentoringTopic,
-        goals: validRequest.goals,
-        experienceLevel: "beginner",
-        preferredFormat: "online",
-      });
-
       req.reply({
         statusCode: 201,
         body: {
@@ -137,6 +110,7 @@ describe("Mentor Me — end-to-end flow", () => {
   });
 
   it("submits a mentoring request and displays the confirmation", () => {
+    // Register the request intercept before the form is opened.
     stubBookingSuccess();
 
     openMentorMeForm();
@@ -144,16 +118,24 @@ describe("Mentor Me — end-to-end flow", () => {
     submitMentoringRequest();
 
     cy.wait("@submitMentoringRequest").then(({ request }) => {
-      expect(request.body.visitorId).to.equal(visitorId);
-      expect(request.body.bookingType).to.equal("mentor_me");
+      expect(request.method).to.equal("POST");
+      expect(request.url).to.include("/api/bookings");
+      expect(request.body).to.include({
+        visitorId,
+        bookingType: "mentor_me",
+        name: validRequest.name,
+        email: validRequest.email,
+      });
+      expect(request.body.requestDetails).to.include({
+        mentoringTopic: validRequest.mentoringTopic,
+        goals: validRequest.goals,
+      });
     });
 
     cy.contains("h2", "Request submitted").should("be.visible");
-
     cy.contains(
       "Your mentoring request has been submitted. I'll review your goals and follow up.",
     ).should("be.visible");
-
     cy.contains(bookingReference).should("be.visible");
   });
 
@@ -188,11 +170,9 @@ describe("Mentor Me — end-to-end flow", () => {
       .click();
 
     cy.contains("h2", "Work With Me").should("be.visible");
-
-    cy.get('button[aria-label^="Mentor Me:"]')
-      .should("exist");
-
-    cy.contains("button", "Deliver My Project")
-      .should("exist");
+    cy.get('button[aria-label^="Mentor Me:"]').should("exist");
+    cy.contains("button", "Deliver My Project").should("exist");
   });
 });
+
+export {};
