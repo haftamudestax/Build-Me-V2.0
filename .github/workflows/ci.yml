@@ -74,6 +74,8 @@ jobs:
 
       - name: Verify Analytics Project Structure
         run: |
+          set -eu
+
           echo "Repository root:"
           pwd
 
@@ -87,7 +89,6 @@ jobs:
 
           if [ ! -f services/analytics/pyproject.toml ]; then
             echo "::error::services/analytics/pyproject.toml was not found."
-            echo "Check that the analytics project exists and is committed to this branch."
             exit 1
           fi
 
@@ -114,26 +115,30 @@ jobs:
 
       - name: Start API for Performance Tests
         run: |
-          setsid nohup pnpm --filter @build-me/api dev > /tmp/build-me-api.log 2>&1 &
+          set -eu
+
+          setsid nohup pnpm --filter @build-me/api dev \
+            > /tmp/build-me-api.log 2>&1 &
           echo "$!" > /tmp/build-me-api.pid
 
           for i in $(seq 1 60); do
-            if curl --fail --silent http://127.0.0.1:4000/health >/dev/null; then
-              echo "API is ready"
+            if curl --noproxy '*' --fail --silent \
+              http://127.0.0.1:4000/health >/dev/null; then
+              echo "API is ready."
               exit 0
             fi
 
             if ! kill -0 "$(cat /tmp/build-me-api.pid)" 2>/dev/null; then
-              echo "::error::API process exited before becoming ready"
-              cat /tmp/build-me-api.log
+              echo "::error::API process exited before becoming ready."
+              cat /tmp/build-me-api.log || true
               exit 1
             fi
 
             sleep 2
           done
 
-          echo "::error::API did not become ready"
-          cat /tmp/build-me-api.log
+          echo "::error::API did not become ready."
+          cat /tmp/build-me-api.log || true
           exit 1
 
       - name: Run Workspace Tests
@@ -166,7 +171,6 @@ jobs:
     timeout-minutes: 30
 
     env:
-      # Make sure no runner proxy settings interfere with local server checks.
       NO_PROXY: 127.0.0.1,localhost
 
     steps:
@@ -189,8 +193,6 @@ jobs:
 
       - name: Install Cypress Binary
         run: |
-          # pnpm may skip Cypress's postinstall script, so install the binary explicitly.
-          # This is a no-op if the binary is already present.
           pnpm --filter @build-me/e2e-tests exec cypress install
           pnpm --filter @build-me/e2e-tests exec cypress verify
 
@@ -199,6 +201,8 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
+          set -eu
+
           if [ -z "$VITE_SUPABASE_URL" ]; then
             echo "::error::GitHub Actions secret VITE_SUPABASE_URL is missing."
             exit 1
@@ -215,32 +219,42 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_ANALYTICS_URL: http://127.0.0.1:4000
         run: |
-          # setsid + nohup fully detaches the servers from this step's shell.
-          setsid nohup pnpm --filter @build-me/web dev --host 127.0.0.1 --port 5173 --strictPort \
+          set -eu
+
+          echo "Starting web application."
+          echo "VITE_ANALYTICS_URL is configured for the web process."
+
+          setsid nohup pnpm --filter @build-me/web dev \
+            --host 127.0.0.1 --port 5173 --strictPort \
             > /tmp/build-me-web.log 2>&1 &
           echo "$!" > /tmp/build-me-web.pid
 
-          setsid nohup pnpm --filter @build-me/admin dev --host 127.0.0.1 --port 5174 --strictPort \
+          echo "Starting dashboard application."
+          setsid nohup pnpm --filter @build-me/admin dev \
+            --host 127.0.0.1 --port 5174 --strictPort \
             > /tmp/build-me-dashboard.log 2>&1 &
           echo "$!" > /tmp/build-me-dashboard.pid
 
       - name: Wait for Applications
         run: |
+          set -eu
+
           wait_for_url() {
             url="$1"
             pid_file="$2"
             log_file="$3"
 
             for i in $(seq 1 60); do
-              if curl --fail --silent "$url" >/dev/null; then
+              if curl --noproxy '*' --fail --silent "$url" >/dev/null; then
                 echo "Ready: $url"
                 return 0
               fi
 
               if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
                 echo "::error::Application process exited before becoming ready: $url"
-                cat "$log_file"
+                cat "$log_file" || true
                 return 1
               fi
 
@@ -267,8 +281,7 @@ jobs:
 
       - name: Verify Applications Are Still Running
         run: |
-          # Give Vite a moment to finish any dependency re-optimization,
-          # then confirm both servers are still up right before Cypress starts.
+          set -eu
           sleep 5
 
           failed=0
@@ -286,7 +299,10 @@ jobs:
               return
             fi
 
-            status=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: text/html" "$url" || true)
+            status=$(curl --noproxy '*' --silent --output /dev/null \
+              --write-out "%{http_code}" \
+              -H "Accept: text/html" "$url" || true)
+
             echo "$name -> $url returned HTTP $status"
 
             case "$status" in
@@ -299,8 +315,15 @@ jobs:
             esac
           }
 
-          check_app "Web" http://127.0.0.1:5173 /tmp/build-me-web.pid /tmp/build-me-web.log
-          check_app "Dashboard" http://127.0.0.1:5174 /tmp/build-me-dashboard.pid /tmp/build-me-dashboard.log
+          check_app "Web" \
+            http://127.0.0.1:5173 \
+            /tmp/build-me-web.pid \
+            /tmp/build-me-web.log
+
+          check_app "Dashboard" \
+            http://127.0.0.1:5174 \
+            /tmp/build-me-dashboard.pid \
+            /tmp/build-me-dashboard.log
 
           echo "----- Listening ports -----"
           ss -lntp || true
@@ -308,15 +331,14 @@ jobs:
           exit "$failed"
 
       - name: Run Cypress E2E Tests
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: pnpm --filter @build-me/e2e-tests test:e2e
 
       - name: Show Application Logs on Failure
         if: failure()
         run: |
-          for log_file in /tmp/build-me-web.log /tmp/build-me-dashboard.log; do
+          for log_file in \
+            /tmp/build-me-web.log \
+            /tmp/build-me-dashboard.log; do
             if [ -f "$log_file" ]; then
               echo "----- $log_file -----"
               cat "$log_file"

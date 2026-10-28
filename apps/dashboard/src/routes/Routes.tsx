@@ -14,6 +14,7 @@ import { AnalyticsOverviewPage } from "../pages/analytics/AnalyticsOverviewPage"
 import { NavbarAnalyticsPage } from "../pages/analytics/NavbarAnalyticsPage";
 import { HeroAnalyticsPage } from "../pages/analytics/HeroAnalyticsPage";
 import { DeliveryProjectAnalyticsPage } from "../pages/analytics/DeliveryProjectAnalyticsPage";
+import { MentorMeAnalyticsPage } from "../pages/analytics/MentorMeAnalyticsPage";
 
 function LoginPage() {
   return <LoginForm />;
@@ -89,6 +90,10 @@ export default function AppRoutes() {
             <Route
               path="/dashboard/analytics/delivery-project"
               element={<DeliveryProjectAnalyticsPage />}
+            />
+            <Route
+              path="/dashboard/analytics/mentor-me"
+              element={<MentorMeAnalyticsPage />}
             />
           </Route>
         </Route>
