@@ -84,6 +84,9 @@ jobs:
           sudo apt-get install -y k6
           k6 version
 
+      - name: Run database migrations
+        run: pnpm --filter @build-me/database exec drizzle-kit migrate
+
       - name: Build workspace
         run: pnpm build
 
@@ -92,9 +95,6 @@ jobs:
 
       - name: Run unit and integration tests
         run: pnpm test
-
-      - name: Run database migrations
-        run: pnpm --filter @build-me/database exec drizzle-kit migrate
 
       - name: Start API for performance tests
         run: |
