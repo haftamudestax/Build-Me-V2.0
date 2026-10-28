@@ -72,9 +72,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
       - name: Build workspace
         run: pnpm build
 
@@ -230,11 +227,11 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: pnpm --filter @build-me/e2e-tests test:e2e
 
-      - name: Upload Cypress screenshots
+      - name: Upload Cypress screenshots and videos
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: cypress-screenshots
+          name: cypress-artifacts
           path: |
             tests/e2e/cypress/screenshots
             tests/e2e/cypress/videos
@@ -263,3 +260,4 @@ jobs:
               kill -- "-$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
             fi
           done
+
