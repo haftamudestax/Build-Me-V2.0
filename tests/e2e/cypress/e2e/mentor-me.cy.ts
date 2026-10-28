@@ -1,4 +1,3 @@
-
 describe("Mentor Me — end-to-end flow", () => {
   const bookingUrl = "**/api/bookings";
   const visitorUrl = "**/api/visitors";
@@ -27,8 +26,9 @@ describe("Mentor Me — end-to-end flow", () => {
   function openMentorMeForm() {
     cy.visit("/");
 
-    // Wait for initializeApp() to register and configure the visitor.
-    cy.wait("@registerVisitor");
+    // Visitor registration is optional when analytics is not configured.
+    // Do not block the mentoring flow waiting for an analytics request.
+    cy.get("body").should("be.visible");
 
     cy.contains("button", /^Work With Me$/i)
       .should("be.visible")
