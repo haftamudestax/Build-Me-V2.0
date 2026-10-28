@@ -51,8 +51,7 @@ router.get('/:id', async (req, res, next) => {
   }
 
   try {
-    // Do not expose private booking details through a public endpoint.
-    // This endpoint currently returns only non-sensitive booking metadata.
+  
     const booking = await getProjectBookingById(id);
 
     if (!booking) {

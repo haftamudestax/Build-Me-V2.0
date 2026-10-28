@@ -57,14 +57,13 @@ export interface CreateBookingInput {
   name: string;
   email: string;
 
-  // Delivery My Project fields
   projectTitle?: string;
   projectType?: string;
   description?: string;
   timeline?: BookingTimeline;
   budget?: string | null;
 
-  // Mentor Me / Coffee With Me fields
+  
   requestDetails: BookingRequestDetails;
   meetingStartAt?: string;
   meetingDurationMinutes?: number;

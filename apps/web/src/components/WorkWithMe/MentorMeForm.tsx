@@ -203,7 +203,7 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
           "Your request may have been received, but no booking reference was returned. Please contact us before submitting again.",
         );
       }
-
+      console.log("result:", result);
       trackBookingEvent("mentor_me.booking_submitted", {
         reference,
         bookingType: result.data?.bookingType ?? "mentor_me",
