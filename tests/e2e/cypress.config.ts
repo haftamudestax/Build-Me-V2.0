@@ -32,7 +32,7 @@ const supabaseUrl =
 
 export default defineConfig({
   e2e: {
-    baseUrl: "http://127.0.0.1:5174",
+    baseUrl: "http://127.0.0.1:5173",
     env: {
       supabaseUrl,
       adminBaseUrl: "http://127.0.0.1:5174",

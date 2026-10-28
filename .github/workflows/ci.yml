@@ -5,23 +5,23 @@ on:
     branches:
       - main
       - development
+      - "feature/**"
   pull_request:
     branches:
       - main
       - development
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-permissions:
-  contents: read
 
 jobs:
   quality:
     name: Quality Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 30
 
     services:
       postgres:
@@ -39,12 +39,12 @@ jobs:
           --health-retries 5
 
     env:
-      NODE_ENV: test
+      CI: true
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/build_me_test
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/build_me_test
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup pnpm
@@ -69,108 +69,73 @@ jobs:
           enable-cache: true
           cache-dependency-glob: services/analytics/uv.lock
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify Analytics Project Structure
-        run: |
-          echo "Repository root:"
-          pwd
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
 
-          echo "Root files:"
-          ls -la
+      - name: Build workspace
+        run: pnpm build
 
-          echo "Python project files:"
-          find . -maxdepth 5 \
-            \( -name pyproject.toml -o -name uv.lock \) \
-            -print
-
-          if [ ! -f services/analytics/pyproject.toml ]; then
-            echo "::error::services/analytics/pyproject.toml was not found."
-            echo "Check that the analytics project exists and is committed to this branch."
-            exit 1
-          fi
-
-          if [ ! -d tests/analytics ]; then
-            echo "::error::tests/analytics directory was not found."
-            exit 1
-          fi
-
-      - name: Push Database Schema
-        run: pnpm --filter @build-me/database db:push
-
-      - name: Install k6
-        uses: grafana/setup-k6-action@v1
-
-      - name: Lint
+      - name: Run lint
         run: pnpm lint
 
-      - name: Typecheck
-        run: pnpm typecheck
+      - name: Run unit and integration tests
+        run: pnpm test
 
-      - name: Run Python Analytics Tests
-        working-directory: services/analytics
-        run: uv run --project . pytest ../../tests/analytics/ -v
+      - name: Run database migrations
+        run: pnpm --filter @build-me/database exec drizzle-kit migrate
 
-      - name: Start API for Performance Tests
+      - name: Start API for performance tests
         run: |
-          setsid nohup pnpm --filter @build-me/api dev > /tmp/build-me-api.log 2>&1 &
-          echo "$!" > /tmp/build-me-api.pid
+          setsid nohup pnpm --filter @build-me/api dev \
+            > /tmp/build-me-api-quality.log 2>&1 &
+          echo "$!" > /tmp/build-me-api-quality.pid
 
-          for i in $(seq 1 60); do
-            if curl --fail --silent http://127.0.0.1:4000/health >/dev/null; then
-              echo "API is ready"
+      - name: Wait for API
+        run: |
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:4000/health; then
+              echo "API is ready."
               exit 0
             fi
 
-            if ! kill -0 "$(cat /tmp/build-me-api.pid)" 2>/dev/null; then
-              echo "::error::API process exited before becoming ready"
-              cat /tmp/build-me-api.log
+            if ! kill -0 "$(cat /tmp/build-me-api-quality.pid)" 2>/dev/null; then
+              echo "API process exited unexpectedly."
+              cat /tmp/build-me-api-quality.log
               exit 1
             fi
 
             sleep 2
           done
 
-          echo "::error::API did not become ready"
-          cat /tmp/build-me-api.log
+          echo "API did not become ready."
+          cat /tmp/build-me-api-quality.log
           exit 1
 
-      - name: Run Workspace Tests
-        run: |
-          pnpm exec turbo run test \
-            --filter='!@build-me/integration-tests' \
-            --filter='!@build-me/api-tests'
+      - name: Run performance tests
+        run: pnpm --filter @build-me/perf-tests test
 
-      - name: Build
-        run: pnpm build
-
-      - name: Stop API
-        if: always()
-        run: |
-          if [ -f /tmp/build-me-api.pid ]; then
-            kill "$(cat /tmp/build-me-api.pid)" 2>/dev/null || true
-          fi
-
-      - name: Show API Logs on Failure
+      - name: Upload API logs on failure
         if: failure()
-        run: |
-          if [ -f /tmp/build-me-api.log ]; then
-            cat /tmp/build-me-api.log
-          fi
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-quality-logs
+          path: /tmp/build-me-api-quality.log
+          if-no-files-found: ignore
+          retention-days: 7
 
   e2e:
-    name: Cypress E2E Tests
+    name: End-to-End Tests
     runs-on: ubuntu-latest
     needs: quality
-    timeout-minutes: 30
 
     env:
-      # Make sure no runner proxy settings interfere with local server checks.
-      NO_PROXY: 127.0.0.1,localhost
+      CI: true
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup pnpm
@@ -184,62 +149,57 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Cypress Binary
-        run: |
-          # pnpm may skip Cypress's postinstall script, so install the binary explicitly.
-          # This is a no-op if the binary is already present.
-          pnpm --filter @build-me/e2e-tests exec cypress install
-          pnpm --filter @build-me/e2e-tests exec cypress verify
-
-      - name: Validate Supabase Secrets
+      - name: Validate Supabase configuration
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           if [ -z "$VITE_SUPABASE_URL" ]; then
-            echo "::error::GitHub Actions secret VITE_SUPABASE_URL is missing."
+            echo "::error::Missing GitHub Actions secret VITE_SUPABASE_URL."
             exit 1
           fi
 
           if [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
-            echo "::error::GitHub Actions secret VITE_SUPABASE_PUBLISHABLE_KEY is missing."
+            echo "::error::Missing GitHub Actions secret VITE_SUPABASE_PUBLISHABLE_KEY."
             exit 1
           fi
-
-          echo "Required Supabase environment variables are present."
 
       - name: Start Web and Dashboard Applications
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_ANALYTICS_URL: http://127.0.0.1:5173
         run: |
-          # setsid + nohup fully detaches the servers from this step's shell.
-          setsid nohup pnpm --filter @build-me/web dev --host 127.0.0.1 --port 5173 --strictPort \
+          setsid nohup pnpm --filter @build-me/web dev \
+            --host 127.0.0.1 --port 5173 --strictPort \
             > /tmp/build-me-web.log 2>&1 &
           echo "$!" > /tmp/build-me-web.pid
 
-          setsid nohup pnpm --filter @build-me/admin dev --host 127.0.0.1 --port 5174 --strictPort \
+          setsid nohup pnpm --filter @build-me/admin dev \
+            --host 127.0.0.1 --port 5174 --strictPort \
             > /tmp/build-me-dashboard.log 2>&1 &
           echo "$!" > /tmp/build-me-dashboard.pid
 
-      - name: Wait for Applications
+      - name: Wait for Web and Dashboard
         run: |
           wait_for_url() {
-            url="$1"
-            pid_file="$2"
-            log_file="$3"
+            local url="$1"
+            local name="$2"
+            local log_file="$3"
+            local pid_file="$4"
 
-            for i in $(seq 1 60); do
-              if curl --fail --silent "$url" >/dev/null; then
-                echo "Ready: $url"
+            for i in {1..60}; do
+              if curl --fail --silent "$url" > /dev/null; then
+                echo "$name is ready."
                 return 0
               fi
 
-              if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
-                echo "::error::Application process exited before becoming ready: $url"
+              if [ -f "$pid_file" ] &&
+                 ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
+                echo "$name process exited unexpectedly."
                 cat "$log_file"
                 return 1
               fi
@@ -247,65 +207,22 @@ jobs:
               sleep 2
             done
 
-            echo "::error::Timed out waiting for $url"
-            echo "----- Application log -----"
-            cat "$log_file" || true
-            echo "----- Listening ports -----"
-            ss -lntp || true
+            echo "$name did not become ready at $url."
+            cat "$log_file"
             return 1
           }
 
           wait_for_url \
-            http://127.0.0.1:5173 \
-            /tmp/build-me-web.pid \
-            /tmp/build-me-web.log
+            "http://127.0.0.1:5173" \
+            "Web application" \
+            "/tmp/build-me-web.log" \
+            "/tmp/build-me-web.pid"
 
           wait_for_url \
-            http://127.0.0.1:5174 \
-            /tmp/build-me-dashboard.pid \
-            /tmp/build-me-dashboard.log
-
-      - name: Verify Applications Are Still Running
-        run: |
-          # Give Vite a moment to finish any dependency re-optimization,
-          # then confirm both servers are still up right before Cypress starts.
-          sleep 5
-
-          failed=0
-
-          check_app() {
-            name="$1"
-            url="$2"
-            pid_file="$3"
-            log_file="$4"
-
-            if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
-              echo "::error::$name process is no longer running."
-              cat "$log_file" || true
-              failed=1
-              return
-            fi
-
-            status=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: text/html" "$url" || true)
-            echo "$name -> $url returned HTTP $status"
-
-            case "$status" in
-              2*|3*) ;;
-              *)
-                echo "::error::$name returned an unexpected status ($status)."
-                cat "$log_file" || true
-                failed=1
-                ;;
-            esac
-          }
-
-          check_app "Web" http://127.0.0.1:5173 /tmp/build-me-web.pid /tmp/build-me-web.log
-          check_app "Dashboard" http://127.0.0.1:5174 /tmp/build-me-dashboard.pid /tmp/build-me-dashboard.log
-
-          echo "----- Listening ports -----"
-          ss -lntp || true
-
-          exit "$failed"
+            "http://127.0.0.1:5174" \
+            "Dashboard application" \
+            "/tmp/build-me-dashboard.log" \
+            "/tmp/build-me-dashboard.pid"
 
       - name: Run Cypress E2E Tests
         env:
@@ -313,59 +230,36 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: pnpm --filter @build-me/e2e-tests test:e2e
 
-      - name: Show Application Logs on Failure
-        if: failure()
-        run: |
-          for log_file in /tmp/build-me-web.log /tmp/build-me-dashboard.log; do
-            if [ -f "$log_file" ]; then
-              echo "----- $log_file -----"
-              cat "$log_file"
-            fi
-          done
-
-      - name: Upload Cypress Screenshots
+      - name: Upload Cypress screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: cypress-screenshots
-          path: tests/e2e/cypress/screenshots/
+          path: |
+            tests/e2e/cypress/screenshots
+            tests/e2e/cypress/videos
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Upload Cypress Videos
+      - name: Upload application logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: cypress-videos
-          path: tests/e2e/cypress/videos/
+          name: e2e-application-logs
+          path: |
+            /tmp/build-me-web.log
+            /tmp/build-me-dashboard.log
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Upload Web Logs
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-logs
-          path: /tmp/build-me-web.log
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Upload Dashboard Logs
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dashboard-logs
-          path: /tmp/build-me-dashboard.log
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Stop Applications
+      - name: Stop applications
         if: always()
         run: |
           for pid_file in \
             /tmp/build-me-web.pid \
             /tmp/build-me-dashboard.pid; do
             if [ -f "$pid_file" ]; then
-              kill "$(cat "$pid_file")" 2>/dev/null || true
+              pid="$(cat "$pid_file")"
+              kill -- "-$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
             fi
           done
