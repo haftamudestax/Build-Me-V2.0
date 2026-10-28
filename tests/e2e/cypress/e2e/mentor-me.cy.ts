@@ -14,33 +14,22 @@ describe("Mentor Me — end-to-end flow", () => {
   const sessionId = "e2e-mentor-session";
 
   function stubVisitorRegistration() {
-    cy.intercept("POST", visitorUrl, (req) => {
-      req.reply({
-        statusCode: 201,
-        body: {
-          visitor_id: visitorId,
-          session_id: sessionId,
-        },
-      });
+    cy.intercept("POST", visitorUrl, {
+      statusCode: 201,
+      body: {
+        visitor_id: visitorId,
+        session_id: sessionId,
+      },
     }).as("registerVisitor");
   }
 
-  function verifyVisitorRegistrationIfRequested() {
-    cy.get("@registerVisitor.all").then((interceptions) => {
-      if (interceptions.length === 0) {
-        cy.log(
-          "Visitor registration was not requested. Check VITE_ANALYTICS_URL and app initialization.",
-        );
-        return;
-      }
-
-      const interception = interceptions[0];
-
-      expect(interception.request.method).to.equal("POST");
-      expect(interception.request.url).to.include("/api/visitors");
-      expect(interception.response, "visitor registration response").to.exist;
-      expect(interception.response!.statusCode).to.equal(201);
-      expect(interception.response!.body).to.deep.equal({
+  function verifyVisitorRegistration() {
+    cy.wait("@registerVisitor").then(({ request, response }) => {
+      expect(request.method).to.equal("POST");
+      expect(request.url).to.include("/api/visitors");
+      expect(response, "visitor registration response").to.exist;
+      expect(response!.statusCode).to.equal(201);
+      expect(response!.body).to.deep.equal({
         visitor_id: visitorId,
         session_id: sessionId,
       });
@@ -52,8 +41,8 @@ describe("Mentor Me — end-to-end flow", () => {
 
     cy.get("body").should("be.visible");
 
-    // Allow the app's startup request to be processed if it is configured.
-    cy.then(() => verifyVisitorRegistrationIfRequested());
+    // Wait for the startup registration request and its stubbed response.
+    verifyVisitorRegistration();
 
     cy.contains("button", /^Work With Me$/i)
       .should("be.visible")
@@ -64,7 +53,6 @@ describe("Mentor Me — end-to-end flow", () => {
       .click({ scrollBehavior: "center" });
 
     cy.contains("h2", "Mentor Me").should("be.visible");
-
     cy.get('input[name="mentoringTopic"]').should("exist");
   }
 
@@ -151,9 +139,10 @@ describe("Mentor Me — end-to-end flow", () => {
     fillValidRequest();
     submitMentoringRequest();
 
-    cy.wait("@submitMentoringRequest").then(({ request }) => {
+    cy.wait("@submitMentoringRequest").then(({ request, response }) => {
       expect(request.method).to.equal("POST");
       expect(request.url).to.include("/api/bookings");
+      expect(response?.statusCode).to.equal(201);
 
       expect(request.headers).to.have.property("idempotency-key");
 
@@ -195,6 +184,7 @@ describe("Mentor Me — end-to-end flow", () => {
 
     cy.wait("@submitMentoringRequest").then(({ request, response }) => {
       expect(request.method).to.equal("POST");
+      expect(request.url).to.include("/api/bookings");
       expect(response?.statusCode).to.equal(500);
     });
 
@@ -217,7 +207,6 @@ describe("Mentor Me — end-to-end flow", () => {
     cy.contains("h2", "Work With Me").should("be.visible");
 
     cy.get('button[aria-label^="Mentor Me:"]').should("exist");
-
     cy.contains("button", "Deliver My Project").should("exist");
   });
 });
