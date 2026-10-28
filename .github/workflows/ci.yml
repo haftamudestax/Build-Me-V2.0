@@ -74,6 +74,8 @@ jobs:
 
       - name: Verify Analytics Project Structure
         run: |
+          set -eu
+
           echo "Repository root:"
           pwd
 
@@ -113,27 +115,30 @@ jobs:
 
       - name: Start API for Performance Tests
         run: |
+          set -eu
+
           setsid nohup pnpm --filter @build-me/api dev \
             > /tmp/build-me-api.log 2>&1 &
           echo "$!" > /tmp/build-me-api.pid
 
           for i in $(seq 1 60); do
-            if curl --fail --silent http://127.0.0.1:4000/health >/dev/null; then
-              echo "API is ready"
+            if curl --noproxy '*' --fail --silent \
+              http://127.0.0.1:4000/health >/dev/null; then
+              echo "API is ready."
               exit 0
             fi
 
             if ! kill -0 "$(cat /tmp/build-me-api.pid)" 2>/dev/null; then
-              echo "::error::API process exited before becoming ready"
-              cat /tmp/build-me-api.log
+              echo "::error::API process exited before becoming ready."
+              cat /tmp/build-me-api.log || true
               exit 1
             fi
 
             sleep 2
           done
 
-          echo "::error::API did not become ready"
-          cat /tmp/build-me-api.log
+          echo "::error::API did not become ready."
+          cat /tmp/build-me-api.log || true
           exit 1
 
       - name: Run Workspace Tests
@@ -167,7 +172,6 @@ jobs:
 
     env:
       NO_PROXY: 127.0.0.1,localhost
-      no_proxy: 127.0.0.1,localhost
 
     steps:
       - name: Checkout Repository
@@ -197,6 +201,8 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
+          set -eu
+
           if [ -z "$VITE_SUPABASE_URL" ]; then
             echo "::error::GitHub Actions secret VITE_SUPABASE_URL is missing."
             exit 1
@@ -213,23 +219,16 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_ANALYTICS_URL: http://127.0.0.1:4000
         run: |
           set -eu
 
-          export VITE_ANALYTICS_URL="http://127.0.0.1:4000"
+          echo "Starting web application."
+          echo "VITE_ANALYTICS_URL is configured for the web process."
 
-          if [ "$VITE_ANALYTICS_URL" != "http://127.0.0.1:4000" ]; then
-            echo "::error::Unexpected analytics URL configuration."
-            exit 1
-          fi
-
-          echo "Starting web application with analytics configured."
-          echo "Analytics URL: $VITE_ANALYTICS_URL"
-
-          VITE_ANALYTICS_URL="$VITE_ANALYTICS_URL" \
-            setsid nohup pnpm --filter @build-me/web dev \
-              --host 127.0.0.1 --port 5173 --strictPort \
-              > /tmp/build-me-web.log 2>&1 &
+          setsid nohup pnpm --filter @build-me/web dev \
+            --host 127.0.0.1 --port 5173 --strictPort \
+            > /tmp/build-me-web.log 2>&1 &
           echo "$!" > /tmp/build-me-web.pid
 
           echo "Starting dashboard application."
