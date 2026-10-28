@@ -47,10 +47,6 @@ describe("Mentor Me — end-to-end flow", () => {
     });
   }
 
-  // The form refuses to submit until the visitor session exists, so tests that
-  // submit the form must wait for registration first. If registration never
-  // happens (for example, VITE_ANALYTICS_URL is missing), this fails here with
-  // a clear message instead of failing later on the booking request.
   function waitForVisitorRegistration() {
     cy.wait("@registerVisitor", { timeout: 10000 })
       .its("response.statusCode")
@@ -62,7 +58,7 @@ describe("Mentor Me — end-to-end flow", () => {
 
     cy.get("body").should("be.visible");
 
-    // Allow the app's startup request to be processed if it is configured.
+    
     cy.then(() => verifyVisitorRegistrationIfRequested());
 
     cy.contains("button", /^Work With Me$/i)
