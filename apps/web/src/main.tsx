@@ -13,6 +13,11 @@ import "./index.css";
 
 const analyticsBaseUrl = import.meta.env.VITE_ANALYTICS_URL ?? null;
 
+console.info("[Analytics] Startup configuration", {
+  configured: Boolean(analyticsBaseUrl),
+  baseUrl: analyticsBaseUrl,
+});
+
 const eventTypeByName: Record<string, AnalyticsEventType> = {
   "work_with_me.cta_clicked": "click",
 
@@ -42,7 +47,9 @@ interface CustomAnalyticsEventDetail {
 function handleCustomAnalyticsEvent(event: Event): void {
   const detail = (event as CustomEvent<CustomAnalyticsEventDetail>).detail;
 
-  if (!detail?.eventName) return;
+  if (!detail?.eventName) {
+    return;
+  }
 
   const eventName = detail.eventName;
   const eventType = eventTypeByName[eventName];
@@ -56,6 +63,11 @@ function handleCustomAnalyticsEvent(event: Event): void {
   const config = getAnalyticsConfig();
 
   if (!config?.baseUrl || !config.visitorId) {
+    console.warn("[Analytics] Event skipped: visitor session is unavailable.", {
+      eventName,
+      configured: Boolean(config?.baseUrl),
+      hasVisitorId: Boolean(config?.visitorId),
+    });
     return;
   }
 
@@ -85,23 +97,41 @@ function handleCustomAnalyticsEvent(event: Event): void {
   });
 }
 
-async function initializeApp() {
+async function initializeApp(): Promise<void> {
   if (analyticsBaseUrl) {
     const baseUrl = analyticsBaseUrl.replace(/\/+$/, "");
+    const visitorRegistrationUrl = `${baseUrl}/api/visitors`;
+
+    console.info("[Analytics] Registering visitor", {
+      url: visitorRegistrationUrl,
+    });
 
     try {
-      const response = await fetch(`${baseUrl}/api/visitors`, {
+      const response = await fetch(visitorRegistrationUrl, {
         method: "POST",
       });
 
+      console.info("[Analytics] Visitor registration response", {
+        status: response.status,
+        ok: response.ok,
+      });
+
       if (!response.ok) {
-        throw new Error(`Visitor registration failed: ${response.status}`);
+        throw new Error(
+          `Visitor registration failed: ${response.status} ${response.statusText}`,
+        );
       }
 
       const registration: {
         visitor_id: string;
         session_id: string;
       } = await response.json();
+
+      if (!registration.visitor_id || !registration.session_id) {
+        throw new Error(
+          "Visitor registration response did not contain visitor_id and session_id.",
+        );
+      }
 
       const analyticsConfig = {
         baseUrl,
@@ -111,8 +141,16 @@ async function initializeApp() {
 
       configureAnalytics(analyticsConfig);
       configureNavAnalytics(analyticsConfig);
-    } catch (error) {
-      console.error("Analytics initialization failed:", error);
+
+      console.info("[Analytics] Visitor registration completed", {
+        hasVisitorId: Boolean(registration.visitor_id),
+        hasSessionId: Boolean(registration.session_id),
+      });
+    } catch (error: unknown) {
+      console.error("[Analytics] Initialization failed", {
+        url: visitorRegistrationUrl,
+        error,
+      });
 
       const analyticsConfig = {
         baseUrl,
@@ -123,6 +161,10 @@ async function initializeApp() {
       configureAnalytics(analyticsConfig);
       configureNavAnalytics(analyticsConfig);
     }
+  } else {
+    console.warn(
+      "[Analytics] VITE_ANALYTICS_URL is not configured. Analytics initialization was skipped.",
+    );
   }
 
   // Register once before rendering the app.
