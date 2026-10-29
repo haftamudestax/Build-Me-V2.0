@@ -331,6 +331,8 @@ jobs:
           exit "$failed"
 
       - name: Run Cypress E2E Tests
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
         run: pnpm --filter @build-me/e2e-tests test:e2e
 
       - name: Show Application Logs on Failure

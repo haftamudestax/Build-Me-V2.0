@@ -1,3 +1,4 @@
+
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "cypress";
@@ -26,17 +27,22 @@ const dashboardEnvPath = resolve(
   "../../apps/dashboard/.env.local",
 );
 
-const supabaseUrl =
+const supabaseUrl = (
   process.env.VITE_SUPABASE_URL ??
-  readEnvValue(dashboardEnvPath, "VITE_SUPABASE_URL");
+  process.env.SUPABASE_URL ??
+  readEnvValue(dashboardEnvPath, "VITE_SUPABASE_URL") ??
+  ""
+).trim();
 
 export default defineConfig({
   e2e: {
     baseUrl: "http://127.0.0.1:5173",
     env: {
       supabaseUrl,
-      adminBaseUrl: "http://127.0.0.1:5174",
-      webBaseUrl: "http://127.0.0.1:5173",
+      adminBaseUrl:
+        process.env.ADMIN_BASE_URL ?? "http://127.0.0.1:5174",
+      webBaseUrl:
+        process.env.WEB_BASE_URL ?? "http://127.0.0.1:5173",
     },
     setupNodeEvents(_on, config) {
       return config;
