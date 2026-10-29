@@ -8,6 +8,7 @@ from fastapi.encoders import jsonable_encoder
 
 from database import get_connection, insert_event, validate_visitor_session
 
+from src.events.coffee_with_me import CoffeeWithMeEventIn
 from src.events.delivery_project import DeliveryProjectEventIn
 from src.events.hero import HeroEventIn
 from src.events.mentor_me import MentorMeEventIn
@@ -15,6 +16,7 @@ from src.events.navbar import NavbarEventIn, NavbarEventName
 
 from src.processing.navbar import process_navbar_event
 
+from src.tracking.coffee_with_me import persist_coffee_with_me_event
 from src.tracking.delivery_project import persist_delivery_project_event
 from src.tracking.hero import persist_hero_event
 from src.tracking.mentor_me import persist_mentor_me_event
@@ -82,12 +84,16 @@ async def create_analytics_event(
         | HeroEventIn
         | DeliveryProjectEventIn
         | MentorMeEventIn
+        | CoffeeWithMeEventIn
     ),
 ):
-    """Persist Navbar, Hero, Delivery Project, and Mentor Me events."""
+    """Persist Navbar, Hero, Delivery Project, Mentor Me, and Coffee With Me events."""
 
     try:
-        if isinstance(event, MentorMeEventIn):
+        if isinstance(event, CoffeeWithMeEventIn):
+            record = await persist_coffee_with_me_event(event)
+
+        elif isinstance(event, MentorMeEventIn):
             record = await persist_mentor_me_event(event)
 
         elif isinstance(event, DeliveryProjectEventIn):

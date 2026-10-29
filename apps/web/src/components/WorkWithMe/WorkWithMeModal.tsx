@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Coffee,
   Copy,
   FolderKanban,
   GraduationCap,
@@ -16,11 +17,13 @@ import {
 } from "lucide-react";
 
 import { Modal } from "@build-me/ui";
+import { CoffeeWithMeForm } from "./CoffeeWithMeForm";
 import { DeliveryProjectForm } from "./DeliveryProjectForm";
 import { MentorMeForm } from "./MentorMeForm";
 
-type JourneyStep = "paths" | "delivery" | "mentor" | "confirmed";
-type BookingPath = "delivery_project" | "mentor_me";
+type JourneyStep = "paths" | "delivery" | "mentor" | "coffee" | "confirmed";
+
+type BookingPath = "delivery_project" | "mentor_me" | "coffee_with_me";
 
 interface Confirmation {
   reference: string;
@@ -50,6 +53,14 @@ const bookingPathDetails: Record<BookingPath, PathDetails> = {
     confirmationMessage:
       "Your mentoring request has been submitted. I'll review your goals and follow up.",
     icon: <GraduationCap size={28} aria-hidden="true" />,
+  },
+  coffee_with_me: {
+    title: "Coffee With Me",
+    description:
+      "Schedule a 30-minute conversation to discuss ideas, technology, collaboration, or career opportunities.",
+    confirmationMessage:
+      "Your Coffee With Me request has been submitted. I'll review your preferred meeting time and follow up to confirm availability.",
+    icon: <Coffee size={28} aria-hidden="true" />,
   },
 };
 
@@ -124,11 +135,10 @@ function PathCard({ title, description, icon, onSelect }: PathCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>): void {
-    // Native buttons already activate on Enter and Space.
-    // Let the browser handle keyboard activation to avoid duplicate selection.
+    // Native buttons already support Enter and Space.
+    // Do not manually activate them here, which would duplicate onClick.
     if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onSelect();
+      // Allow the browser's native button activation.
     }
   }
 
@@ -215,9 +225,15 @@ export function WorkWithMeModal() {
     trackJourneyEvent("work_with_me.closed");
   }
 
-  function selectPath(nextStep: "delivery" | "mentor"): void {
+  function selectPath(
+    nextStep: Exclude<JourneyStep, "paths" | "confirmed">,
+  ): void {
     const bookingType: BookingPath =
-      nextStep === "delivery" ? "delivery_project" : "mentor_me";
+      nextStep === "delivery"
+        ? "delivery_project"
+        : nextStep === "mentor"
+          ? "mentor_me"
+          : "coffee_with_me";
 
     setStep(nextStep);
     setCopyError(null);
@@ -230,7 +246,9 @@ export function WorkWithMeModal() {
         ? "delivery_project"
         : step === "mentor"
           ? "mentor_me"
-          : null;
+          : step === "coffee"
+            ? "coffee_with_me"
+            : null;
 
     if (currentBookingType) {
       trackJourneyEvent(`${currentBookingType}.back_to_paths`);
@@ -244,7 +262,7 @@ export function WorkWithMeModal() {
     setConfirmation({ bookingType, reference });
     setStep("confirmed");
     setCopyError(null);
-    trackJourneyEvent(`${bookingType}.confirmed`);
+    trackJourneyEvent(`${bookingType}.confirmation_viewed`);
   }
 
   async function copyReference(): Promise<void> {
@@ -377,11 +395,18 @@ export function WorkWithMeModal() {
                   icon={bookingPathDetails.mentor_me.icon}
                   onSelect={() => selectPath("mentor")}
                 />
+
+                <PathCard
+                  title={bookingPathDetails.coffee_with_me.title}
+                  description={bookingPathDetails.coffee_with_me.description}
+                  icon={bookingPathDetails.coffee_with_me.icon}
+                  onSelect={() => selectPath("coffee")}
+                />
               </div>
             </>
           )}
 
-          {(step === "delivery" || step === "mentor") && (
+          {(step === "delivery" || step === "mentor" || step === "coffee") && (
             <div
               style={{
                 ...pageStyle,
@@ -418,6 +443,15 @@ export function WorkWithMeModal() {
                   onBack={handleBackToPaths}
                   onSubmitted={(reference) =>
                     handleSubmitted("mentor_me", reference)
+                  }
+                />
+              )}
+
+              {step === "coffee" && (
+                <CoffeeWithMeForm
+                  onBack={handleBackToPaths}
+                  onSubmitted={(reference) =>
+                    handleSubmitted("coffee_with_me", reference)
                   }
                 />
               )}

@@ -1,4 +1,3 @@
-
 import { Router, type Request, type Response } from "express";
 
 import { requireAuth } from "../middleware/requireAuth";
@@ -17,6 +16,8 @@ const allowedEndpoints = {
   deliveryProjectEvents: "/api/analytics/delivery-project/events",
   mentorMeSummary: "/api/analytics/mentor-me/summary",
   mentorMeEvents: "/api/analytics/mentor-me/events",
+  coffeeWithMeSummary: "/api/analytics/coffee-with-me/summary",
+  coffeeWithMeEvents: "/api/analytics/coffee-with-me/events",
 } as const;
 
 type EndpointKey = keyof typeof allowedEndpoints;
@@ -30,6 +31,8 @@ const allowedQueryParams: Record<EndpointKey, string[]> = {
   deliveryProjectEvents: ["limit", "offset", "event_name"],
   mentorMeSummary: ["days"],
   mentorMeEvents: ["limit", "offset", "event_name"],
+  coffeeWithMeSummary: ["days"],
+  coffeeWithMeEvents: ["limit", "offset", "event_name"],
 };
 
 async function proxyAnalytics(
@@ -120,6 +123,14 @@ router.get("/mentor-me/summary", (req, res) =>
 
 router.get("/mentor-me/events", (req, res) =>
   proxyAnalytics(req, res, "mentorMeEvents"),
+);
+
+router.get("/coffee-with-me/summary", (req, res) =>
+  proxyAnalytics(req, res, "coffeeWithMeSummary"),
+);
+
+router.get("/coffee-with-me/events", (req, res) =>
+  proxyAnalytics(req, res, "coffeeWithMeEvents"),
 );
 
 export default router;

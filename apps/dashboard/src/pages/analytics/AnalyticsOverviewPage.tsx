@@ -24,6 +24,12 @@ const analyticsSections = [
       "Review mentoring selections, form engagement, validation failures, and booking submissions.",
     to: "/dashboard/analytics/mentor-me",
   },
+  {
+    title: "Coffee With Me Analytics",
+    description:
+      "Review coffee meeting requests, format selections, form engagement, validation failures, and booking outcomes.",
+    to: "/dashboard/analytics/coffee-with-me",
+  },
 ];
 
 export function AnalyticsOverviewPage() {
