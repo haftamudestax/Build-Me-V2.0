@@ -15,6 +15,7 @@ import { NavbarAnalyticsPage } from "../pages/analytics/NavbarAnalyticsPage";
 import { HeroAnalyticsPage } from "../pages/analytics/HeroAnalyticsPage";
 import { DeliveryProjectAnalyticsPage } from "../pages/analytics/DeliveryProjectAnalyticsPage";
 import { MentorMeAnalyticsPage } from "../pages/analytics/MentorMeAnalyticsPage";
+import { CoffeeWithMeAnalyticsPage } from "../pages/analytics/CoffeeWithMeAnalyticsPage";
 
 function LoginPage() {
   return <LoginForm />;
@@ -94,6 +95,10 @@ export default function AppRoutes() {
             <Route
               path="/dashboard/analytics/mentor-me"
               element={<MentorMeAnalyticsPage />}
+            />
+            <Route
+              path="/dashboard/analytics/coffee-with-me"
+              element={<CoffeeWithMeAnalyticsPage />}
             />
           </Route>
         </Route>

@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-   "test:e2e": "cypress run"
+    "test:e2e": "cypress run",
+    "test:e2e:coffee": "cypress run --spec \"cypress/e2e/coffee-with-me.cy.ts\"",
+    "test:e2e:coffee:ci": "start-server-and-test \"pnpm --filter @build-me/web dev --host 127.0.0.1 --port 5173 --strictPort\" http://127.0.0.1:5173 \"pnpm run test:e2e:coffee\""
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

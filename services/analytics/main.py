@@ -17,6 +17,9 @@ from src.reporting.delivery_project import (
     router as delivery_project_reporting_router,
 )
 from src.reporting.mentor_me import router as mentor_me_reporting_router
+from src.reporting.coffee_with_me import (
+    router as coffee_with_me_reporting_router,
+)
 
 load_dotenv()
 
@@ -60,6 +63,7 @@ app.include_router(navbar_reporting_router)
 app.include_router(hero_reporting_router)
 app.include_router(delivery_project_reporting_router)
 app.include_router(mentor_me_reporting_router)
+app.include_router(coffee_with_me_reporting_router)
 app.include_router(visitors_router)
 
 

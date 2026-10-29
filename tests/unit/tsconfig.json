@@ -12,5 +12,5 @@
       "@about-me/web/*": ["../../apps/web/src/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": ["**/*.ts", "**/*.tsx", "../integration/work-with-me/coffee-with-me-flow.integration.test.tsx"]
 }
