@@ -13,7 +13,6 @@ from src.events.navbar import (
 )
 from src.processing.navbar import process_navbar_event
 
-
 def make_navbar_event(
     event_name: str = "navbar.logo_click",
     event_type: str = "click",

@@ -30,6 +30,12 @@ const analyticsSections = [
       "Review coffee meeting requests, format selections, form engagement, validation failures, and booking outcomes.",
     to: "/dashboard/analytics/coffee-with-me",
   },
+  {
+    title: "Technology Ownership Audit",
+    description:
+      "Review audit engagement, answer selections, completion rates, and results viewed.",
+    to: "/dashboard/analytics/ownership-audit",
+  },
 ];
 
 export function AnalyticsOverviewPage() {

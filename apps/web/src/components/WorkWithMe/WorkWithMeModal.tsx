@@ -13,6 +13,7 @@ import {
   Copy,
   FolderKanban,
   GraduationCap,
+  ShieldCheck,
   X,
 } from "lucide-react";
 
@@ -20,8 +21,15 @@ import { Modal } from "@build-me/ui";
 import { CoffeeWithMeForm } from "./CoffeeWithMeForm";
 import { DeliveryProjectForm } from "./DeliveryProjectForm";
 import { MentorMeForm } from "./MentorMeForm";
+import { OwnershipAudit } from "./OwnershipAudit";
 
-type JourneyStep = "paths" | "delivery" | "mentor" | "coffee" | "confirmed";
+type JourneyStep =
+  | "paths"
+  | "delivery"
+  | "mentor"
+  | "coffee"
+  | "ownership_audit"
+  | "confirmed";
 
 type BookingPath = "delivery_project" | "mentor_me" | "coffee_with_me";
 
@@ -136,9 +144,9 @@ function PathCard({ title, description, icon, onSelect }: PathCardProps) {
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>): void {
     // Native buttons already support Enter and Space.
-    // Do not manually activate them here, which would duplicate onClick.
+    // Leave activation to the browser to avoid duplicate click events.
     if (event.key === "Enter" || event.key === " ") {
-      // Allow the browser's native button activation.
+      return;
     }
   }
 
@@ -226,7 +234,7 @@ export function WorkWithMeModal() {
   }
 
   function selectPath(
-    nextStep: Exclude<JourneyStep, "paths" | "confirmed">,
+    nextStep: Exclude<JourneyStep, "paths" | "confirmed" | "ownership_audit">,
   ): void {
     const bookingType: BookingPath =
       nextStep === "delivery"
@@ -238,6 +246,14 @@ export function WorkWithMeModal() {
     setStep(nextStep);
     setCopyError(null);
     trackJourneyEvent(`${bookingType}.selected`);
+  }
+
+  function selectOwnershipAudit(): void {
+    setStep("ownership_audit");
+    setCopyError(null);
+
+    trackJourneyEvent("ownership_audit.selected");
+    trackJourneyEvent("ownership_audit.started");
   }
 
   function handleBackToPaths(): void {
@@ -252,6 +268,8 @@ export function WorkWithMeModal() {
 
     if (currentBookingType) {
       trackJourneyEvent(`${currentBookingType}.back_to_paths`);
+    } else if (step === "ownership_audit") {
+      trackJourneyEvent("ownership_audit.back_to_paths");
     }
 
     setStep("paths");
@@ -402,6 +420,13 @@ export function WorkWithMeModal() {
                   icon={bookingPathDetails.coffee_with_me.icon}
                   onSelect={() => selectPath("coffee")}
                 />
+
+                <PathCard
+                  title="Technology Ownership Audit"
+                  description="Assess how well you control your code, infrastructure, access, documentation, and long-term technology decisions."
+                  icon={<ShieldCheck size={28} aria-hidden="true" />}
+                  onSelect={selectOwnershipAudit}
+                />
               </div>
             </>
           )}
@@ -455,6 +480,33 @@ export function WorkWithMeModal() {
                   }
                 />
               )}
+            </div>
+          )}
+
+          {step === "ownership_audit" && (
+            <div
+              style={{
+                ...pageStyle,
+                flex: "1 1 auto",
+                overflowY: "auto",
+                overflowX: "hidden",
+                overscrollBehaviorY: "contain",
+                WebkitOverflowScrolling: "touch",
+                padding: "4px 4px 12px",
+              }}
+            >
+              <div style={{ flexShrink: 0 }}>
+                <Button
+                  type="button"
+                  variant="text"
+                  startIcon={<ArrowLeft size={18} />}
+                  onClick={handleBackToPaths}
+                >
+                  All project paths
+                </Button>
+              </div>
+
+              <OwnershipAudit onBack={handleBackToPaths} />
             </div>
           )}
 

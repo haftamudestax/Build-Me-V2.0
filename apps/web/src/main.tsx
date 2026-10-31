@@ -8,6 +8,7 @@ import {
   trackAnalyticsEvent,
 } from "@build-me/utils";
 import type { AnalyticsEventName, AnalyticsEventType } from "@build-me/types";
+
 import { router } from "./routes/Routes.tsx";
 import "./index.css";
 
@@ -19,21 +20,49 @@ console.info("[Analytics] Startup configuration", {
 });
 
 const eventTypeByName: Record<string, AnalyticsEventType> = {
+  // Work With Me
   "work_with_me.cta_clicked": "click",
+  "work_with_me.opened": "click",
+  "work_with_me.closed": "click",
+  "work_with_me.reference_copied": "click",
 
+  // Delivery Project
   "delivery_project.selected": "click",
   "delivery_project.started": "feature_use",
   "delivery_project.validation_failed": "feature_use",
   "delivery_project.booking_submitted": "feature_use",
   "delivery_project.confirmation_viewed": "view",
   "delivery_project.submission_failed": "feature_use",
+  "delivery_project.back_to_paths": "click",
 
+  // Mentor Me
   "mentor_me.selected": "click",
   "mentor_me.started": "feature_use",
   "mentor_me.validation_failed": "feature_use",
   "mentor_me.booking_submitted": "feature_use",
   "mentor_me.confirmation_viewed": "view",
   "mentor_me.submission_failed": "feature_use",
+  "mentor_me.back_to_paths": "click",
+
+  // Coffee With Me
+  "coffee_with_me.selected": "click",
+  "coffee_with_me.started": "feature_use",
+  "coffee_with_me.validation_failed": "feature_use",
+  "coffee_with_me.booking_submitted": "feature_use",
+  "coffee_with_me.confirmation_viewed": "view",
+  "coffee_with_me.submission_failed": "feature_use",
+  "coffee_with_me.back_to_paths": "click",
+
+  // Ownership Audit
+  "ownership_audit.selected": "click",
+  "ownership_audit.started": "feature_use",
+  "ownership_audit.answer_selected": "click",
+  "ownership_audit.step_completed": "feature_use",
+  "ownership_audit.validation_failed": "feature_use",
+  "ownership_audit.completed": "feature_use",
+  "ownership_audit.results_viewed": "view",
+  "ownership_audit.restarted": "click",
+  "ownership_audit.back_to_paths": "click",
 };
 
 interface CustomAnalyticsEventDetail {
@@ -79,7 +108,15 @@ function handleCustomAnalyticsEvent(event: Event): void {
     ? "mentor_me"
     : eventName.startsWith("delivery_project.")
       ? "delivery_project"
-      : "work_with_me";
+      : eventName.startsWith("coffee_with_me.")
+        ? "coffee_with_me"
+        : eventName.startsWith("ownership_audit.")
+          ? "ownership_audit"
+          : "work_with_me";
+
+  const journey =
+    detail.journey ??
+    (feature === "work_with_me" ? "delivery_project" : feature);
 
   void trackAnalyticsEvent({
     eventName: eventName as AnalyticsEventName,
@@ -87,9 +124,7 @@ function handleCustomAnalyticsEvent(event: Event): void {
     visitorId: config.visitorId,
     sessionId: config.sessionId,
     feature,
-    journey:
-      detail.journey ??
-      (feature === "work_with_me" ? "delivery_project" : feature),
+    journey,
     sourceRoute: detail.sourceRoute ?? window.location.pathname,
     destinationRoute: detail.destinationRoute,
     metadata: detail.metadata ?? {},

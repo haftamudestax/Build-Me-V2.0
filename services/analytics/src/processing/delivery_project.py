@@ -8,14 +8,17 @@ from src.events.delivery_project import DeliveryProjectEventIn
 
 EXPECTED_EVENT_TYPES = {
     "work_with_me.cta_clicked": "click",
+    "work_with_me.opened": "click",
+    "work_with_me.closed": "click",
+    "work_with_me.reference_copied": "click",
     "delivery_project.selected": "click",
     "delivery_project.started": "feature_use",
     "delivery_project.validation_failed": "feature_use",
     "delivery_project.booking_submitted": "feature_use",
     "delivery_project.confirmation_viewed": "view",
     "delivery_project.submission_failed": "feature_use",
+    "delivery_project.back_to_paths": "click",
 }
-
 
 def _validate_route(route: str | None, field_name: str) -> str | None:
     if route is None:

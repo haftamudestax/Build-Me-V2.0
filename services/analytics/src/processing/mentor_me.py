@@ -12,6 +12,7 @@ EXPECTED_EVENT_TYPES = {
     "mentor_me.booking_submitted": "feature_use",
     "mentor_me.confirmation_viewed": "view",
     "mentor_me.submission_failed": "feature_use",
+    "mentor_me.back_to_paths": "click",
 }
 
 
