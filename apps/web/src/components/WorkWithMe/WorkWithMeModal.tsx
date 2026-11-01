@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
   type CSSProperties,
   type KeyboardEvent,
@@ -21,7 +22,10 @@ import { Modal } from "@build-me/ui";
 import { CoffeeWithMeForm } from "./CoffeeWithMeForm";
 import { DeliveryProjectForm } from "./DeliveryProjectForm";
 import { MentorMeForm } from "./MentorMeForm";
-import { OwnershipAudit } from "./OwnershipAudit";
+import {
+  OPEN_WORK_WITH_ME_EVENT,
+  type OpenWorkWithMeDetail,
+} from "./openWorkWithMe";
 
 type JourneyStep =
   | "paths"
@@ -219,6 +223,37 @@ export function WorkWithMeModal() {
   const [step, setStep] = useState<JourneyStep>("paths");
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
+
+  // Lets other components (for example the last step of Get Quick Wins) open
+  // this modal, optionally straight on one of its paths.
+  useEffect(() => {
+    function handleOpenRequest(event: Event): void {
+      const path = (event as CustomEvent<OpenWorkWithMeDetail>).detail?.path;
+
+      setConfirmation(null);
+      setCopyError(null);
+      setStep(path ?? "paths");
+      setIsOpen(true);
+      trackJourneyEvent("work_with_me.opened");
+
+      if (path) {
+        const bookingType: BookingPath =
+          path === "delivery"
+            ? "delivery_project"
+            : path === "mentor"
+              ? "mentor_me"
+              : "coffee_with_me";
+
+        trackJourneyEvent(`${bookingType}.selected`);
+      }
+    }
+
+    window.addEventListener(OPEN_WORK_WITH_ME_EVENT, handleOpenRequest);
+
+    return () => {
+      window.removeEventListener(OPEN_WORK_WITH_ME_EVENT, handleOpenRequest);
+    };
+  }, []);
 
   function openModal(): void {
     setStep("paths");
@@ -505,8 +540,6 @@ export function WorkWithMeModal() {
                   All project paths
                 </Button>
               </div>
-
-              <OwnershipAudit onBack={handleBackToPaths} />
             </div>
           )}
 

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 
 from database import get_connection
+from src.processing.ownership_audit import EXPECTED_EVENT_TYPES
 from src.tracking.navbar import require_admin
 
 
@@ -13,14 +14,63 @@ router = APIRouter(
     tags=["Ownership Audit Analytics"],
 )
 
-SUPPORTED_EVENT_NAMES = {
-    "ownership_audit.answer_selected",
-    "ownership_audit.validation_failed",
-    "ownership_audit.step_completed",
-    "ownership_audit.completed",
-    "ownership_audit.results_viewed",
-    "ownership_audit.restarted",
-}
+# One source of truth: every event the service accepts can be filtered on.
+SUPPORTED_EVENT_NAMES = set(EXPECTED_EVENT_TYPES)
+
+# Funnel stages in journey order, with the totals key holding the number of
+# distinct visitors who reached each stage.
+FUNNEL_STAGES = [
+    ("opened", "unique_openers"),
+    ("selected_audit", "unique_selectors"),
+    ("registered", "unique_registrants"),
+    ("completed", "unique_completers"),
+    ("viewed_results", "unique_results_viewers"),
+    ("viewed_next_steps", "unique_next_steps_viewers"),
+    ("chose_a_path", "unique_path_selectors"),
+]
+
+
+def _percentage(numerator: int, denominator: int | None) -> float:
+    """Percentage rounded to 2 places, capped at 100 and 0 when undefined."""
+
+    if not denominator:
+        return 0.0
+
+    return min(100.0, round(numerator / denominator * 100, 2))
+
+
+def _build_funnel(totals: dict) -> list[dict]:
+    """Visitor funnel from the Get Quick Wins button to a chosen path.
+
+    Each stage is counted independently, so a visitor who arrived through the
+    older Work With Me card can complete without an 'opened' event. Rates are
+    capped at 100 for that reason.
+    """
+
+    funnel: list[dict] = []
+    first: int | None = None
+    previous: int | None = None
+
+    for stage, key in FUNNEL_STAGES:
+        visitors = totals.get(key, 0)
+
+        if first is None:
+            first = visitors
+
+        funnel.append(
+            {
+                "stage": stage,
+                "visitors": visitors,
+                "from_previous_pct": (
+                    None if previous is None else _percentage(visitors, previous)
+                ),
+                "from_first_pct": _percentage(visitors, first),
+            }
+        )
+
+        previous = visitors
+
+    return funnel
 
 
 @router.get("/summary")
@@ -64,13 +114,65 @@ async def get_ownership_audit_summary(
                         WHERE event_name = 'ownership_audit.restarted'
                     )::int AS restarts,
 
+                    COUNT(*) FILTER (
+                        WHERE event_name = 'get_quick_wins.opened'
+                    )::int AS quick_wins_opens,
+
+                    COUNT(*) FILTER (
+                        WHERE event_name = 'get_quick_wins.closed'
+                    )::int AS quick_wins_closes,
+
+                    COUNT(*) FILTER (
+                        WHERE event_name = 'ownership_audit.selected'
+                    )::int AS audit_selections,
+
+                    COUNT(*) FILTER (
+                        WHERE event_name = 'ownership_audit.started'
+                    )::int AS starts,
+
+                    COUNT(*) FILTER (
+                        WHERE event_name = 'ownership_audit.registration_completed'
+                    )::int AS registrations,
+
+                    COUNT(*) FILTER (
+                        WHERE event_name = 'ownership_audit.next_steps_viewed'
+                    )::int AS next_steps_views,
+
+                    COUNT(*) FILTER (
+                        WHERE event_name = 'ownership_audit.path_selected'
+                    )::int AS path_selections,
+
+                    COUNT(*) FILTER (
+                        WHERE event_name = 'ownership_audit.back_to_paths'
+                    )::int AS back_to_paths,
+
                     COUNT(DISTINCT visitor_id) FILTER (
                         WHERE event_name = 'ownership_audit.completed'
                     )::int AS unique_completers,
 
                     COUNT(DISTINCT visitor_id) FILTER (
                         WHERE event_name = 'ownership_audit.results_viewed'
-                    )::int AS unique_results_viewers
+                    )::int AS unique_results_viewers,
+
+                    COUNT(DISTINCT visitor_id) FILTER (
+                        WHERE event_name = 'get_quick_wins.opened'
+                    )::int AS unique_openers,
+
+                    COUNT(DISTINCT visitor_id) FILTER (
+                        WHERE event_name = 'ownership_audit.selected'
+                    )::int AS unique_selectors,
+
+                    COUNT(DISTINCT visitor_id) FILTER (
+                        WHERE event_name = 'ownership_audit.registration_completed'
+                    )::int AS unique_registrants,
+
+                    COUNT(DISTINCT visitor_id) FILTER (
+                        WHERE event_name = 'ownership_audit.next_steps_viewed'
+                    )::int AS unique_next_steps_viewers,
+
+                    COUNT(DISTINCT visitor_id) FILTER (
+                        WHERE event_name = 'ownership_audit.path_selected'
+                    )::int AS unique_path_selectors
 
                 FROM events
                 WHERE journey = 'ownership_audit'
@@ -96,7 +198,11 @@ async def get_ownership_audit_summary(
                 "end": end_time.isoformat(),
             },
             "totals": totals,
+            "funnel": _build_funnel(totals),
             "kpis": {
+                # Kept as originally defined. It divides completions by
+                # individual answer clicks, so it stays low by design; use
+                # completion_rate for completions per audit selection.
                 "completion_to_selection_rate": round(
                     completions / selections * 100, 2
                 ) if selections else 0.0,
@@ -106,7 +212,94 @@ async def get_ownership_audit_summary(
                 "average_completed_steps_per_completion": round(
                     step_completions / completions, 2
                 ) if completions else 0.0,
+                "completion_rate": _percentage(
+                    completions,
+                    totals.get("audit_selections", 0),
+                ),
+                "registration_rate": _percentage(
+                    totals.get("registrations", 0),
+                    totals.get("starts", 0),
+                ),
+                "path_selection_rate": _percentage(
+                    totals.get("path_selections", 0),
+                    totals.get("next_steps_views", 0),
+                ),
             },
+            "generated_at": end_time.isoformat(),
+        }
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Ownership Audit analytics reporting is unavailable.",
+        ) from exc
+
+
+@router.get("/breakdown")
+async def get_ownership_audit_breakdown(
+    _: Annotated[None, Depends(require_admin)],
+    days: int = Query(default=30, ge=1, le=365),
+):
+    """Return result categories, chosen paths and where visitors left.
+
+    Reads values from the event metadata, so it needs the metadata column to be
+    json or jsonb.
+    """
+
+    end_time = datetime.now(timezone.utc)
+    start_time = end_time - timedelta(days=days)
+
+    try:
+        async with get_connection() as connection:
+            rows = await connection.fetch(
+                """
+                SELECT
+                    event_name,
+                    metadata->>'resultCategory' AS result_category,
+                    metadata->>'path' AS path,
+                    metadata->>'lastStep' AS last_step,
+                    COUNT(*)::int AS events
+                FROM events
+                WHERE journey = 'ownership_audit'
+                  AND event_name IN (
+                      'ownership_audit.completed',
+                      'ownership_audit.path_selected',
+                      'get_quick_wins.closed'
+                  )
+                  AND timestamp >= $1
+                  AND timestamp < $2
+                GROUP BY 1, 2, 3, 4
+                """,
+                start_time,
+                end_time,
+            )
+
+        result_categories: dict[str, int] = {}
+        paths: dict[str, int] = {}
+        closed_at_step: dict[str, int] = {}
+
+        for row in rows:
+            count = row["events"]
+
+            if row["event_name"] == "ownership_audit.completed":
+                key, target = row["result_category"], result_categories
+            elif row["event_name"] == "ownership_audit.path_selected":
+                key, target = row["path"], paths
+            else:
+                key, target = row["last_step"], closed_at_step
+
+            if key:
+                target[key] = target.get(key, 0) + count
+
+        return {
+            "period": {
+                "days": days,
+                "start": start_time.isoformat(),
+                "end": end_time.isoformat(),
+            },
+            "result_categories": result_categories,
+            "paths_chosen": paths,
+            "closed_at_step": closed_at_step,
             "generated_at": end_time.isoformat(),
         }
 

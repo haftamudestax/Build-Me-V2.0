@@ -54,15 +54,25 @@ const eventTypeByName: Record<string, AnalyticsEventType> = {
   "coffee_with_me.back_to_paths": "click",
 
   // Ownership Audit
+  // These types must match EXPECTED_EVENT_TYPES in the analytics service
+  // (services/analytics/src/processing/ownership_audit.py); a mismatch is
+  // rejected with a 422.
   "ownership_audit.selected": "click",
   "ownership_audit.started": "feature_use",
   "ownership_audit.answer_selected": "click",
   "ownership_audit.step_completed": "feature_use",
   "ownership_audit.validation_failed": "feature_use",
+  "ownership_audit.registration_completed": "feature_use",
   "ownership_audit.completed": "feature_use",
   "ownership_audit.results_viewed": "view",
+  "ownership_audit.next_steps_viewed": "view",
+  "ownership_audit.path_selected": "click",
   "ownership_audit.restarted": "click",
   "ownership_audit.back_to_paths": "click",
+
+  // Get Quick Wins
+  "get_quick_wins.opened": "click",
+  "get_quick_wins.closed": "click",
 };
 
 interface CustomAnalyticsEventDetail {
@@ -112,7 +122,9 @@ function handleCustomAnalyticsEvent(event: Event): void {
         ? "coffee_with_me"
         : eventName.startsWith("ownership_audit.")
           ? "ownership_audit"
-          : "work_with_me";
+          : eventName.startsWith("get_quick_wins.")
+            ? "get_quick_wins"
+            : "work_with_me";
 
   const journey =
     detail.journey ??

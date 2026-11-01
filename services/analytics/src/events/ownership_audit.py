@@ -11,10 +11,19 @@ OwnershipAuditEventName = Literal[
     "ownership_audit.answer_selected",
     "ownership_audit.validation_failed",
     "ownership_audit.step_completed",
+    "ownership_audit.registration_completed",
     "ownership_audit.completed",
     "ownership_audit.results_viewed",
+    "ownership_audit.next_steps_viewed",
+    "ownership_audit.path_selected",
     "ownership_audit.restarted",
     "ownership_audit.back_to_paths",
+]
+
+# Events for the Get Quick Wins button and modal that hosts the audit.
+GetQuickWinsEventName = Literal[
+    "get_quick_wins.opened",
+    "get_quick_wins.closed",
 ]
 
 OwnershipAuditEventType = Literal[
@@ -35,7 +44,9 @@ class OwnershipAuditEventIn(BaseModel):
     visitor_id: UUID = Field(alias="visitorId")
     session_id: UUID | None = Field(default=None, alias="sessionId")
 
-    event_name: OwnershipAuditEventName = Field(alias="eventName")
+    event_name: OwnershipAuditEventName | GetQuickWinsEventName = Field(
+        alias="eventName",
+    )
     event_type: OwnershipAuditEventType = Field(alias="eventType")
 
     source_route: str = Field(

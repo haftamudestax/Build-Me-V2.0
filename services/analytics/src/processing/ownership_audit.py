@@ -5,28 +5,64 @@ from fastapi import HTTPException
 from src.events.ownership_audit import OwnershipAuditEventIn
 
 
+# Every accepted event name and the one event type it may be sent with.
+# The frontend's eventTypeByName in main.tsx must use the same types.
 EXPECTED_EVENT_TYPES = {
     "ownership_audit.selected": "click",
     "ownership_audit.started": "feature_use",
     "ownership_audit.answer_selected": "click",
     "ownership_audit.validation_failed": "feature_use",
     "ownership_audit.step_completed": "feature_use",
+    "ownership_audit.registration_completed": "feature_use",
     "ownership_audit.completed": "feature_use",
     "ownership_audit.results_viewed": "view",
+    "ownership_audit.next_steps_viewed": "view",
+    "ownership_audit.path_selected": "click",
     "ownership_audit.restarted": "click",
     "ownership_audit.back_to_paths": "click",
+    # Get Quick Wins is the entry point to the audit. These events are stored
+    # under the ownership_audit feature and journey so the audit's reporting
+    # includes them.
+    "get_quick_wins.opened": "click",
+    "get_quick_wins.closed": "click",
 }
 
 
 ALLOWED_METADATA_FIELDS = {
     "step",
+    "section",
     "completedStep",
     "nextStep",
     "answeredQuestions",
     "resultCategory",
+    "path",
+    "lastStep",
     "source_route",
     "destination_route",
 }
+
+RESULT_CATEGORIES = {"strong", "developing", "high_risk"}
+
+# Work With Me paths the final step can send a visitor to.
+WORK_WITH_ME_PATHS = {"delivery", "mentor", "coffee"}
+
+# Steps of the Get Quick Wins modal a visitor can leave from.
+QUICK_WINS_STEPS = {
+    "options",
+    "intro",
+    "register",
+    "questions",
+    "score",
+    "next",
+}
+
+POSITIVE_INTEGER_FIELDS = (
+    "step",
+    "section",
+    "completedStep",
+    "nextStep",
+    "answeredQuestions",
+)
 
 
 def _validate_route(route: str | None, field_name: str) -> str | None:
@@ -51,7 +87,11 @@ def _validate_route(route: str | None, field_name: str) -> str | None:
 
 
 def _sanitize_metadata(metadata: dict) -> dict:
-    """Keep only approved, non-answer-specific audit metadata."""
+    """Keep only approved, non-answer-specific audit metadata.
+
+    Individual answers (questionId, points), scores, names and emails are
+    dropped on purpose.
+    """
 
     sanitized = {
         key: value
@@ -61,17 +101,29 @@ def _sanitize_metadata(metadata: dict) -> dict:
 
     result_category = sanitized.get("resultCategory")
 
-    if result_category is not None and result_category not in {
-        "strong",
-        "developing",
-        "high_risk",
-    }:
+    if result_category is not None and result_category not in RESULT_CATEGORIES:
         raise HTTPException(
             status_code=422,
             detail="Unsupported ownership audit result category.",
         )
 
-    for field in ("step", "completedStep", "nextStep", "answeredQuestions"):
+    path = sanitized.get("path")
+
+    if path is not None and path not in WORK_WITH_ME_PATHS:
+        raise HTTPException(
+            status_code=422,
+            detail="Unsupported ownership audit path.",
+        )
+
+    last_step = sanitized.get("lastStep")
+
+    if last_step is not None and last_step not in QUICK_WINS_STEPS:
+        raise HTTPException(
+            status_code=422,
+            detail="Unsupported Get Quick Wins step.",
+        )
+
+    for field in POSITIVE_INTEGER_FIELDS:
         value = sanitized.get(field)
 
         if value is not None and (
