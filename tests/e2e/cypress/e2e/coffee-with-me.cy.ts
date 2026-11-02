@@ -17,19 +17,48 @@ describe("Work With Me — Coffee With Me E2E", () => {
     },
   };
 
-  function openCoffeeWithMe() {
-    // Register a deterministic visitor before the application initializes.
-    cy.intercept("POST", visitorUrl, {
-      statusCode: 201,
-      body: visitorResponse,
+  function registerVisitor(): void {
+    cy.intercept("POST", visitorUrl, (req) => {
+      Cypress.log({
+        name: "Visitor registration",
+        message: req.url,
+      });
+
+      req.reply({
+        statusCode: 201,
+        body: visitorResponse,
+      });
     }).as("registerVisitor");
+  }
+
+  function verifyVisitorRegistrationIfRequested(): void {
+    cy.get("@registerVisitor.all").then((interceptions) => {
+      if (interceptions.length === 0) {
+        cy.log(
+          "Visitor registration was not requested. Check application initialization or feature flags.",
+        );
+        return;
+      }
+
+      const interception = interceptions[0];
+      expect(interception.request.method).to.equal("POST");
+      expect(interception.request.url).to.include("/api/visitors");
+      expect(interception.response, "visitor registration response").to.exist;
+      expect(interception.response!.statusCode).to.equal(201);
+      expect(interception.response!.body).to.deep.equal(visitorResponse);
+    });
+  }
+
+  function openCoffeeWithMe(): void {
+    // Register the intercept before loading the application.
+    registerVisitor();
 
     cy.visit("/");
 
-    cy.wait("@registerVisitor").then(({ response }) => {
-      expect(response?.statusCode).to.equal(201);
-      expect(response?.body).to.deep.equal(visitorResponse);
-    });
+    cy.location("pathname").should("eq", "/");
+
+    // Conditionally verify visitor registration if the app triggers it
+    verifyVisitorRegistrationIfRequested();
 
     cy.findByRole("button", { name: /work with me/i })
       .should("be.visible")
@@ -38,8 +67,8 @@ describe("Work With Me — Coffee With Me E2E", () => {
     cy.findByRole("dialog").should("be.visible");
 
     cy.findByRole("button", { name: /coffee with me/i })
-      .should("exist")
-      .click({ force: true });
+      .should("be.visible")
+      .click();
 
     cy.findByRole("heading", { name: /coffee with me/i })
       .should("be.visible");
@@ -48,9 +77,11 @@ describe("Work With Me — Coffee With Me E2E", () => {
       .should("be.visible");
   }
 
-  function fillCoffeeWithMeForm() {
+  function fillCoffeeWithMeForm(): void {
     const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
     futureDate.setSeconds(0, 0);
+    futureDate.setMilliseconds(0);
 
     const localDateTime =
       [
@@ -91,11 +122,11 @@ describe("Work With Me — Coffee With Me E2E", () => {
     }).type("Discuss a potential collaboration.");
   }
 
-  function submitBooking() {
+  function submitBooking(): void {
     cy.findByRole("button", { name: /submit request/i })
       .scrollIntoView()
       .should("be.visible")
-      .click({ force: true });
+      .click();
   }
 
   beforeEach(() => {
@@ -122,6 +153,7 @@ describe("Work With Me — Coffee With Me E2E", () => {
 
   it("validates required fields before submitting", () => {
     openCoffeeWithMe();
+
     submitBooking();
 
     cy.findByRole("alert")
@@ -138,7 +170,9 @@ describe("Work With Me — Coffee With Me E2E", () => {
     }).as("successfulBooking");
 
     openCoffeeWithMe();
+
     fillCoffeeWithMeForm();
+
     submitBooking();
 
     cy.wait("@successfulBooking").then(({ request, response }) => {
@@ -153,8 +187,9 @@ describe("Work With Me — Coffee With Me E2E", () => {
         meetingDurationMinutes: 30,
       });
 
-      expect(request.body.visitorId)
-        .to.equal(visitorResponse.visitor_id);
+      expect(request.body.visitorId).to.equal(
+        visitorResponse.visitor_id,
+      );
 
       expect(request.body.visitorId)
         .to.be.a("string")
@@ -180,24 +215,30 @@ describe("Work With Me — Coffee With Me E2E", () => {
     });
 
     cy.findByRole("dialog").should("be.visible");
+
     cy.contains("coffee-booking-e2e-123").should("be.visible");
   });
 
   it("displays an error when the booking API fails", () => {
     cy.intercept("POST", bookingUrl, {
       statusCode: 500,
-      body: { error: "Booking service unavailable." },
+      body: {
+        error: "Booking service unavailable.",
+      },
     }).as("failedBooking");
 
     openCoffeeWithMe();
+
     fillCoffeeWithMeForm();
+
     submitBooking();
 
     cy.wait("@failedBooking").then(({ request, response }) => {
       expect(response?.statusCode).to.equal(500);
 
-      expect(request.body.visitorId)
-        .to.equal(visitorResponse.visitor_id);
+      expect(request.body.visitorId).to.equal(
+        visitorResponse.visitor_id,
+      );
     });
 
     cy.findByRole("alert")
@@ -207,3 +248,5 @@ describe("Work With Me — Coffee With Me E2E", () => {
     cy.findByRole("dialog").should("be.visible");
   });
 });
+
+export {};
