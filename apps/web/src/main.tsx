@@ -14,9 +14,13 @@ import "./index.css";
 
 const analyticsBaseUrl = import.meta.env.VITE_ANALYTICS_URL ?? "";
 
+const normalizedAnalyticsBaseUrl = analyticsBaseUrl.trim()
+  ? analyticsBaseUrl.trim().replace(/\/+$/, "")
+  : "";
+
 console.info("[Analytics] Startup configuration", {
-  configured: Boolean(analyticsBaseUrl.trim()),
-  baseUrl: analyticsBaseUrl.trim() || null,
+  configured: Boolean(normalizedAnalyticsBaseUrl),
+  baseUrl: normalizedAnalyticsBaseUrl || null,
 });
 
 const eventTypeByName: Record<string, AnalyticsEventType> = {
@@ -54,9 +58,8 @@ const eventTypeByName: Record<string, AnalyticsEventType> = {
   "coffee_with_me.back_to_paths": "click",
 
   // Ownership Audit
-  // These types must match EXPECTED_EVENT_TYPES in the analytics service
-  // (services/analytics/src/processing/ownership_audit.py); a mismatch is
-  // rejected with a 422.
+  // These types must match EXPECTED_EVENT_TYPES in:
+  // services/analytics/src/processing/ownership_audit.py
   "ownership_audit.selected": "click",
   "ownership_audit.started": "feature_use",
   "ownership_audit.answer_selected": "click",
@@ -88,10 +91,31 @@ interface VisitorRegistration {
   session_id: string;
 }
 
-function handleCustomAnalyticsEvent(event: Event): void {
-  const detail = (event as CustomEvent<CustomAnalyticsEventDetail>).detail;
+interface PendingAnalyticsEvent {
+  detail: CustomAnalyticsEventDetail;
+  sourceRoute: string;
+}
 
-  if (!detail?.eventName) {
+const pendingAnalyticsEvents: PendingAnalyticsEvent[] = [];
+
+let visitorRegistrationCompleted = false;
+
+function configureUnavailableAnalytics(baseUrl: string): void {
+  const analyticsConfig = {
+    baseUrl,
+    visitorId: null,
+    sessionId: null,
+  };
+
+  configureAnalytics(analyticsConfig);
+  configureNavAnalytics(analyticsConfig);
+}
+
+function sendCustomAnalyticsEvent(
+  detail: CustomAnalyticsEventDetail,
+  sourceRoute: string,
+): void {
+  if (!detail.eventName) {
     return;
   }
 
@@ -137,7 +161,7 @@ function handleCustomAnalyticsEvent(event: Event): void {
     sessionId: config.sessionId,
     feature,
     journey,
-    sourceRoute: detail.sourceRoute ?? window.location.pathname,
+    sourceRoute,
     destinationRoute: detail.destinationRoute,
     metadata: detail.metadata ?? {},
   }).catch((error: unknown) => {
@@ -148,20 +172,47 @@ function handleCustomAnalyticsEvent(event: Event): void {
   });
 }
 
-function configureUnavailableAnalytics(baseUrl: string): void {
-  const analyticsConfig = {
-    baseUrl,
-    visitorId: null,
-    sessionId: null,
-  };
+function handleCustomAnalyticsEvent(event: Event): void {
+  const detail = (event as CustomEvent<CustomAnalyticsEventDetail>).detail;
 
-  configureAnalytics(analyticsConfig);
-  configureNavAnalytics(analyticsConfig);
+  if (!detail?.eventName) {
+    return;
+  }
+
+  const sourceRoute = detail.sourceRoute ?? window.location.pathname;
+
+  if (!visitorRegistrationCompleted) {
+    if (!normalizedAnalyticsBaseUrl) {
+      console.warn("[Analytics] Event skipped: analytics URL is unavailable.", {
+        eventName: detail.eventName,
+      });
+      return;
+    }
+
+    pendingAnalyticsEvents.push({
+      detail,
+      sourceRoute,
+    });
+
+    return;
+  }
+
+  sendCustomAnalyticsEvent(detail, sourceRoute);
+}
+
+function flushPendingAnalyticsEvents(): void {
+  const queuedEvents = pendingAnalyticsEvents.splice(
+    0,
+    pendingAnalyticsEvents.length,
+  );
+
+  for (const queuedEvent of queuedEvents) {
+    sendCustomAnalyticsEvent(queuedEvent.detail, queuedEvent.sourceRoute);
+  }
 }
 
 async function registerVisitor(baseUrl: string): Promise<void> {
-  const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
-  const visitorRegistrationUrl = `${normalizedBaseUrl}/api/visitors`;
+  const visitorRegistrationUrl = `${baseUrl}/api/visitors`;
 
   console.info("[Analytics] Registering visitor", {
     url: visitorRegistrationUrl,
@@ -197,48 +248,42 @@ async function registerVisitor(baseUrl: string): Promise<void> {
       );
     }
 
-    const analyticsConfig = {
-      baseUrl: normalizedBaseUrl,
+    configureAnalytics({
+      baseUrl,
       visitorId: registration.visitor_id,
       sessionId: registration.session_id,
-    };
+    });
 
-    configureAnalytics(analyticsConfig);
-    configureNavAnalytics(analyticsConfig);
+    configureNavAnalytics({
+      baseUrl,
+      visitorId: registration.visitor_id,
+      sessionId: registration.session_id,
+    });
+
+    visitorRegistrationCompleted = true;
 
     console.info("[Analytics] Visitor registration completed", {
       hasVisitorId: true,
       hasSessionId: true,
     });
+
+    flushPendingAnalyticsEvents();
   } catch (error: unknown) {
     console.error("[Analytics] Visitor registration failed.", {
       url: visitorRegistrationUrl,
       error,
     });
 
-    configureUnavailableAnalytics(normalizedBaseUrl);
+    configureUnavailableAnalytics(baseUrl);
+
+    // Registration failed: queued events cannot be sent without
+    // a valid visitor session.
+    pendingAnalyticsEvents.length = 0;
+    visitorRegistrationCompleted = true;
   }
 }
 
-async function initializeApp(): Promise<void> {
-  const normalizedAnalyticsBaseUrl = analyticsBaseUrl.trim()
-    ? analyticsBaseUrl.trim().replace(/\/+$/, "")
-    : "";
-
-  if (normalizedAnalyticsBaseUrl) {
-    await registerVisitor(normalizedAnalyticsBaseUrl);
-  } else {
-    console.warn(
-      "[Analytics] VITE_ANALYTICS_URL is missing or empty. Analytics registration was skipped.",
-    );
-
-    configureUnavailableAnalytics("");
-  }
-
-  // Register the listener before rendering so initial component events
-  // are not missed.
-  window.addEventListener("build-me:analytics", handleCustomAnalyticsEvent);
-
+function renderApp(): void {
   const rootElement = document.getElementById("root");
 
   if (!rootElement) {
@@ -252,18 +297,30 @@ async function initializeApp(): Promise<void> {
   );
 }
 
-void initializeApp().catch((error: unknown) => {
-  console.error("[App] Application initialization failed.", error);
+function initializeApp(): void {
+  // Register the listener before rendering so initial component
+  // events can be queued while visitor registration is in progress.
+  window.addEventListener("build-me:analytics", handleCustomAnalyticsEvent);
 
-  const rootElement = document.getElementById("root");
+  if (!normalizedAnalyticsBaseUrl) {
+    console.warn(
+      "[Analytics] VITE_ANALYTICS_URL is missing or empty. Analytics registration was skipped.",
+    );
 
-  if (!rootElement) {
-    return;
+    configureUnavailableAnalytics("");
+    visitorRegistrationCompleted = true;
   }
 
-  createRoot(rootElement).render(
-    <StrictMode>
-      <RouterProvider router={router} />
-    </StrictMode>,
-  );
-});
+  // Render independently of analytics initialization.
+  renderApp();
+
+  if (normalizedAnalyticsBaseUrl) {
+    void registerVisitor(normalizedAnalyticsBaseUrl);
+  }
+}
+
+try {
+  initializeApp();
+} catch (error: unknown) {
+  console.error("[App] Application initialization failed.", error);
+}
