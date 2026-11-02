@@ -47,13 +47,32 @@ describe("Mentor Me — end-to-end flow", () => {
     });
   }
 
-  function waitForVisitorRegistration() {
-    cy.wait("@registerVisitor", { timeout: 10000 })
-      .its("response.statusCode")
-      .should("equal", 201);
-  }
+  function openMentorMeForm(bookingMode: "default" | "success" | "failure" = "default") {
+    stubVisitorRegistration();
 
-  function openMentorMeForm() {
+    if (bookingMode === "success") {
+      cy.intercept("POST", bookingUrl, {
+        statusCode: 201,
+        body: {
+          data: {
+            id: bookingReference,
+            reference: bookingReference,
+            bookingType: "mentor_me",
+            status: "pending",
+          },
+        },
+      }).as("submitMentoringRequest");
+    } else if (bookingMode === "failure") {
+      cy.intercept("POST", bookingUrl, {
+        statusCode: 500,
+        body: {
+          error: "Unable to submit mentoring request",
+        },
+      }).as("submitMentoringRequest");
+    } else {
+      cy.intercept("POST", bookingUrl).as("submitMentoringRequest");
+    }
+
     cy.visit("/");
 
     cy.get("body").should("be.visible");
@@ -103,27 +122,12 @@ describe("Mentor Me — end-to-end flow", () => {
       .click({ scrollBehavior: "center" });
   }
 
-  function stubBookingSuccess() {
-    cy.intercept("POST", bookingUrl, {
-      statusCode: 201,
-      body: {
-        data: {
-          id: bookingReference,
-          reference: bookingReference,
-          bookingType: "mentor_me",
-          status: "pending",
-        },
-      },
-    }).as("submitMentoringRequest");
-  }
-
   beforeEach(() => {
     cy.viewport(1280, 800);
-    stubVisitorRegistration();
   });
 
   it("opens the Mentor Me form from Work With Me", () => {
-    openMentorMeForm();
+    openMentorMeForm("default");
 
     cy.get('input[name="name"]').should("exist");
     cy.get('input[name="email"]').should("exist");
@@ -138,9 +142,7 @@ describe("Mentor Me — end-to-end flow", () => {
   });
 
   it("validates required fields before submitting", () => {
-    cy.intercept("POST", bookingUrl).as("submitMentoringRequest");
-
-    openMentorMeForm();
+    openMentorMeForm("default");
     submitMentoringRequest();
 
     cy.get('[role="alert"]')
@@ -155,10 +157,7 @@ describe("Mentor Me — end-to-end flow", () => {
   });
 
   it("submits a mentoring request and displays the confirmation", () => {
-    stubBookingSuccess();
-
-    openMentorMeForm();
-    waitForVisitorRegistration();
+    openMentorMeForm("success");
     fillValidRequest();
     submitMentoringRequest();
 
@@ -193,15 +192,7 @@ describe("Mentor Me — end-to-end flow", () => {
   });
 
   it("displays an error when the mentoring request fails", () => {
-    cy.intercept("POST", bookingUrl, {
-      statusCode: 500,
-      body: {
-        error: "Unable to submit mentoring request",
-      },
-    }).as("submitMentoringRequest");
-
-    openMentorMeForm();
-    waitForVisitorRegistration();
+    openMentorMeForm("failure");
     fillValidRequest();
     submitMentoringRequest();
 
@@ -219,7 +210,7 @@ describe("Mentor Me — end-to-end flow", () => {
   });
 
   it("returns to project path selection from the Mentor Me form", () => {
-    openMentorMeForm();
+    openMentorMeForm("default");
 
     cy.contains("button", "All project paths")
       .scrollIntoView()

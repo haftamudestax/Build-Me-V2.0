@@ -49,8 +49,25 @@ describe("Work With Me — Coffee With Me E2E", () => {
     });
   }
 
-  function openCoffeeWithMe(): void {
+  function openCoffeeWithMe(bookingAlias = "createBooking"): void {
     registerVisitor();
+
+    // Register booking intercept before visiting so it's ready when submitted
+    if (bookingAlias === "successfulBooking") {
+      cy.intercept("POST", bookingUrl, {
+        statusCode: 201,
+        body: bookingResponse,
+      }).as("successfulBooking");
+    } else if (bookingAlias === "failedBooking") {
+      cy.intercept("POST", bookingUrl, {
+        statusCode: 500,
+        body: {
+          error: "Booking service unavailable.",
+        },
+      }).as("failedBooking");
+    } else {
+      cy.intercept("POST", bookingUrl).as("createBooking");
+    }
 
     cy.visit("/");
 
@@ -130,11 +147,10 @@ describe("Work With Me — Coffee With Me E2E", () => {
 
   beforeEach(() => {
     cy.viewport(1280, 800);
-    cy.intercept("POST", bookingUrl).as("createBooking");
   });
 
   it("opens the Coffee With Me form from the Work With Me modal", () => {
-    openCoffeeWithMe();
+    openCoffeeWithMe("createBooking");
 
     cy.findByRole("textbox", { name: /full name/i })
       .should("be.visible");
@@ -152,7 +168,7 @@ describe("Work With Me — Coffee With Me E2E", () => {
   });
 
   it("validates required fields before submitting", () => {
-    openCoffeeWithMe();
+    openCoffeeWithMe("createBooking");
 
     submitBooking();
 
@@ -164,12 +180,7 @@ describe("Work With Me — Coffee With Me E2E", () => {
   });
 
   it("submits a Coffee With Me booking and displays confirmation", () => {
-    cy.intercept("POST", bookingUrl, {
-      statusCode: 201,
-      body: bookingResponse,
-    }).as("successfulBooking");
-
-    openCoffeeWithMe();
+    openCoffeeWithMe("successfulBooking");
 
     fillCoffeeWithMeForm();
 
@@ -220,14 +231,7 @@ describe("Work With Me — Coffee With Me E2E", () => {
   });
 
   it("displays an error when the booking API fails", () => {
-    cy.intercept("POST", bookingUrl, {
-      statusCode: 500,
-      body: {
-        error: "Booking service unavailable.",
-      },
-    }).as("failedBooking");
-
-    openCoffeeWithMe();
+    openCoffeeWithMe("failedBooking");
 
     fillCoffeeWithMeForm();
 
