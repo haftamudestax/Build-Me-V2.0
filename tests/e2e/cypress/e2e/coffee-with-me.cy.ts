@@ -1,3 +1,4 @@
+
 describe("Work With Me — Coffee With Me E2E", () => {
   const visitorUrl = "**/api/visitors";
   const bookingUrl = "**/api/bookings";
@@ -31,28 +32,25 @@ describe("Work With Me — Coffee With Me E2E", () => {
     }).as("registerVisitor");
   }
 
-  function verifyVisitorRegistrationIfRequested(): void {
-    cy.get("@registerVisitor.all").then((interceptions) => {
-      if (interceptions.length === 0) {
-        cy.log(
-          "Visitor registration was not requested. Check application initialization or feature flags.",
-        );
-        return;
-      }
+  function verifyVisitorRegistration(): void {
+    cy.wait("@registerVisitor", { timeout: 10000 }).then(
+      ({ request, response }) => {
+        expect(request.method).to.equal("POST");
+        expect(request.url).to.include("/api/visitors");
 
-      const interception = interceptions[0];
-      expect(interception.request.method).to.equal("POST");
-      expect(interception.request.url).to.include("/api/visitors");
-      expect(interception.response, "visitor registration response").to.exist;
-      expect(interception.response!.statusCode).to.equal(201);
-      expect(interception.response!.body).to.deep.equal(visitorResponse);
-    });
+        expect(response, "visitor registration response").to.exist;
+        expect(response!.statusCode).to.equal(201);
+        expect(response!.body).to.deep.equal(visitorResponse);
+      },
+    );
   }
 
-  function openCoffeeWithMe(bookingAlias = "createBooking"): void {
+  function openCoffeeWithMe(
+    bookingAlias = "createBooking",
+  ): void {
     registerVisitor();
 
-    // Register booking intercept before visiting so it's ready when submitted
+    // Register booking intercept before visiting the application.
     if (bookingAlias === "successfulBooking") {
       cy.intercept("POST", bookingUrl, {
         statusCode: 201,
@@ -73,7 +71,8 @@ describe("Work With Me — Coffee With Me E2E", () => {
 
     cy.location("pathname").should("eq", "/");
 
-    verifyVisitorRegistrationIfRequested();
+    // Do not continue until the application has registered its visitor.
+    verifyVisitorRegistration();
 
     cy.findByRole("button", { name: /work with me/i })
       .should("be.visible")
@@ -95,7 +94,9 @@ describe("Work With Me — Coffee With Me E2E", () => {
   }
 
   function fillCoffeeWithMeForm(): void {
-    const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const futureDate = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    );
 
     futureDate.setSeconds(0, 0);
     futureDate.setMilliseconds(0);
@@ -142,6 +143,7 @@ describe("Work With Me — Coffee With Me E2E", () => {
     cy.findByRole("button", { name: /submit request/i })
       .scrollIntoView()
       .should("be.visible")
+      .and("be.enabled")
       .click();
   }
 
@@ -187,6 +189,8 @@ describe("Work With Me — Coffee With Me E2E", () => {
     submitBooking();
 
     cy.wait("@successfulBooking").then(({ request, response }) => {
+      expect(request.method).to.equal("POST");
+      expect(request.url).to.include("/api/bookings");
       expect(response?.statusCode).to.equal(201);
 
       expect(request.headers).to.have.property("idempotency-key");
@@ -238,6 +242,8 @@ describe("Work With Me — Coffee With Me E2E", () => {
     submitBooking();
 
     cy.wait("@failedBooking").then(({ request, response }) => {
+      expect(request.method).to.equal("POST");
+      expect(request.url).to.include("/api/bookings");
       expect(response?.statusCode).to.equal(500);
 
       expect(request.body.visitorId).to.equal(
