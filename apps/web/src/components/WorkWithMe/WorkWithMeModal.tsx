@@ -14,7 +14,6 @@ import {
   Copy,
   FolderKanban,
   GraduationCap,
-  ShieldCheck,
   X,
 } from "lucide-react";
 
@@ -283,14 +282,6 @@ export function WorkWithMeModal() {
     trackJourneyEvent(`${bookingType}.selected`);
   }
 
-  function selectOwnershipAudit(): void {
-    setStep("ownership_audit");
-    setCopyError(null);
-
-    trackJourneyEvent("ownership_audit.selected");
-    trackJourneyEvent("ownership_audit.started");
-  }
-
   function handleBackToPaths(): void {
     const currentBookingType: BookingPath | null =
       step === "delivery"
@@ -455,13 +446,6 @@ export function WorkWithMeModal() {
                   icon={bookingPathDetails.coffee_with_me.icon}
                   onSelect={() => selectPath("coffee")}
                 />
-
-                <PathCard
-                  title="Technology Ownership Audit"
-                  description="Assess how well you control your code, infrastructure, access, documentation, and long-term technology decisions."
-                  icon={<ShieldCheck size={28} aria-hidden="true" />}
-                  onSelect={selectOwnershipAudit}
-                />
               </div>
             </>
           )}
@@ -515,31 +499,6 @@ export function WorkWithMeModal() {
                   }
                 />
               )}
-            </div>
-          )}
-
-          {step === "ownership_audit" && (
-            <div
-              style={{
-                ...pageStyle,
-                flex: "1 1 auto",
-                overflowY: "auto",
-                overflowX: "hidden",
-                overscrollBehaviorY: "contain",
-                WebkitOverflowScrolling: "touch",
-                padding: "4px 4px 12px",
-              }}
-            >
-              <div style={{ flexShrink: 0 }}>
-                <Button
-                  type="button"
-                  variant="text"
-                  startIcon={<ArrowLeft size={18} />}
-                  onClick={handleBackToPaths}
-                >
-                  All project paths
-                </Button>
-              </div>
             </div>
           )}
 
