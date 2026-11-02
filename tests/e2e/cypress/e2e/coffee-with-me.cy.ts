@@ -50,25 +50,25 @@ describe("Work With Me — Coffee With Me E2E", () => {
   }
 
   function openCoffeeWithMe(): void {
-    // Register the intercept before loading the application.
     registerVisitor();
 
     cy.visit("/");
 
     cy.location("pathname").should("eq", "/");
 
-    // Conditionally verify visitor registration if the app triggers it
     verifyVisitorRegistrationIfRequested();
 
     cy.findByRole("button", { name: /work with me/i })
       .should("be.visible")
       .click();
 
-    cy.findByRole("dialog").should("be.visible");
-
-    cy.findByRole("button", { name: /coffee with me/i })
+    cy.findByRole("dialog")
       .should("be.visible")
-      .click();
+      .within(() => {
+        cy.findByRole("button", { name: /coffee with me/i })
+          .should("be.visible")
+          .click();
+      });
 
     cy.findByRole("heading", { name: /coffee with me/i })
       .should("be.visible");
@@ -106,7 +106,6 @@ describe("Work With Me — Coffee With Me E2E", () => {
       .clear()
       .type(localDateTime);
 
-    // MUI Select is a custom combobox, not a native HTML select.
     cy.findByRole("combobox", {
       name: /preferred meeting format/i,
     })
@@ -130,6 +129,7 @@ describe("Work With Me — Coffee With Me E2E", () => {
   }
 
   beforeEach(() => {
+    cy.viewport(1280, 800);
     cy.intercept("POST", bookingUrl).as("createBooking");
   });
 

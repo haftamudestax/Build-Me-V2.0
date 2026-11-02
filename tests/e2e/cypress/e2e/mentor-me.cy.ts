@@ -58,16 +58,19 @@ describe("Mentor Me — end-to-end flow", () => {
 
     cy.get("body").should("be.visible");
 
-    
-    cy.then(() => verifyVisitorRegistrationIfRequested());
+    verifyVisitorRegistrationIfRequested();
 
     cy.contains("button", /^Work With Me$/i)
       .should("be.visible")
       .click();
 
-    cy.get('button[aria-label^="Mentor Me:"]')
+    cy.findByRole("dialog")
       .should("be.visible")
-      .click({ scrollBehavior: "center" });
+      .within(() => {
+        cy.get('button[aria-label^="Mentor Me:"]')
+          .should("be.visible")
+          .click({ scrollBehavior: "center" });
+      });
 
     cy.contains("h2", "Mentor Me").should("be.visible");
 
@@ -115,6 +118,7 @@ describe("Mentor Me — end-to-end flow", () => {
   }
 
   beforeEach(() => {
+    cy.viewport(1280, 800);
     stubVisitorRegistration();
   });
 
