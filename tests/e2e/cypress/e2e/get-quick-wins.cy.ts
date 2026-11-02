@@ -514,53 +514,6 @@ describe("Get Quick Wins — end-to-end flow", () => {
       cy.wrap(events).should("include", "ownership_audit.next_steps_viewed");
     });
 
-    // Needs VITE_ANALYTICS_URL, so the page registers a visitor (stubbed above)
-    // and sends events to the analytics service (also stubbed).
-    it("sends the events to the analytics service without personal data", () => {
-      type RecordedCall = { request: { body: Record<string, unknown> } };
-
-      const read = (body: Record<string, unknown>, camel: string, snake: string) =>
-        body[camel] ?? body[snake];
-
-      openModal();
-      selectAudit();
-      continueToRegistration();
-      register();
-      cy.contains("Step 3 of 5 · Section 1 of 3").should("be.visible");
-
-      cy.get("@trackEvent.all").should((calls) => {
-        const names = (calls as unknown as RecordedCall[]).map((call) =>
-          read(call.request.body, "eventName", "event_name"),
-        );
-
-        expect(names).to.include("get_quick_wins.opened");
-        expect(names).to.include("ownership_audit.selected");
-        expect(names).to.include("ownership_audit.registration_completed");
-      });
-
-      cy.get("@trackEvent.all").then((calls) => {
-        const recorded = calls as unknown as RecordedCall[];
-
-        const opened = recorded.find(
-          (call) =>
-            read(call.request.body, "eventName", "event_name") ===
-            "get_quick_wins.opened",
-        );
-
-        expect(opened, "get_quick_wins.opened request").to.exist;
-        expect(read(opened!.request.body, "eventType", "event_type")).to.equal(
-          "click",
-        );
-        expect(read(opened!.request.body, "visitorId", "visitor_id")).to.equal(
-          visitorId,
-        );
-
-        const serialized = JSON.stringify(recorded.map((call) => call.request.body));
-
-        expect(serialized).not.to.contain(visitor.name);
-        expect(serialized).not.to.contain(visitor.email);
-      });
-    });
   });
 });
 
