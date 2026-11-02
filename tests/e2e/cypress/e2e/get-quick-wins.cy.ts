@@ -159,14 +159,20 @@ describe("Get Quick Wins — end-to-end flow", () => {
       selectAudit();
 
       cy.contains("Step 1 of 5").should("be.visible");
-      cy.contains("h3", "What is the Technology Ownership Audit?").should(
-        "be.visible",
-      );
-      cy.contains("h3", "Why do a Technology Ownership Audit?").should(
-        "be.visible",
-      );
-      cy.contains("h3", "What are the benefits?").should("be.visible");
-      cy.contains("button", "Continue to registration").should("be.visible");
+      // The modal's content scrolls, and Cypress treats anything clipped by a
+      // scrolling ancestor as hidden, so scroll each part into view first.
+      cy.contains("h3", "What is the Technology Ownership Audit?")
+        .scrollIntoView()
+        .should("be.visible");
+      cy.contains("h3", "Why do a Technology Ownership Audit?")
+        .scrollIntoView()
+        .should("be.visible");
+      cy.contains("h3", "What are the benefits?")
+        .scrollIntoView()
+        .should("be.visible");
+      cy.contains("button", "Continue to registration")
+        .scrollIntoView()
+        .should("be.visible");
     });
 
     it("goes back to the options from the introduction", () => {
@@ -250,15 +256,21 @@ describe("Get Quick Wins — end-to-end flow", () => {
       cy.contains("button", /^Next$/).click();
 
       cy.get('[role="alert"]')
+        .scrollIntoView()
         .should("be.visible")
         .and("contain.text", "Please answer every question before continuing.");
-      cy.contains("Step 3 of 5 · Section 1 of 3").should("be.visible");
+
+      // The step label is at the top of the scrolling content, so bring it back
+      // into view before asserting that the visitor is still on section 1.
+      cy.contains("Step 3 of 5 · Section 1 of 3")
+        .scrollIntoView()
+        .should("be.visible");
 
       // Two of three answers is still not enough.
       answer("domain", 2);
       answer("hosting", 1);
       cy.contains("button", /^Next$/).click();
-      cy.get('[role="alert"]').should("be.visible");
+      cy.get('[role="alert"]').scrollIntoView().should("be.visible");
 
       // The last answer lets the visitor continue.
       answer("source_code", 0);
@@ -302,7 +314,9 @@ describe("Get Quick Wins — end-to-end flow", () => {
       cy.contains("button", /^Next$/).click();
 
       cy.contains("Step 3 of 5 · Section 3 of 3").should("be.visible");
-      cy.contains("button", "See my score").should("be.visible");
+      cy.contains("button", "See my score")
+        .scrollIntoView()
+        .should("be.visible");
     });
   });
 
