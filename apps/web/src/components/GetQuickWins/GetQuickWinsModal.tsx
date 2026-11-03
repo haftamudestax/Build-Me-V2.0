@@ -13,19 +13,26 @@ import {
   openWorkWithMe,
   type WorkWithMePath,
 } from "../WorkWithMe/openWorkWithMe";
-import { trackEvent } from "./analytics";
+import { trackEvent } from "./ownershipAudit/analytics";
 import {
   calculateScore,
   getResultCategory,
   type AuditAnswers,
-} from "./ownershipAuditData";
-import { OwnershipAuditIntro } from "./OwnershipAuditIntro";
-import { OwnershipAuditNextSteps } from "./OwnershipAuditNextSteps";
-import { OwnershipAuditQuestions } from "./OwnershipAuditQuestions";
-import { OwnershipAuditRegistration } from "./OwnershipAuditRegistration";
-import { emptyRegistration, type Registration } from "./registration";
-import { OwnershipAuditScore } from "./OwnershipAuditScore";
-import { DESCRIPTION_ID, StepHeader, TITLE_ID } from "./StepParts";
+} from "./ownershipAudit/ownershipAuditData";
+import { OwnershipAuditIntro } from "./ownershipAudit/OwnershipAuditIntro";
+import { OwnershipAuditNextSteps } from "./ownershipAudit/OwnershipAuditNextSteps";
+import { OwnershipAuditQuestions } from "./ownershipAudit/OwnershipAuditQuestions";
+import { OwnershipAuditRegistration } from "./ownershipAudit/OwnershipAuditRegistration";
+import {
+  emptyRegistration,
+  type Registration,
+} from "./ownershipAudit/registration";
+import { OwnershipAuditScore } from "./ownershipAudit/OwnershipAuditScore";
+import {
+  DESCRIPTION_ID,
+  StepHeader,
+  TITLE_ID,
+} from "./ownershipAudit/StepParts";
 
 type AuditStep = "intro" | "register" | "questions" | "score" | "next";
 type QuickWinsStep = "options" | AuditStep;

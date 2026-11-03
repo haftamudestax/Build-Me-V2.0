@@ -1,4 +1,4 @@
-import type { WorkWithMePath } from "../WorkWithMe/openWorkWithMe";
+import type { WorkWithMePath } from "../../WorkWithMe/openWorkWithMe";
 
 export type AuditQuestion = {
   id: string;
