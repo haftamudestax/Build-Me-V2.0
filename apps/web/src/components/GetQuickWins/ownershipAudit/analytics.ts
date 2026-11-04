@@ -7,7 +7,7 @@
 export function trackEvent(
   eventName: string,
   metadata: Record<string, unknown> = {},
-  journey: "ownership_audit" | "get_quick_wins" = "ownership_audit",
+  journey: "ownership_audit" | "get_quick_wins"| "ownership_toolkit" = "ownership_audit",
 ): void {
   if (typeof window === "undefined") return;
 

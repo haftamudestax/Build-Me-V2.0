@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { Box, Button, IconButton, LinearProgress, Stack } from "@mui/material";
-import { ArrowRight, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, BookOpen, ShieldCheck, X } from "lucide-react";
 
 import { Modal } from "@build-me/ui";
 import {
@@ -33,9 +33,14 @@ import {
   StepHeader,
   TITLE_ID,
 } from "./ownershipAudit/StepParts";
+import {
+  OwnershipToolkitFlow,
+  type ToolkitStep,
+} from "./toolkit/OwnershipToolkitFlow";
 
 type AuditStep = "intro" | "register" | "questions" | "score" | "next";
-type QuickWinsStep = "options" | AuditStep;
+
+type QuickWinsStep = "options" | "toolkit" | AuditStep;
 
 const STEP_NUMBER: Record<AuditStep, number> = {
   intro: 1,
@@ -89,7 +94,10 @@ function OptionCard({ title, description, icon, onSelect }: OptionCardProps) {
         cursor: "pointer",
         overflowWrap: "anywhere",
         transition: "border-color 160ms ease, background-color 160ms ease",
-        "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
+        "&:hover": {
+          borderColor: "primary.main",
+          bgcolor: "action.hover",
+        },
         "&:focus-visible": {
           outline: "2px solid",
           outlineColor: "primary.main",
@@ -116,7 +124,11 @@ function OptionCard({ title, description, icon, onSelect }: OptionCardProps) {
 
       <Box
         component="span"
-        sx={{ fontSize: "0.875rem", lineHeight: 1.6, color: "text.secondary" }}
+        sx={{
+          fontSize: "0.875rem",
+          lineHeight: 1.6,
+          color: "text.secondary",
+        }}
       >
         {description}
       </Box>
@@ -127,47 +139,66 @@ function OptionCard({ title, description, icon, onSelect }: OptionCardProps) {
 export function GetQuickWinsModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<QuickWinsStep>("options");
+
   const [registration, setRegistration] =
     useState<Registration>(emptyRegistration);
+
   const [answers, setAnswers] = useState<AuditAnswers>({});
   const [questionSection, setQuestionSection] = useState(0);
+
+  const [toolkitStep, setToolkitStep] = useState<ToolkitStep>("why");
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const name = registration.name.trim();
   const score = calculateScore(answers);
   const category = getResultCategory(score);
 
-  // Each new step starts at the top. Without this the content keeps the scroll
-  // position from the previous step's footer and the heading is cut off.
+  // Reset the scroll position whenever the active journey or step changes.
   useEffect(() => {
-    if (scrollAreaRef.current) scrollAreaRef.current.scrollTop = 0;
-  }, [step, questionSection]);
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = 0;
+    }
+  }, [step, questionSection, toolkitStep]);
 
   function openModal(): void {
     setStep("options");
     setRegistration(emptyRegistration);
     setAnswers({});
     setQuestionSection(0);
+    setToolkitStep("why");
     setIsOpen(true);
+
     trackEvent("get_quick_wins.opened", {}, "get_quick_wins");
   }
 
   function closeModal(): void {
     setIsOpen(false);
+
     // The backend reads "step" as a number, so the step name travels as lastStep.
-    trackEvent("get_quick_wins.closed", { lastStep: step }, "get_quick_wins");
+    trackEvent(
+      "get_quick_wins.closed",
+      { lastStep: step === "toolkit" ? toolkitStep : step },
+      "get_quick_wins",
+    );
   }
+
+  // ---------------------------------------------------------------------------
+  // Ownership Audit
+  // ---------------------------------------------------------------------------
 
   function moveForward(from: AuditStep, to: AuditStep): void {
     trackEvent("ownership_audit.step_completed", {
       completedStep: STEP_NUMBER[from],
       nextStep: STEP_NUMBER[to],
     });
+
     setStep(to);
   }
 
   function selectAudit(): void {
     setStep("intro");
+
     trackEvent("ownership_audit.selected");
     trackEvent("ownership_audit.started");
   }
@@ -183,7 +214,11 @@ export function GetQuickWinsModal() {
   }
 
   function handleAnswer(questionId: string, points: number): void {
-    setAnswers((current) => ({ ...current, [questionId]: points }));
+    setAnswers((current) => ({
+      ...current,
+      [questionId]: points,
+    }));
+
     trackEvent("ownership_audit.answer_selected", {
       questionId,
       points,
@@ -197,11 +232,13 @@ export function GetQuickWinsModal() {
     const finalCategory = getResultCategory(finalScore);
 
     moveForward("questions", "score");
+
     trackEvent("ownership_audit.completed", {
       score: finalScore,
       answeredQuestions: Object.keys(answers).length,
       resultCategory: finalCategory,
     });
+
     trackEvent("ownership_audit.results_viewed", {
       score: finalScore,
       resultCategory: finalCategory,
@@ -210,6 +247,7 @@ export function GetQuickWinsModal() {
 
   function handleShowNextSteps(): void {
     moveForward("score", "next");
+
     trackEvent("ownership_audit.next_steps_viewed", {
       resultCategory: category,
     });
@@ -223,7 +261,25 @@ export function GetQuickWinsModal() {
     window.setTimeout(() => openWorkWithMe(path), 0);
   }
 
-  const currentStepNumber = step === "options" ? 0 : STEP_NUMBER[step];
+  // ---------------------------------------------------------------------------
+  // Technology Ownership Toolkit
+  // ---------------------------------------------------------------------------
+
+  function selectToolkit(): void {
+    setToolkitStep("why");
+    setStep("toolkit");
+
+    trackEvent("ownership_toolkit.selected");
+    trackEvent("ownership_toolkit.started");
+  }
+
+  function handleToolkitBack(): void {
+    trackEvent("ownership_toolkit.back_to_paths");
+    setStep("options");
+  }
+
+  const currentStepNumber =
+    step === "options" || step === "toolkit" ? 0 : STEP_NUMBER[step];
 
   return (
     <>
@@ -282,7 +338,8 @@ export function GetQuickWinsModal() {
             <X size={22} aria-hidden="true" />
           </IconButton>
 
-          {step !== "options" && (
+          {/* Ownership Audit progress indicator */}
+          {step !== "options" && step !== "toolkit" && (
             <LinearProgress
               variant="determinate"
               value={(currentStepNumber / TOTAL_STEPS) * 100}
@@ -303,11 +360,12 @@ export function GetQuickWinsModal() {
               padding: "4px 4px 12px",
             }}
           >
+            {/* Get Quick Wins options */}
             {step === "options" && (
               <Stack spacing={2.5} sx={{ minWidth: 0 }}>
                 <StepHeader
                   title="Get Quick Wins"
-                  description="Choose a quick assessment to find the fastest improvements for your technology."
+                  description="Choose a quick assessment or practical toolkit to find improvements and take control of your technology."
                 />
 
                 <OptionCard
@@ -316,9 +374,17 @@ export function GetQuickWinsModal() {
                   icon={<ShieldCheck size={28} aria-hidden="true" />}
                   onSelect={selectAudit}
                 />
+
+                <OptionCard
+                  title="Technology Ownership Toolkit"
+                  description="Access practical checklists, templates, and guidance to manage your domains, hosting, source code, accounts, providers, backups, and ongoing maintenance."
+                  icon={<BookOpen size={28} aria-hidden="true" />}
+                  onSelect={selectToolkit}
+                />
               </Stack>
             )}
 
+            {/* Technology Ownership Audit journey */}
             {step === "intro" && (
               <OwnershipAuditIntro
                 onBack={backToOptions}
@@ -364,6 +430,15 @@ export function GetQuickWinsModal() {
                 onPrevious={() => setStep("score")}
                 onClose={closeModal}
                 onSelectPath={handleSelectPath}
+              />
+            )}
+
+            {/* Technology Ownership Toolkit journey */}
+            {step === "toolkit" && (
+              <OwnershipToolkitFlow
+                onBack={handleToolkitBack}
+                onClose={closeModal}
+                onStepChange={setToolkitStep}
               />
             )}
           </div>
