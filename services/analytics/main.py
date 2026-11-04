@@ -24,6 +24,9 @@ from src.reporting.coffee_with_me import (
 from src.reporting.ownership_audit import (
     router as ownership_audit_reporting_router,
 )
+from src.reporting.ownership_learning_circle import (
+    router as ownership_learning_circle_analytics_router,
+)
 
 load_dotenv()
 
@@ -69,6 +72,7 @@ app.include_router(delivery_project_reporting_router)
 app.include_router(mentor_me_reporting_router)
 app.include_router(coffee_with_me_reporting_router)
 app.include_router(ownership_audit_reporting_router)
+app.include_router(ownership_learning_circle_analytics_router)
 app.include_router(visitors_router)
 
 
