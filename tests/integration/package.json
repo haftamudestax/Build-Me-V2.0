@@ -6,7 +6,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@build-me/ui": "workspace:*"
+    "@build-me/ui": "workspace:*",
+    "@build-me/utils":"workspace:*"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.10.0",

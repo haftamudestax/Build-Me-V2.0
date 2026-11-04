@@ -86,7 +86,7 @@ export function trackNavigationEvent(params: {
       : {}),
   };
 
-  const endpoint = `${normalizeBaseUrl(baseUrl)}/events`;
+  const endpoint = `${normalizeBaseUrl(baseUrl)}/api/events`;
 
   void fetch(endpoint, {
     method: "POST",

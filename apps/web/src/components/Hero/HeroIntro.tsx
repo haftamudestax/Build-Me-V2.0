@@ -1,5 +1,6 @@
 import { Card } from "@build-me/ui";
 import { Box, Typography } from "@mui/material";
+import { WorkWithMeModal } from "../WorkWithMe/WorkWithMeModal";
 
 export function HeroIntro() {
   return (
@@ -51,7 +52,6 @@ export function HeroIntro() {
               Digital Experiences
             </Box>
           </Typography>
-
           <Typography
             component="h2"
             sx={{
@@ -65,7 +65,6 @@ export function HeroIntro() {
           >
             Simple, fast, and beautiful platforms that win and get real results
           </Typography>
-
           <Typography
             component="p"
             sx={{
@@ -85,6 +84,7 @@ export function HeroIntro() {
             <br />
             reliable solutions that help you grow.
           </Typography>
+          <WorkWithMeModal />
         </Box>
       </Card.Body>
     </main>

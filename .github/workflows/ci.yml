@@ -5,14 +5,13 @@ on:
     branches:
       - main
       - development
-
   pull_request:
     branches:
       - main
       - development
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -20,16 +19,168 @@ permissions:
 
 jobs:
   quality:
-    name: Lint, Type Check, Test & Build
+    name: Quality Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: build_me_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d build_me_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/build_me_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/build_me_test
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup PNPM
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10.25.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/analytics/uv.lock
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify Analytics Project Structure
+        run: |
+          set -eu
+
+          echo "Repository root:"
+          pwd
+
+          echo "Root files:"
+          ls -la
+
+          echo "Python project files:"
+          find . -maxdepth 5 \
+            \( -name pyproject.toml -o -name uv.lock \) \
+            -print
+
+          if [ ! -f services/analytics/pyproject.toml ]; then
+            echo "::error::services/analytics/pyproject.toml was not found."
+            exit 1
+          fi
+
+          if [ ! -d tests/analytics ]; then
+            echo "::error::tests/analytics directory was not found."
+            exit 1
+          fi
+
+      - name: Push Database Schema
+        run: pnpm --filter @build-me/database db:push
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Run Python Analytics Tests
+        working-directory: services/analytics
+        run: uv run --project . pytest ../../tests/analytics/ -v
+
+      - name: Start API for Performance Tests
+        run: |
+          set -eu
+
+          setsid nohup pnpm --filter @build-me/api dev \
+            > /tmp/build-me-api.log 2>&1 &
+          echo "$!" > /tmp/build-me-api.pid
+
+          for i in $(seq 1 60); do
+            if curl --noproxy '*' --fail --silent \
+              http://127.0.0.1:4000/health >/dev/null; then
+              echo "API is ready."
+              exit 0
+            fi
+
+            if ! kill -0 "$(cat /tmp/build-me-api.pid)" 2>/dev/null; then
+              echo "::error::API process exited before becoming ready."
+              cat /tmp/build-me-api.log || true
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          echo "::error::API did not become ready."
+          cat /tmp/build-me-api.log || true
+          exit 1
+
+      - name: Run Workspace Tests
+        run: |
+          pnpm exec turbo run test \
+            --filter='!@build-me/integration-tests' \
+            --filter='!@build-me/api-tests'
+
+      - name: Build
+        run: pnpm build
+
+      - name: Stop API
+        if: always()
+        run: |
+          if [ -f /tmp/build-me-api.pid ]; then
+            kill "$(cat /tmp/build-me-api.pid)" 2>/dev/null || true
+          fi
+
+      - name: Show API Logs on Failure
+        if: failure()
+        run: |
+          if [ -f /tmp/build-me-api.log ]; then
+            cat /tmp/build-me-api.log
+          fi
+
+  e2e:
+    name: Cypress E2E Tests
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 30
+
+    env:
+      NO_PROXY: 127.0.0.1,localhost
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.25.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -40,71 +191,205 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.14"
-
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v6
-
-      - name: Install Playwright Browsers
-        run: pnpm --filter @build-me/web exec playwright install --with-deps chromium
-
-      - name: Install k6
-        uses: grafana/setup-k6-action@v1
-
-      - name: Verify k6 Installation
-        run: k6 version
-
-      - name: Lint
-        run: pnpm turbo run lint
-
-      - name: Type Check
-        run: pnpm turbo run typecheck
-
-      - name: Run Python Analytics Tests
-        working-directory: services/analytics
-        env:
-          PYTHONPATH: ${{ github.workspace }}/services/analytics
-        run: uv run pytest ../../tests/analytics/ -v
-
-      - name: Start API for Performance Tests
-        shell: bash
+      - name: Install Cypress Binary
         run: |
-          pnpm --filter @build-me/api dev > /tmp/build-me-api.log 2>&1 &
-          API_PID=$!
-          echo "$API_PID" > /tmp/build-me-api.pid
+          pnpm --filter @build-me/e2e-tests exec cypress install
+          pnpm --filter @build-me/e2e-tests exec cypress verify
 
-          for i in {1..30}; do
-            if curl --fail --silent http://localhost:4000/health; then
-              echo "API is ready"
-              exit 0
+      - name: Validate Supabase Secrets
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -eu
+
+          if [ -z "$VITE_SUPABASE_URL" ]; then
+            echo "::error::GitHub Actions secret VITE_SUPABASE_URL is missing."
+            exit 1
+          fi
+
+          if [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::GitHub Actions secret VITE_SUPABASE_PUBLISHABLE_KEY is missing."
+            exit 1
+          fi
+
+          echo "Required Supabase environment variables are present."
+
+      - name: Start Web and Dashboard Applications
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_ANALYTICS_URL: http://127.0.0.1:4000
+        run: |
+          set -eu
+
+          echo "Starting web application."
+          echo "VITE_ANALYTICS_URL is configured for the web process."
+
+          setsid nohup pnpm --filter @build-me/web dev \
+            --host 127.0.0.1 --port 5173 --strictPort \
+            > /tmp/build-me-web.log 2>&1 &
+          echo "$!" > /tmp/build-me-web.pid
+
+          echo "Starting dashboard application."
+          setsid nohup pnpm --filter @build-me/admin dev \
+            --host 127.0.0.1 --port 5174 --strictPort \
+            > /tmp/build-me-dashboard.log 2>&1 &
+          echo "$!" > /tmp/build-me-dashboard.pid
+
+      - name: Wait for Applications
+        run: |
+          set -eu
+
+          wait_for_url() {
+            url="$1"
+            pid_file="$2"
+            log_file="$3"
+
+            for i in $(seq 1 60); do
+              if curl --noproxy '*' --fail --silent "$url" >/dev/null; then
+                echo "Ready: $url"
+                return 0
+              fi
+
+              if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
+                echo "::error::Application process exited before becoming ready: $url"
+                cat "$log_file" || true
+                return 1
+              fi
+
+              sleep 2
+            done
+
+            echo "::error::Timed out waiting for $url"
+            echo "----- Application log -----"
+            cat "$log_file" || true
+            echo "----- Listening ports -----"
+            ss -lntp || true
+            return 1
+          }
+
+          wait_for_url \
+            http://127.0.0.1:5173 \
+            /tmp/build-me-web.pid \
+            /tmp/build-me-web.log
+
+          wait_for_url \
+            http://127.0.0.1:5174 \
+            /tmp/build-me-dashboard.pid \
+            /tmp/build-me-dashboard.log
+
+      - name: Verify Applications Are Still Running
+        run: |
+          set -eu
+          sleep 5
+
+          failed=0
+
+          check_app() {
+            name="$1"
+            url="$2"
+            pid_file="$3"
+            log_file="$4"
+
+            if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
+              echo "::error::$name process is no longer running."
+              cat "$log_file" || true
+              failed=1
+              return
             fi
 
-            if ! kill -0 "$API_PID" 2>/dev/null; then
-              echo "API process exited unexpectedly."
-              cat /tmp/build-me-api.log
-              exit 1
-            fi
+            status=$(curl --noproxy '*' --silent --output /dev/null \
+              --write-out "%{http_code}" \
+              -H "Accept: text/html" "$url" || true)
 
-            sleep 2
+            echo "$name -> $url returned HTTP $status"
+
+            case "$status" in
+              2*|3*) ;;
+              *)
+                echo "::error::$name returned an unexpected status ($status)."
+                cat "$log_file" || true
+                failed=1
+                ;;
+            esac
+          }
+
+          check_app "Web" \
+            http://127.0.0.1:5173 \
+            /tmp/build-me-web.pid \
+            /tmp/build-me-web.log
+
+          check_app "Dashboard" \
+            http://127.0.0.1:5174 \
+            /tmp/build-me-dashboard.pid \
+            /tmp/build-me-dashboard.log
+
+          echo "----- Listening ports -----"
+          ss -lntp || true
+
+          exit "$failed"
+
+      - name: Run Cypress E2E Tests
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        run: pnpm --filter @build-me/e2e-tests test:e2e
+
+      - name: Show Application Logs on Failure
+        if: failure()
+        run: |
+          for log_file in \
+            /tmp/build-me-web.log \
+            /tmp/build-me-dashboard.log; do
+            if [ -f "$log_file" ]; then
+              echo "----- $log_file -----"
+              cat "$log_file"
+            fi
           done
 
-          echo "API failed to start or health check failed."
-          cat /tmp/build-me-api.log
-          exit 1
+      - name: Upload Cypress Screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: tests/e2e/cypress/screenshots/
+          if-no-files-found: ignore
+          retention-days: 7
 
-      - name: Run Tests
-        run: pnpm turbo run test --filter='!@build-me/integration-tests'
+      - name: Upload Cypress Videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: tests/e2e/cypress/videos/
+          if-no-files-found: ignore
+          retention-days: 7
 
-      - name: Build
-        run: pnpm turbo run build
+      - name: Upload Web Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-logs
+          path: /tmp/build-me-web.log
+          if-no-files-found: ignore
+          retention-days: 7
 
-      - name: Stop API
+      - name: Upload Dashboard Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-logs
+          path: /tmp/build-me-dashboard.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop Applications
         if: always()
-        shell: bash
         run: |
-          if [ -f /tmp/build-me-api.pid ]; then
-            kill "$(cat /tmp/build-me-api.pid)" 2>/dev/null || true
-          fi
+          for pid_file in \
+            /tmp/build-me-web.pid \
+            /tmp/build-me-dashboard.pid; do
+            if [ -f "$pid_file" ]; then
+              kill "$(cat "$pid_file")" 2>/dev/null || true
+            fi
+          done

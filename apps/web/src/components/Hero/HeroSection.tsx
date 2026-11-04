@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Box, Container } from "@mui/material";
 import { HeroIntro } from "./HeroIntro";
+import { HeroRight } from "./HeroRight";
 import { useVisibilityAnalytics } from "../../hooks/useTracking/useVisibilityAnalytics";
 
 export function HeroSection() {
@@ -25,7 +26,9 @@ export function HeroSection() {
       id="hero"
       aria-labelledby="hero-title"
       sx={{
+        position: "relative",
         width: "100%",
+        overflow: "hidden",
         py: { xs: 6, sm: 8, md: 12 },
         backgroundColor: "background.default",
       }}
@@ -33,14 +36,38 @@ export function HeroSection() {
       <Container
         maxWidth="lg"
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-start",
-          gap: { xs: 3, md: 5 },
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "minmax(0, 1fr)",
+            md: "minmax(0, 1.05fr) minmax(0, 0.95fr)",
+          },
+          alignItems: "center",
+          columnGap: { xs: 4, md: 6, lg: 8 },
+          rowGap: { xs: 8, md: 0 },
         }}
       >
-        <Box sx={{ width: "100%", maxWidth: "900px" }}>
+        {/* Left: hero introduction and calls to action */}
+        <Box
+          sx={{
+            width: "100%",
+            minWidth: 0,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           <HeroIntro />
+        </Box>
+
+        {/* Right: profile image and floating impact card */}
+        <Box
+          sx={{
+            width: "100%",
+            minWidth: 0,
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <HeroRight />
         </Box>
       </Container>
     </Box>
