@@ -12,6 +12,7 @@ MentorMeEventName = Literal[
     "mentor_me.booking_submitted",
     "mentor_me.confirmation_viewed",
     "mentor_me.submission_failed",
+    "mentor_me.back_to_paths",
 ]
 
 MentorMeEventType = Literal["click", "feature_use", "view"]

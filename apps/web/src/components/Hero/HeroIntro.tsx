@@ -1,5 +1,6 @@
 import { Card } from "@build-me/ui";
 import { Box, Typography } from "@mui/material";
+import { GetQuickWinsModal } from "../GetQuickWins";
 import { WorkWithMeModal } from "../WorkWithMe/WorkWithMeModal";
 
 export function HeroIntro() {
@@ -84,7 +85,24 @@ export function HeroIntro() {
             <br />
             reliable solutions that help you grow.
           </Typography>
-          <WorkWithMeModal />
+
+          {/*
+            Both modals stay mounted together: the last step of Get Quick Wins
+            opens Work With Me through a window event, so WorkWithMeModal must
+            be on the page whenever GetQuickWinsModal is.
+          */}
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: 1.5,
+              mt: 3,
+            }}
+          >
+            <WorkWithMeModal />
+            <GetQuickWinsModal />
+          </Box>
         </Box>
       </Card.Body>
     </main>

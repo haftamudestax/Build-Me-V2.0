@@ -12,6 +12,7 @@ CoffeeWithMeEventName = Literal[
     "coffee_with_me.booking_submitted",
     "coffee_with_me.confirmation_viewed",
     "coffee_with_me.submission_failed",
+    "coffee_with_me.back_to_paths",
 ]
 
 CoffeeWithMeEventType = Literal["click", "feature_use", "view"]

@@ -12,8 +12,8 @@ EXPECTED_EVENT_TYPES = {
     "coffee_with_me.booking_submitted": "feature_use",
     "coffee_with_me.confirmation_viewed": "view",
     "coffee_with_me.submission_failed": "feature_use",
+    "coffee_with_me.back_to_paths": "click",
 }
-
 
 def _validate_route(route: str | None, field_name: str) -> str | None:
     if route is None:

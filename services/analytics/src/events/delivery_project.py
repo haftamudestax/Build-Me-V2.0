@@ -7,12 +7,16 @@ from pydantic import BaseModel, ConfigDict, Field
 
 DeliveryProjectEventName = Literal[
     "work_with_me.cta_clicked",
+    "work_with_me.opened",
+    "work_with_me.closed",
+    "work_with_me.reference_copied",
     "delivery_project.selected",
     "delivery_project.started",
     "delivery_project.validation_failed",
     "delivery_project.booking_submitted",
     "delivery_project.confirmation_viewed",
     "delivery_project.submission_failed",
+    "delivery_project.back_to_paths",
 ]
 
 DeliveryProjectEventType = Literal["click", "feature_use", "view"]
