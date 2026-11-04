@@ -21,6 +21,11 @@ from src.tracking.delivery_project import persist_delivery_project_event
 from src.tracking.hero import persist_hero_event
 from src.tracking.mentor_me import persist_mentor_me_event
 
+from src.events.ownership_audit import OwnershipAuditEventIn
+from src.tracking.ownership_audit import (
+    persist_ownership_audit_event,
+)
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/events", tags=["Analytics Events"])
@@ -85,6 +90,7 @@ async def create_analytics_event(
         | DeliveryProjectEventIn
         | MentorMeEventIn
         | CoffeeWithMeEventIn
+        | OwnershipAuditEventIn
     ),
 ):
     """Persist Navbar, Hero, Delivery Project, Mentor Me, and Coffee With Me events."""
@@ -101,6 +107,8 @@ async def create_analytics_event(
 
         elif isinstance(event, HeroEventIn):
             record = await persist_hero_event(event)
+        elif isinstance(event, OwnershipAuditEventIn):
+            record = await persist_ownership_audit_event(event)
 
         else:
             record = await persist_navbar_event(event)
