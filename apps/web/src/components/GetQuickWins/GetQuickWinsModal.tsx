@@ -183,10 +183,6 @@ export function GetQuickWinsModal() {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Ownership Audit
-  // ---------------------------------------------------------------------------
-
   function moveForward(from: AuditStep, to: AuditStep): void {
     trackEvent("ownership_audit.step_completed", {
       completedStep: STEP_NUMBER[from],
@@ -261,16 +257,12 @@ export function GetQuickWinsModal() {
     window.setTimeout(() => openWorkWithMe(path), 0);
   }
 
-  // ---------------------------------------------------------------------------
-  // Technology Ownership Toolkit
-  // ---------------------------------------------------------------------------
-
   function selectToolkit(): void {
     setToolkitStep("why");
     setStep("toolkit");
 
-    trackEvent("ownership_toolkit.selected");
-    trackEvent("ownership_toolkit.started");
+    trackEvent("ownership_toolkit.selected", {}, "ownership_toolkit");
+    trackEvent("ownership_toolkit.started", {}, "ownership_toolkit");
   }
 
   function handleToolkitBack(): void {

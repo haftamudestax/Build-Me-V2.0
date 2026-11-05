@@ -76,6 +76,16 @@ const eventTypeByName: Record<string, AnalyticsEventType> = {
   // Get Quick Wins
   "get_quick_wins.opened": "click",
   "get_quick_wins.closed": "click",
+  // Ownership Toolkit
+  "ownership_toolkit.selected": "click",
+  "ownership_toolkit.started": "feature_use",
+  "ownership_toolkit.step_completed": "feature_use",
+  "ownership_toolkit.validation_failed": "feature_use",
+  "ownership_toolkit.registration_completed": "feature_use",
+  "ownership_toolkit.content_viewed": "view",
+  "ownership_toolkit.tool_opened": "click",
+  "ownership_toolkit.pdf_downloaded": "click",
+  "ownership_toolkit.back_to_paths": "click",
 };
 
 interface CustomAnalyticsEventDetail {
@@ -146,9 +156,11 @@ function sendCustomAnalyticsEvent(
         ? "coffee_with_me"
         : eventName.startsWith("ownership_audit.")
           ? "ownership_audit"
-          : eventName.startsWith("get_quick_wins.")
-            ? "get_quick_wins"
-            : "work_with_me";
+          : eventName.startsWith("ownership_toolkit.")
+            ? "ownership_toolkit"
+            : eventName.startsWith("get_quick_wins.")
+              ? "get_quick_wins"
+              : "work_with_me";
 
   const journey =
     detail.journey ??
