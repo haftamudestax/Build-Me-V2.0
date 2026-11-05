@@ -5,18 +5,17 @@ import { StepHeader } from "../ownershipAudit/StepParts";
 
 interface LearningCircleWhyStepProps {
   onBack: () => void;
-  onJoin: () => void;
-  telegramAvailable: boolean;
+  onNext: () => void;
 }
 
 export function LearningCircleWhyStep({
   onBack,
-  onJoin,
-  telegramAvailable,
+  onNext,
 }: LearningCircleWhyStepProps) {
   return (
     <Stack spacing={3}>
       <StepHeader
+        eyebrow="Step 1 of 3"
         title="Technology Ownership Learning Circle"
         description="Learn how to take control of the technology your business depends on."
       />
@@ -70,10 +69,15 @@ export function LearningCircleWhyStep({
             <BookOpen
               size={20}
               aria-hidden="true"
-              style={{ flexShrink: 0, marginTop: 3 }}
+              style={{
+                flexShrink: 0,
+                marginTop: 3,
+              }}
             />
+
             <Box>
               <Typography sx={{ fontWeight: 600 }}>{item.title}</Typography>
+
               <Typography variant="body2" color="text.secondary">
                 {item.description}
               </Typography>
@@ -81,22 +85,6 @@ export function LearningCircleWhyStep({
           </Box>
         ))}
       </Stack>
-
-      {!telegramAvailable && (
-        <Box
-          role="status"
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            bgcolor: "action.hover",
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            The Telegram community invitation is being prepared. Joining will be
-            available here once the group is launched.
-          </Typography>
-        </Box>
-      )}
 
       <Stack
         sx={{
@@ -115,11 +103,10 @@ export function LearningCircleWhyStep({
         <Button
           type="button"
           variant="contained"
-          onClick={onJoin}
-          disabled={!telegramAvailable}
+          onClick={onNext}
           endIcon={<ArrowRight size={18} />}
         >
-          {telegramAvailable ? "Join the Learning Circle" : "Coming soon"}
+          Continue to registration
         </Button>
       </Stack>
     </Stack>

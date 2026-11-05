@@ -1,17 +1,26 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Button, Stack, Typography } from "@mui/material";
-import { ArrowLeft, ExternalLink, Users } from "lucide-react";
+import { LinearProgress, Stack } from "@mui/material";
 
-import { StepHeader } from "../ownershipAudit/StepParts";
+import {
+  emptyRegistration,
+  type Registration,
+} from "../ownershipAudit/registration";
 
 import { LearningCircleWhyStep } from "./LearningCircleWhyStep";
-import {
-  LEARNING_CIRCLE_NAME,
-  TELEGRAM_LEARNING_CIRCLE_URL,
-} from "./learningCircleConfig";
+import { LearningCircleRegistrationStep } from "./LearningCircleRegistrationStep";
+import { LearningCircleJoinStep } from "./LearningCircleJoinStep";
+
 import { trackLearningCircle } from "./learningCircleAnalytics";
 
-export type LearningCircleStep = "why" | "join";
+export type LearningCircleStep = "why" | "registration" | "join";
+
+const STEP_NUMBER: Record<LearningCircleStep, number> = {
+  why: 1,
+  registration: 2,
+  join: 3,
+};
+
+const TOTAL_STEPS = 3;
 
 interface OwnershipLearningCircleFlowProps {
   onBack: () => void;
@@ -26,9 +35,10 @@ export function OwnershipLearningCircleFlow({
 }: OwnershipLearningCircleFlowProps) {
   const [step, setStep] = useState<LearningCircleStep>("why");
 
-  const explanationTracked = useRef(false);
+  const [registration, setRegistration] =
+    useState<Registration>(emptyRegistration);
 
-  const telegramAvailable = Boolean(TELEGRAM_LEARNING_CIRCLE_URL);
+  const explanationTracked = useRef(false);
 
   useEffect(() => {
     onStepChange?.(step);
@@ -44,111 +54,66 @@ export function OwnershipLearningCircleFlow({
     trackLearningCircle("ownership_learning_circle.explanation_viewed");
   }, []);
 
-  function handleJoin(): void {
-    if (!TELEGRAM_LEARNING_CIRCLE_URL) {
-      return;
-    }
+  function moveForward(from: LearningCircleStep, to: LearningCircleStep): void {
+    trackLearningCircle("ownership_learning_circle.step_completed", {
+      completedStep: STEP_NUMBER[from],
+      nextStep: STEP_NUMBER[to],
+    });
 
-    trackLearningCircle("ownership_learning_circle.join_clicked");
-
-    trackLearningCircle("ownership_learning_circle.telegram_opened");
-
-    window.open(TELEGRAM_LEARNING_CIRCLE_URL, "_blank", "noopener,noreferrer");
-
-    setStep("join");
+    setStep(to);
   }
 
-  function handleTelegramOpen(): void {
-    if (!TELEGRAM_LEARNING_CIRCLE_URL) {
-      return;
-    }
-
-    trackLearningCircle("ownership_learning_circle.telegram_opened");
-  }
-
-  function handleBack(): void {
-    if (step === "join") {
-      setStep("why");
-      return;
-    }
-
+  function handleBackToOptions(): void {
     trackLearningCircle("ownership_learning_circle.back_to_paths");
 
     onBack();
   }
 
+  function handleRegistrationStarted(): void {
+    trackLearningCircle("ownership_learning_circle.registration_started");
+
+    moveForward("why", "registration");
+  }
+
+  function handleRegistered(): void {
+    trackLearningCircle("ownership_learning_circle.registration_completed");
+
+    moveForward("registration", "join");
+
+    trackLearningCircle("ownership_learning_circle.join_viewed");
+  }
+
   return (
-    <Stack spacing={3}>
+    <Stack spacing={2.5} sx={{ minWidth: 0 }}>
+      <LinearProgress
+        variant="determinate"
+        value={(STEP_NUMBER[step] / TOTAL_STEPS) * 100}
+        aria-label={`Step ${STEP_NUMBER[step]} of ${TOTAL_STEPS}`}
+        sx={{ flexShrink: 0 }}
+      />
+
       {step === "why" && (
         <LearningCircleWhyStep
-          onBack={handleBack}
-          onJoin={handleJoin}
-          telegramAvailable={telegramAvailable}
+          onBack={handleBackToOptions}
+          onNext={handleRegistrationStarted}
+        />
+      )}
+
+      {step === "registration" && (
+        <LearningCircleRegistrationStep
+          values={registration}
+          onChange={setRegistration}
+          onBack={() => setStep("why")}
+          onSubmit={handleRegistered}
         />
       )}
 
       {step === "join" && (
-        <>
-          <StepHeader
-            title="Join the Learning Circle"
-            description={`Take the next step with the ${LEARNING_CIRCLE_NAME}.`}
-          />
-
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              py: 2,
-              color: "primary.main",
-            }}
-          >
-            <Users size={52} aria-hidden="true" />
-          </Box>
-
-          <Typography color="text.secondary">
-            {telegramAvailable
-              ? "The Telegram invitation has been opened in a new tab. Follow the invitation to join the community."
-              : "The Telegram community invitation is not available yet."}
-          </Typography>
-
-          {telegramAvailable && (
-            <Button
-              component="a"
-              href={TELEGRAM_LEARNING_CIRCLE_URL!}
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="contained"
-              endIcon={<ExternalLink size={18} />}
-              onClick={handleTelegramOpen}
-            >
-              Open Telegram invitation
-            </Button>
-          )}
-
-          <Stack
-            sx={{
-              flexDirection: {
-                xs: "column-reverse",
-                sm: "row",
-              },
-              gap: 1.5,
-              justifyContent: "space-between",
-            }}
-          >
-            <Button
-              type="button"
-              variant="text"
-              startIcon={<ArrowLeft size={18} />}
-              onClick={handleBack}
-            >
-              Back
-            </Button>
-
-            <Button type="button" variant="outlined" onClick={onClose}>
-              Close
-            </Button>
-          </Stack>
-        </>
+        <LearningCircleJoinStep
+          name={registration.name.trim()}
+          onPrevious={() => setStep("registration")}
+          onClose={onClose}
+        />
       )}
     </Stack>
   );

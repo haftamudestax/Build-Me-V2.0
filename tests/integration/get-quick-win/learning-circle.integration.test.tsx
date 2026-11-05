@@ -1,5 +1,3 @@
-// @vitest-environment jsdom
-
 import "@testing-library/jest-dom/vitest";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -27,6 +25,67 @@ function learningCircleEvents(): CapturedEvent[] {
   );
 }
 
+async function openLearningCircle(
+  user: ReturnType<typeof userEvent.setup>,
+): Promise<void> {
+  await user.click(screen.getByRole("button", { name: "Get Quick Wins" }));
+
+  await user.click(
+    screen.getByRole("button", {
+      name: /^Technology Ownership Learning Circle:/,
+    }),
+  );
+
+  expect(
+    await screen.findByRole("heading", {
+      name: "Technology Ownership Learning Circle",
+    }),
+  ).toBeInTheDocument();
+}
+
+async function completeLearningCircleRegistration(
+  user: ReturnType<typeof userEvent.setup>,
+): Promise<void> {
+  await user.click(
+    screen.getByRole("button", {
+      name: "Continue to registration",
+    }),
+  );
+
+  expect(
+    await screen.findByRole("heading", {
+      name: "Join the Learning Circle",
+    }),
+  ).toBeInTheDocument();
+
+  await user.type(
+    screen.getByRole("textbox", { name: /full name/i }),
+    "Alex Morgan",
+  );
+
+  await user.type(
+    screen.getByRole("textbox", { name: /email address/i }),
+    "alex@example.com",
+  );
+
+  await user.type(
+    screen.getByRole("textbox", { name: /organisation/i }),
+    "Example Technologies",
+  );
+
+  await user.click(
+    screen.getByRole("button", {
+      name: "Continue to the Learning Circle",
+    }),
+  );
+
+  expect(
+    await screen.findByRole("heading", {
+      name: /ready to join/i,
+    }),
+  ).toBeInTheDocument();
+}
+
 beforeEach(() => {
   events = [];
   window.addEventListener("build-me:analytics", recordEvent);
@@ -44,11 +103,136 @@ describe("Ownership Learning Circle integration", () => {
 
     render(<GetQuickWinsModal />);
 
-    await user.click(screen.getByRole("button", { name: "Get Quick Wins" }));
+    await openLearningCircle(user);
+
+    expect(
+      screen.getByRole("button", {
+        name: "Continue to registration",
+      }),
+    ).toBeEnabled();
+
+    expect(
+      screen.getByRole("progressbar", {
+        name: "Step 1 of 3",
+      }),
+    ).toBeInTheDocument();
+
+    expect(screen.getByText("What you can learn")).toBeInTheDocument();
+  });
+
+  it("completes registration and reaches the Telegram invitation", async () => {
+    const user = userEvent.setup();
+
+    render(<GetQuickWinsModal />);
+
+    await openLearningCircle(user);
+
+    await waitFor(() => {
+      expect(learningCircleEvents().map((event) => event.eventName)).toEqual([
+        "ownership_learning_circle.selected",
+        "ownership_learning_circle.started",
+        "ownership_learning_circle.explanation_viewed",
+      ]);
+    });
+
+    await completeLearningCircleRegistration(user);
+
+    expect(screen.getByText(/Alex Morgan/)).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("progressbar", {
+        name: "Step 3 of 3",
+      }),
+    ).toBeInTheDocument();
+
+    const telegramInvitation = screen.getByRole("link", {
+      name: "Join the Learning Circle",
+    });
+
+    expect(telegramInvitation).toHaveAttribute(
+      "href",
+      TELEGRAM_LEARNING_CIRCLE_URL,
+    );
+
+    expect(telegramInvitation).toHaveAttribute("target", "_blank");
+
+    await waitFor(() => {
+      expect(learningCircleEvents().map((event) => event.eventName)).toEqual([
+        "ownership_learning_circle.selected",
+        "ownership_learning_circle.started",
+        "ownership_learning_circle.explanation_viewed",
+        "ownership_learning_circle.registration_started",
+        "ownership_learning_circle.step_completed",
+        "ownership_learning_circle.registration_completed",
+        "ownership_learning_circle.step_completed",
+        "ownership_learning_circle.join_viewed",
+      ]);
+    });
+
+    await user.click(telegramInvitation);
+
+    await waitFor(() => {
+      expect(learningCircleEvents().map((event) => event.eventName)).toContain(
+        "ownership_learning_circle.telegram_opened",
+      );
+    });
+  });
+
+  it("preserves registration details when navigating back from the join step", async () => {
+    const user = userEvent.setup();
+
+    render(<GetQuickWinsModal />);
+
+    await openLearningCircle(user);
+    await completeLearningCircleRegistration(user);
 
     await user.click(
       screen.getByRole("button", {
-        name: /^Technology Ownership Learning Circle:/,
+        name: /previous|back/i,
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Join the Learning Circle",
+      }),
+    ).toBeInTheDocument();
+
+    expect(screen.getByRole("textbox", { name: /full name/i })).toHaveValue(
+      "Alex Morgan",
+    );
+
+    expect(screen.getByRole("textbox", { name: /email address/i })).toHaveValue(
+      "alex@example.com",
+    );
+
+    expect(screen.getByRole("textbox", { name: /organisation/i })).toHaveValue(
+      "Example Technologies",
+    );
+  });
+
+  it("returns to the explanation step from registration", async () => {
+    const user = userEvent.setup();
+
+    render(<GetQuickWinsModal />);
+
+    await openLearningCircle(user);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Continue to registration",
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Join the Learning Circle",
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /previous|back/i,
       }),
     );
 
@@ -60,58 +244,9 @@ describe("Ownership Learning Circle integration", () => {
 
     expect(
       screen.getByRole("button", {
-        name: "Join the Learning Circle",
-      }),
-    ).toBeEnabled();
-  });
-
-  it("completes the explanation and Telegram invitation journey", async () => {
-    const user = userEvent.setup();
-    const openSpy = vi.spyOn(window, "open").mockReturnValue(null);
-
-    render(<GetQuickWinsModal />);
-
-    await user.click(screen.getByRole("button", { name: "Get Quick Wins" }));
-
-    await user.click(
-      screen.getByRole("button", {
-        name: /^Technology Ownership Learning Circle:/,
-      }),
-    );
-
-    await waitFor(() => {
-      expect(learningCircleEvents().map((event) => event.eventName)).toEqual([
-        "ownership_learning_circle.selected",
-        "ownership_learning_circle.started",
-        "ownership_learning_circle.explanation_viewed",
-      ]);
-    });
-
-    await user.click(
-      screen.getByRole("button", {
-        name: "Join the Learning Circle",
-      }),
-    );
-
-    expect(openSpy).toHaveBeenCalledWith(
-      TELEGRAM_LEARNING_CIRCLE_URL,
-      "_blank",
-      "noopener,noreferrer",
-    );
-
-    expect(
-      screen.getByRole("heading", {
-        name: "Join the Learning Circle",
+        name: "Continue to registration",
       }),
     ).toBeInTheDocument();
-
-    expect(learningCircleEvents().map((event) => event.eventName)).toEqual([
-      "ownership_learning_circle.selected",
-      "ownership_learning_circle.started",
-      "ownership_learning_circle.explanation_viewed",
-      "ownership_learning_circle.join_clicked",
-      "ownership_learning_circle.telegram_opened",
-    ]);
   });
 
   it("returns to the options without opening another journey", async () => {
@@ -119,15 +254,13 @@ describe("Ownership Learning Circle integration", () => {
 
     render(<GetQuickWinsModal />);
 
-    await user.click(screen.getByRole("button", { name: "Get Quick Wins" }));
+    await openLearningCircle(user);
 
     await user.click(
       screen.getByRole("button", {
-        name: /^Technology Ownership Learning Circle:/,
+        name: "Back to options",
       }),
     );
-
-    await user.click(screen.getByRole("button", { name: "Back to options" }));
 
     expect(
       await screen.findByRole("button", {
@@ -144,6 +277,10 @@ describe("Ownership Learning Circle integration", () => {
     expect(learningCircleEvents().map((event) => event.eventName)).toContain(
       "ownership_learning_circle.back_to_paths",
     );
+
+    expect(
+      events.some((event) => event.eventName.startsWith("work_with_me.")),
+    ).toBe(false);
   });
 
   it("closes the modal without opening Work With Me", async () => {
@@ -151,23 +288,19 @@ describe("Ownership Learning Circle integration", () => {
 
     render(<GetQuickWinsModal />);
 
-    await user.click(screen.getByRole("button", { name: "Get Quick Wins" }));
+    await openLearningCircle(user);
 
     await user.click(
       screen.getByRole("button", {
-        name: /^Technology Ownership Learning Circle:/,
+        name: "Close Get Quick Wins modal",
       }),
-    );
-
-    await user.click(screen.getByRole("button", { name: "Back to options" }));
-
-    await user.click(
-      screen.getByRole("button", { name: "Close Get Quick Wins modal" }),
     );
 
     await waitFor(() => {
       expect(
-        screen.queryByRole("heading", { name: "Get Quick Wins" }),
+        screen.queryByRole("heading", {
+          name: "Technology Ownership Learning Circle",
+        }),
       ).not.toBeInTheDocument();
     });
 

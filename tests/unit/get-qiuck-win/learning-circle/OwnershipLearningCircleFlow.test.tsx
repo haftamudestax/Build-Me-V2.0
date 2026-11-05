@@ -7,7 +7,6 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { OwnershipLearningCircleFlow } from "../../../../apps/web/src/components/GetQuickWins/learningCircle/OwnershipLearningCircleFlow";
-import { TELEGRAM_LEARNING_CIRCLE_URL } from "../../../../apps/web/src/components/GetQuickWins/learningCircle/learningCircleConfig";
 
 interface CapturedEvent {
   eventName: string;
@@ -19,6 +18,54 @@ let events: CapturedEvent[] = [];
 
 function recordEvent(event: Event): void {
   events.push((event as CustomEvent<CapturedEvent>).detail);
+}
+
+async function navigateToRegistration(
+  user: ReturnType<typeof userEvent.setup>,
+): Promise<void> {
+  await user.click(
+    screen.getByRole("button", {
+      name: "Continue to registration",
+    }),
+  );
+}
+
+async function completeRegistration(
+  user: ReturnType<typeof userEvent.setup>,
+): Promise<void> {
+  await user.type(
+    screen.getByRole("textbox", { name: /full name/i }),
+    "Alex Morgan",
+  );
+
+  await user.type(
+    screen.getByRole("textbox", { name: /email address/i }),
+    "alex@example.com",
+  );
+
+  await user.type(
+    screen.getByRole("textbox", { name: /organisation/i }),
+    "Example Technologies",
+  );
+
+  await user.click(
+    screen.getByRole("button", {
+      name: "Continue to the Learning Circle",
+    }),
+  );
+
+  expect(
+    await screen.findByRole("heading", {
+      name: /ready to join/i,
+    }),
+  ).toBeInTheDocument();
+}
+
+async function navigateToJoinStep(
+  user: ReturnType<typeof userEvent.setup>,
+): Promise<void> {
+  await navigateToRegistration(user);
+  await completeRegistration(user);
 }
 
 beforeEach(() => {
@@ -49,11 +96,9 @@ describe("OwnershipLearningCircleFlow", () => {
     });
   });
 
-  it("opens Telegram and moves to the join step", async () => {
+  it("moves from the explanation to registration", async () => {
     const user = userEvent.setup();
     const onStepChange = vi.fn();
-
-    const openSpy = vi.spyOn(window, "open").mockReturnValue(null);
 
     render(
       <OwnershipLearningCircleFlow
@@ -63,30 +108,51 @@ describe("OwnershipLearningCircleFlow", () => {
       />,
     );
 
-    await user.click(
-      screen.getByRole("button", {
-        name: "Join the Learning Circle",
-      }),
+    await navigateToRegistration(user);
+
+    expect(
+      screen.getByRole("textbox", { name: /full name/i }),
+    ).toBeInTheDocument();
+
+    expect(events.map((event) => event.eventName)).toContain(
+      "ownership_learning_circle.registration_started",
     );
 
-    expect(openSpy).toHaveBeenCalledWith(
-      TELEGRAM_LEARNING_CIRCLE_URL,
-      "_blank",
-      "noopener,noreferrer",
+    expect(events.map((event) => event.eventName)).toContain(
+      "ownership_learning_circle.step_completed",
     );
+
+    await waitFor(() => {
+      expect(onStepChange).toHaveBeenCalledWith("registration");
+    });
+  });
+
+  it("moves to the join step after valid registration", async () => {
+    const user = userEvent.setup();
+    const onStepChange = vi.fn();
+
+    render(
+      <OwnershipLearningCircleFlow
+        onBack={vi.fn()}
+        onClose={vi.fn()}
+        onStepChange={onStepChange}
+      />,
+    );
+
+    await navigateToJoinStep(user);
 
     expect(
       screen.getByRole("heading", {
-        name: "Join the Learning Circle",
+        name: /ready to join/i,
       }),
     ).toBeInTheDocument();
 
     expect(events.map((event) => event.eventName)).toContain(
-      "ownership_learning_circle.join_clicked",
+      "ownership_learning_circle.registration_completed",
     );
 
     expect(events.map((event) => event.eventName)).toContain(
-      "ownership_learning_circle.telegram_opened",
+      "ownership_learning_circle.join_viewed",
     );
 
     await waitFor(() => {
@@ -94,46 +160,46 @@ describe("OwnershipLearningCircleFlow", () => {
     });
   });
 
-  it("renders the Telegram invitation link", async () => {
+  it("returns from the join step to registration and preserves values", async () => {
     const user = userEvent.setup();
-
-    vi.spyOn(window, "open").mockReturnValue(null);
 
     render(<OwnershipLearningCircleFlow onBack={vi.fn()} onClose={vi.fn()} />);
 
-    await user.click(
-      screen.getByRole("button", {
-        name: "Join the Learning Circle",
-      }),
+    await navigateToJoinStep(user);
+
+    await user.click(screen.getByRole("button", { name: /^previous$/i }));
+
+    expect(screen.getByRole("textbox", { name: /full name/i })).toHaveValue(
+      "Alex Morgan",
     );
 
-    const link = screen.getByRole("link", {
-      name: "Open Telegram invitation",
-    });
+    expect(screen.getByRole("textbox", { name: /email address/i })).toHaveValue(
+      "alex@example.com",
+    );
 
-    expect(link).toHaveAttribute("href", TELEGRAM_LEARNING_CIRCLE_URL);
-    expect(link).toHaveAttribute("target", "_blank");
-    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(screen.getByRole("textbox", { name: /organisation/i })).toHaveValue(
+      "Example Technologies",
+    );
   });
 
-  it("returns from the join step to the explanation", async () => {
+  it("returns from registration to the explanation", async () => {
     const user = userEvent.setup();
-
-    vi.spyOn(window, "open").mockReturnValue(null);
 
     render(<OwnershipLearningCircleFlow onBack={vi.fn()} onClose={vi.fn()} />);
 
-    await user.click(
-      screen.getByRole("button", {
-        name: "Join the Learning Circle",
-      }),
-    );
+    await navigateToRegistration(user);
 
-    await user.click(screen.getByRole("button", { name: /^back$/i }));
+    await user.click(screen.getByRole("button", { name: /^previous$/i }));
 
     expect(
       screen.getByRole("heading", {
         name: "Technology Ownership Learning Circle",
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", {
+        name: "Continue to registration",
       }),
     ).toBeInTheDocument();
   });
@@ -144,7 +210,11 @@ describe("OwnershipLearningCircleFlow", () => {
 
     render(<OwnershipLearningCircleFlow onBack={onBack} onClose={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: "Back to options" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Back to options",
+      }),
+    );
 
     expect(onBack).toHaveBeenCalledOnce();
 
@@ -157,17 +227,15 @@ describe("OwnershipLearningCircleFlow", () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
 
-    vi.spyOn(window, "open").mockReturnValue(null);
-
     render(<OwnershipLearningCircleFlow onBack={vi.fn()} onClose={onClose} />);
+
+    await navigateToJoinStep(user);
 
     await user.click(
       screen.getByRole("button", {
-        name: "Join the Learning Circle",
+        name: "Close",
       }),
     );
-
-    await user.click(screen.getByRole("button", { name: "Close" }));
 
     expect(onClose).toHaveBeenCalledOnce();
   });
