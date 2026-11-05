@@ -41,7 +41,6 @@ import {
   OwnershipLearningCircleFlow,
   type LearningCircleStep,
 } from "./learningCircle/OwnershipLearningCircleFlow";
-import { trackLearningCircle } from "./learningCircle/learningCircleAnalytics";
 
 type AuditStep = "intro" | "register" | "questions" | "score" | "next";
 
