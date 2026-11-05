@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { Box, Button, IconButton, LinearProgress, Stack } from "@mui/material";
-import { ArrowRight, BookOpen, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, BookOpen, ShieldCheck, Users, X } from "lucide-react";
 
 import { Modal } from "@build-me/ui";
 import {
@@ -37,10 +37,14 @@ import {
   OwnershipToolkitFlow,
   type ToolkitStep,
 } from "./toolkit/OwnershipToolkitFlow";
+import {
+  OwnershipLearningCircleFlow,
+  type LearningCircleStep,
+} from "./learningCircle/OwnershipLearningCircleFlow";
 
 type AuditStep = "intro" | "register" | "questions" | "score" | "next";
 
-type QuickWinsStep = "options" | "toolkit" | AuditStep;
+type QuickWinsStep = "options" | "toolkit" | "learningCircle" | AuditStep;
 
 const STEP_NUMBER: Record<AuditStep, number> = {
   intro: 1,
@@ -148,18 +152,21 @@ export function GetQuickWinsModal() {
 
   const [toolkitStep, setToolkitStep] = useState<ToolkitStep>("why");
 
+  const [learningCircleStep, setLearningCircleStep] =
+    useState<LearningCircleStep>("why");
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const name = registration.name.trim();
   const score = calculateScore(answers);
   const category = getResultCategory(score);
 
-  // Reset the scroll position whenever the active journey or step changes.
+  // Reset scroll whenever the active journey or step changes.
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = 0;
     }
-  }, [step, questionSection, toolkitStep]);
+  }, [step, questionSection, toolkitStep, learningCircleStep]);
 
   function openModal(): void {
     setStep("options");
@@ -167,6 +174,7 @@ export function GetQuickWinsModal() {
     setAnswers({});
     setQuestionSection(0);
     setToolkitStep("why");
+    setLearningCircleStep("why");
     setIsOpen(true);
 
     trackEvent("get_quick_wins.opened", {}, "get_quick_wins");
@@ -175,13 +183,19 @@ export function GetQuickWinsModal() {
   function closeModal(): void {
     setIsOpen(false);
 
-    // The backend reads "step" as a number, so the step name travels as lastStep.
-    trackEvent(
-      "get_quick_wins.closed",
-      { lastStep: step === "toolkit" ? toolkitStep : step },
-      "get_quick_wins",
-    );
+    const lastStep =
+      step === "toolkit"
+        ? toolkitStep
+        : step === "learningCircle"
+          ? learningCircleStep
+          : step;
+
+    trackEvent("get_quick_wins.closed", { lastStep }, "get_quick_wins");
   }
+
+  // ---------------------------------------------------------------------------
+  // Ownership Audit
+  // ---------------------------------------------------------------------------
 
   function moveForward(from: AuditStep, to: AuditStep): void {
     trackEvent("ownership_audit.step_completed", {
@@ -253,9 +267,13 @@ export function GetQuickWinsModal() {
     trackEvent("ownership_audit.path_selected", { path });
     closeModal();
 
-    // Let this modal finish closing before the Work With Me modal opens.
+    // Allow this modal to close before opening Work With Me.
     window.setTimeout(() => openWorkWithMe(path), 0);
   }
+
+  // ---------------------------------------------------------------------------
+  // Technology Ownership Toolkit
+  // ---------------------------------------------------------------------------
 
   function selectToolkit(): void {
     setToolkitStep("why");
@@ -266,12 +284,30 @@ export function GetQuickWinsModal() {
   }
 
   function handleToolkitBack(): void {
-    trackEvent("ownership_toolkit.back_to_paths");
+    // OwnershipToolkitFlow owns back_to_paths analytics.
+    setStep("options");
+  }
+
+  // ---------------------------------------------------------------------------
+  // Technology Ownership Learning Circle
+  // ---------------------------------------------------------------------------
+
+  function selectLearningCircle(): void {
+    setLearningCircleStep("why");
+    setStep("learningCircle");
+
+    trackEvent("ownership_learning_circle.selected");
+    trackEvent("ownership_learning_circle.started");
+  }
+
+  function handleLearningCircleBack(): void {
     setStep("options");
   }
 
   const currentStepNumber =
-    step === "options" || step === "toolkit" ? 0 : STEP_NUMBER[step];
+    step === "options" || step === "toolkit" || step === "learningCircle"
+      ? 0
+      : STEP_NUMBER[step];
 
   return (
     <>
@@ -331,14 +367,16 @@ export function GetQuickWinsModal() {
           </IconButton>
 
           {/* Ownership Audit progress indicator */}
-          {step !== "options" && step !== "toolkit" && (
-            <LinearProgress
-              variant="determinate"
-              value={(currentStepNumber / TOTAL_STEPS) * 100}
-              aria-label={`Step ${currentStepNumber} of ${TOTAL_STEPS}`}
-              sx={{ flexShrink: 0 }}
-            />
-          )}
+          {step !== "options" &&
+            step !== "toolkit" &&
+            step !== "learningCircle" && (
+              <LinearProgress
+                variant="determinate"
+                value={(currentStepNumber / TOTAL_STEPS) * 100}
+                aria-label={`Step ${currentStepNumber} of ${TOTAL_STEPS}`}
+                sx={{ flexShrink: 0 }}
+              />
+            )}
 
           <div
             ref={scrollAreaRef}
@@ -357,7 +395,7 @@ export function GetQuickWinsModal() {
               <Stack spacing={2.5} sx={{ minWidth: 0 }}>
                 <StepHeader
                   title="Get Quick Wins"
-                  description="Choose a quick assessment or practical toolkit to find improvements and take control of your technology."
+                  description="Choose a quick assessment, practical toolkit, or learning community to find improvements and take control of your technology."
                 />
 
                 <OptionCard
@@ -372,6 +410,13 @@ export function GetQuickWinsModal() {
                   description="Access practical checklists, templates, and guidance to manage your domains, hosting, source code, accounts, providers, backups, and ongoing maintenance."
                   icon={<BookOpen size={28} aria-hidden="true" />}
                   onSelect={selectToolkit}
+                />
+
+                <OptionCard
+                  title="Technology Ownership Learning Circle"
+                  description="Join a learning community to build your understanding of technology ownership, digital assets, providers, access, security, and long-term technology management."
+                  icon={<Users size={28} aria-hidden="true" />}
+                  onSelect={selectLearningCircle}
                 />
               </Stack>
             )}
@@ -431,6 +476,15 @@ export function GetQuickWinsModal() {
                 onBack={handleToolkitBack}
                 onClose={closeModal}
                 onStepChange={setToolkitStep}
+              />
+            )}
+
+            {/* Technology Ownership Learning Circle journey */}
+            {step === "learningCircle" && (
+              <OwnershipLearningCircleFlow
+                onBack={handleLearningCircleBack}
+                onClose={closeModal}
+                onStepChange={setLearningCircleStep}
               />
             )}
           </div>
