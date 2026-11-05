@@ -279,8 +279,8 @@ export function GetQuickWinsModal() {
     setToolkitStep("why");
     setStep("toolkit");
 
-    trackEvent("ownership_toolkit.selected");
-    trackEvent("ownership_toolkit.started");
+    trackEvent("ownership_toolkit.selected", {}, "ownership_toolkit");
+    trackEvent("ownership_toolkit.started", {}, "ownership_toolkit");
   }
 
   function handleToolkitBack(): void {

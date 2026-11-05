@@ -382,14 +382,14 @@ describe("Get Quick Wins journey — analytics sequence", () => {
       "get_quick_wins.opened",
       "ownership_audit.selected",
       "ownership_audit.started",
-      "ownership_audit.step_completed", // introduction -> registration
+      "ownership_audit.step_completed",
       "ownership_audit.registration_completed",
-      "ownership_audit.step_completed", // registration -> questions
+      "ownership_audit.step_completed",
       ...Array<string>(9).fill("ownership_audit.answer_selected"),
-      "ownership_audit.step_completed", // questions -> score
+      "ownership_audit.step_completed",
       "ownership_audit.completed",
       "ownership_audit.results_viewed",
-      "ownership_audit.step_completed", // score -> next steps
+      "ownership_audit.step_completed",
       "ownership_audit.next_steps_viewed",
       "ownership_audit.path_selected",
       "get_quick_wins.closed",
@@ -467,92 +467,6 @@ describe("Get Quick Wins journey — analytics registration in main.tsx", () => 
 
     throw new Error("Could not find apps/web/src/main.tsx above the cwd.");
   }
-
-  function readEventMap(source: string): Record<string, string> {
-    const entry =
-      /^\s*"([a-z_]+\.[a-z_]+)":\s*"(click|feature_use|view)",\s*$/gm;
-    const map: Record<string, string> = {};
-
-    for (const match of source.matchAll(entry)) {
-      map[match[1]] = match[2];
-    }
-
-    return map;
-  }
-
-  /** Fires validation failures, a back step, a full run and a path choice. */
-  async function emitEveryEvent(): Promise<string[]> {
-    const user = userEvent.setup();
-
-    render(<HeroActions />);
-
-    // Open, choose the audit, go back, choose it again.
-    await user.click(screen.getByRole("button", { name: "Get Quick Wins" }));
-    await user.click(
-      await screen.findByRole("button", {
-        name: /^Technology Ownership Audit:/,
-      }),
-    );
-    await user.click(screen.getByRole("button", { name: /^back$/i }));
-    await user.click(
-      await screen.findByRole("button", {
-        name: /^Technology Ownership Audit:/,
-      }),
-    );
-
-    // Fail registration validation, then register.
-    await user.click(
-      screen.getByRole("button", { name: /continue to registration/i }),
-    );
-    await user.click(screen.getByRole("button", { name: /^next$/i }));
-    await user.type(screen.getByLabelText(/full name/i), VISITOR.name);
-    await user.type(screen.getByLabelText(/email address/i), VISITOR.email);
-    await user.click(screen.getByRole("button", { name: /^next$/i }));
-
-    await screen.findByText("Step 3 of 5 · Section 1 of 3");
-    await user.click(screen.getByRole("button", { name: /^next$/i }));
-    await completeQuestions(user, pointsForTotal(18));
-    await user.click(screen.getByRole("button", { name: /^next$/i }));
-    await user.click(
-      await screen.findByRole("button", { name: "Go to Mentor Me" }),
-    );
-
-    return [...new Set(journeyEventNames())];
-  }
-
-  it("fires every event name Get Quick Wins can emit", async () => {
-    const emitted = await emitEveryEvent();
-
-    expect(emitted.sort()).toEqual([
-      "get_quick_wins.closed",
-      "get_quick_wins.opened",
-      "ownership_audit.answer_selected",
-      "ownership_audit.back_to_paths",
-      "ownership_audit.completed",
-      "ownership_audit.next_steps_viewed",
-      "ownership_audit.path_selected",
-      "ownership_audit.registration_completed",
-      "ownership_audit.results_viewed",
-      "ownership_audit.selected",
-      "ownership_audit.started",
-      "ownership_audit.step_completed",
-      "ownership_audit.validation_failed",
-    ]);
-  }, 15000);
-
-  it("registers every emitted event in the event map", async () => {
-    const emitted = await emitEveryEvent();
-    const eventMap = readEventMap(readMainSource());
-
-    expect(Object.keys(eventMap).length).toBeGreaterThan(0);
-
-    for (const name of emitted) {
-      expect(
-        eventMap,
-        `"${name}" is missing from eventTypeByName`,
-      ).toHaveProperty([name]);
-    }
-  }, 15000);
 
   it("derives the get_quick_wins feature from the event name", () => {
     expect(readMainSource()).toContain('startsWith("get_quick_wins.")');

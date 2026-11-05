@@ -21,10 +21,8 @@ const STEP_NUMBER: Record<ToolkitStep, number> = {
 const TOTAL_STEPS = 3;
 
 interface OwnershipToolkitFlowProps {
-  /** Back to the Get Quick Wins options from the first step. */
   onBack: () => void;
   onClose: () => void;
-  /** Lets the host reset its scroll position when the step changes. */
   onStepChange?: (step: ToolkitStep) => void;
 }
 
