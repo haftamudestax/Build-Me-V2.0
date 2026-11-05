@@ -14,18 +14,13 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
     "ownership_learning_circle.selected",
     "ownership_learning_circle.started",
     "ownership_learning_circle.explanation_viewed",
-    "ownership_learning_circle.join_clicked",
+    "ownership_learning_circle.registration_started",
+    "ownership_learning_circle.step_completed",
+    "ownership_learning_circle.registration_completed",
+    "ownership_learning_circle.step_completed",
+    "ownership_learning_circle.join_viewed",
     "ownership_learning_circle.telegram_opened",
   ];
-
-  const expectedEventTypes: Record<string, string> = {
-    "ownership_learning_circle.selected": "click",
-    "ownership_learning_circle.started": "feature_use",
-    "ownership_learning_circle.explanation_viewed": "view",
-    "ownership_learning_circle.join_clicked": "click",
-    "ownership_learning_circle.telegram_opened": "click",
-    "ownership_learning_circle.back_to_paths": "click",
-  };
 
   type RecordedCall = {
     request: {
@@ -82,14 +77,42 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
     ).should("be.visible");
   }
 
-  function joinLearningCircle() {
-    cy.contains("button", "Join the Learning Circle")
+  function completeRegistration() {
+    cy.contains("button", "Continue to registration")
       .scrollIntoView()
       .should("be.visible")
       .and("be.enabled")
       .click();
 
-    cy.contains("h2", "Join the Learning Circle").should("be.visible");
+    cy.contains("h2", "Join the Learning Circle")
+      .should("be.visible");
+
+    cy.get('input[name="name"]')
+      .should("be.visible")
+      .clear()
+      .type(visitor.name);
+
+    cy.get('input[name="email"]')
+      .should("be.visible")
+      .clear()
+      .type(visitor.email);
+
+    cy.contains("button", "Continue to the Learning Circle")
+      .scrollIntoView()
+      .should("be.visible")
+      .and("be.enabled")
+      .click();
+
+    cy.contains("h2", /you're ready to join/i)
+      .should("be.visible");
+  }
+
+  function proceedToJoinStep() {
+    completeRegistration();
+
+    cy.contains("a", "Join the Learning Circle")
+      .should("be.visible")
+      .and("have.attr", "href", telegramUrl);
   }
 
   function captureEvents(events: string[]) {
@@ -222,88 +245,152 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
         .should("be.visible");
     });
 
-    it("allows the visitor to proceed to the join step", () => {
-      joinLearningCircle();
-
-      cy.contains(
-        "The Telegram invitation has been opened in a new tab.",
-      ).should("be.visible");
-    });
-  });
-
-  describe("step 2: joining the Learning Circle", () => {
-    beforeEach(() => {
-      cy.visit("/");
-
-      cy.window().then((win) => {
-        cy.stub(win, "open").as("telegramWindow");
-      });
-
-      cy.contains("button", /^Get Quick Wins$/)
+    it("continues to the registration step", () => {
+      cy.contains("button", "Continue to registration")
+        .scrollIntoView()
         .should("be.visible")
         .click();
 
+      cy.contains("h2", "Join the Learning Circle")
+        .should("be.visible");
+
+      cy.get('input[name="name"]').should("be.visible");
+      cy.get('input[name="email"]').should("be.visible");
+    });
+  });
+
+  describe("step 2: Learning Circle registration", () => {
+    beforeEach(() => {
+      openModal();
       selectLearningCircle();
+
+      cy.contains("button", "Continue to registration")
+        .scrollIntoView()
+        .click();
+
+      cy.contains("h2", "Join the Learning Circle")
+        .should("be.visible");
     });
 
-    it("opens the Telegram invitation in a new tab", () => {
-      joinLearningCircle();
+    it("shows the registration fields", () => {
+      cy.get('input[name="name"]').should("be.visible");
+      cy.get('input[name="email"]').should("be.visible");
 
-      cy.get("@telegramWindow").should(
-        "have.been.calledWith",
-        telegramUrl,
-        "_blank",
-        "noopener,noreferrer",
-      );
+      // Organisation is optional.
+      cy.get('input[name="organisation"]').should("exist");
+    });
+
+    it("requires valid registration details before continuing", () => {
+      cy.contains("button", "Continue to the Learning Circle")
+        .should("be.visible")
+        .click();
+
+      cy.get('input[name="name"]').should("be.visible");
+      cy.get('input[name="email"]').should("be.visible");
+
+      cy.contains("h2", "Join the Learning Circle")
+        .should("be.visible");
+    });
+
+    it("accepts visitor details and proceeds to the join step", () => {
+      cy.get('input[name="name"]').type(visitor.name);
+      cy.get('input[name="email"]').type(visitor.email);
+
+      cy.contains("button", "Continue to the Learning Circle")
+        .scrollIntoView()
+        .click();
+
+      cy.contains("h2", /you're ready to join/i)
+        .should("be.visible");
+
+      cy.contains("a", "Join the Learning Circle")
+        .should("be.visible");
+    });
+
+    it("returns to the explanation and preserves the registration flow", () => {
+      cy.get('input[name="name"]').type(visitor.name);
+      cy.get('input[name="email"]').type(visitor.email);
+
+      cy.contains("button", "Previous")
+        .scrollIntoView()
+        .click();
+
+      cy.contains(
+        "h2",
+        "Technology Ownership Learning Circle",
+      ).should("be.visible");
+
+      cy.contains("button", "Continue to registration")
+        .should("be.visible")
+        .click();
+
+      cy.get('input[name="name"]').should("have.value", visitor.name);
+      cy.get('input[name="email"]').should("have.value", visitor.email);
+    });
+  });
+
+  describe("step 3: joining the Learning Circle", () => {
+    beforeEach(() => {
+      openModal();
+      selectLearningCircle();
+      completeRegistration();
     });
 
     it("shows the Telegram invitation link", () => {
-      joinLearningCircle();
-
-      cy.contains("a", "Open Telegram invitation")
+      cy.contains("a", "Join the Learning Circle")
         .should("be.visible")
         .and("have.attr", "href", telegramUrl)
         .and("have.attr", "target", "_blank")
         .and("have.attr", "rel", "noopener noreferrer");
     });
 
-    it("returns to the explanation", () => {
-      joinLearningCircle();
-
-      cy.contains("button", /^Back$/)
-        .scrollIntoView()
-        .click();
-
-      cy.contains(
-        "h2",
-        "Technology Ownership Learning Circle",
-      ).should("be.visible");
-
-      cy.contains("button", "Join the Learning Circle")
-        .should("be.visible");
+    it("opens the Telegram invitation in a new tab", () => {
+      cy.contains("a", "Join the Learning Circle")
+        .should("have.attr", "target", "_blank")
+        .and("have.attr", "href", telegramUrl);
     });
 
-    it("closes the modal from the join step", () => {
-      joinLearningCircle();
-
-      cy.contains("button", /^Close$/)
+    it("returns to registration from the join step", () => {
+      cy.contains("button", "Previous")
         .scrollIntoView()
         .click();
 
       cy.contains("h2", "Join the Learning Circle")
+        .should("be.visible");
+
+      cy.get('input[name="name"]').should("have.value", visitor.name);
+      cy.get('input[name="email"]').should("have.value", visitor.email);
+    });
+
+    it("closes the modal from the join step", () => {
+      cy.contains("button", /^Close$/)
+        .scrollIntoView()
+        .click();
+
+      cy.contains("h2", /you're ready to join/i)
         .should("not.exist");
 
-      cy.contains("button", /^Get Quick Wins$/).should("be.visible");
+      cy.contains("button", /^Get Quick Wins$/)
+        .should("be.visible");
     });
   });
 
   describe("navigation and modal lifecycle", () => {
-    it("returns from the join step to the explanation and then to options", () => {
+    it("returns from the join step through registration to the explanation and options", () => {
       openModal();
       selectLearningCircle();
-      joinLearningCircle();
+      completeRegistration();
 
-      cy.contains("button", /^Back$/)
+      // Join -> Registration
+      cy.contains("button", "Previous")
+        .scrollIntoView()
+        .click();
+
+      cy.contains("h2", "Join the Learning Circle")
+        .should("be.visible");
+
+      // Registration -> Why
+      cy.contains("button", "Previous")
         .scrollIntoView()
         .click();
 
@@ -312,6 +399,7 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
         "Technology Ownership Learning Circle",
       ).should("be.visible");
 
+      // Why -> Options
       cy.contains("button", "Back to options")
         .scrollIntoView()
         .click();
@@ -348,30 +436,41 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
     it("does not open Work With Me when the visitor closes the Learning Circle", () => {
       openModal();
       selectLearningCircle();
+      completeRegistration();
 
-      cy.get('button[aria-label="Close Get Quick Wins modal"]')
-        .should("be.visible")
+      cy.contains("button", /^Close$/)
+        .scrollIntoView()
         .click();
 
-      cy.contains("button", /^Get Quick Wins$/).should("be.visible");
+      cy.contains("button", /^Get Quick Wins$/)
+        .should("be.visible");
 
       cy.get("body").should("not.contain", "All project paths");
     });
   });
 
   describe("analytics", () => {
-    it("reports each step of the Learning Circle journey", () => {
+    it("reports the events for each step of the Learning Circle journey", () => {
       const events: string[] = [];
 
       openModal();
       captureEvents(events);
 
       selectLearningCircle();
-      joinLearningCircle();
+      completeRegistration();
 
-      expectedEvents.forEach((name) => {
+      expectedEvents.slice(0, -1).forEach((name) => {
         cy.wrap(events).should("include", name);
       });
+
+      cy.contains("a", "Join the Learning Circle")
+        .should("be.visible")
+        .click();
+
+      cy.wrap(events).should(
+        "include",
+        "ownership_learning_circle.telegram_opened",
+      );
     });
 
     it("records the expected analytics event sequence", () => {
@@ -381,11 +480,57 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
       captureEvents(events);
 
       selectLearningCircle();
-      joinLearningCircle();
+      completeRegistration();
+
+      cy.contains("a", "Join the Learning Circle")
+        .should("be.visible")
+        .click();
 
       cy.wrap(events).should(() => {
         expect(learningCircleEventNames(events)).to.deep.equal(
           expectedEvents,
+        );
+      });
+    });
+
+    it("sends Learning Circle events to the analytics endpoint", () => {
+      openModal();
+      selectLearningCircle();
+      completeRegistration();
+
+      cy.contains("a", "Join the Learning Circle")
+        .should("be.visible")
+        .click();
+
+      getLearningCircleRequests().should((requests) => {
+        const eventNames = requests.map((call) =>
+          String(
+            read(
+              call.request.body,
+              "eventName",
+              "event_name",
+            ),
+          ),
+        );
+
+        expect(eventNames).to.include(
+          "ownership_learning_circle.selected",
+        );
+
+        expect(eventNames).to.include(
+          "ownership_learning_circle.registration_started",
+        );
+
+        expect(eventNames).to.include(
+          "ownership_learning_circle.registration_completed",
+        );
+
+        expect(eventNames).to.include(
+          "ownership_learning_circle.join_viewed",
+        );
+
+        expect(eventNames).to.include(
+          "ownership_learning_circle.telegram_opened",
         );
       });
     });
