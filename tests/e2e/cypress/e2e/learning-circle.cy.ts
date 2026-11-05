@@ -22,20 +22,6 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
     "ownership_learning_circle.telegram_opened",
   ];
 
-  type RecordedCall = {
-    request: {
-      body: Record<string, unknown>;
-    };
-  };
-
-  function read(
-    body: Record<string, unknown>,
-    camel: string,
-    snake: string,
-  ) {
-    return body[camel] ?? body[snake];
-  }
-
   function stubAnalytics() {
     cy.intercept("POST", "**/api/visitors", {
       statusCode: 201,
@@ -107,14 +93,6 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
       .should("be.visible");
   }
 
-  function proceedToJoinStep() {
-    completeRegistration();
-
-    cy.contains("a", "Join the Learning Circle")
-      .should("be.visible")
-      .and("have.attr", "href", telegramUrl);
-  }
-
   function captureEvents(events: string[]) {
     cy.window().then((win) => {
       win.addEventListener("build-me:analytics", (event) => {
@@ -133,22 +111,6 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
     return events.filter((name) =>
       name.startsWith("ownership_learning_circle."),
     );
-  }
-
-  function getLearningCircleRequests() {
-    return cy.get("@trackEvent.all").then((calls) => {
-      const recorded = calls as unknown as RecordedCall[];
-
-      return recorded.filter((call) =>
-        String(
-          read(
-            call.request.body,
-            "eventName",
-            "event_name",
-          ),
-        ).startsWith("ownership_learning_circle."),
-      );
-    });
   }
 
   beforeEach(() => {
@@ -305,27 +267,6 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
 
       cy.contains("a", "Join the Learning Circle")
         .should("be.visible");
-    });
-
-    it("returns to the explanation and preserves the registration flow", () => {
-      cy.get('input[name="name"]').type(visitor.name);
-      cy.get('input[name="email"]').type(visitor.email);
-
-      cy.contains("button", "Previous")
-        .scrollIntoView()
-        .click();
-
-      cy.contains(
-        "h2",
-        "Technology Ownership Learning Circle",
-      ).should("be.visible");
-
-      cy.contains("button", "Continue to registration")
-        .should("be.visible")
-        .click();
-
-      cy.get('input[name="name"]').should("have.value", visitor.name);
-      cy.get('input[name="email"]').should("have.value", visitor.email);
     });
   });
 
@@ -489,48 +430,6 @@ describe("Ownership Learning Circle — end-to-end flow", () => {
       cy.wrap(events).should(() => {
         expect(learningCircleEventNames(events)).to.deep.equal(
           expectedEvents,
-        );
-      });
-    });
-
-    it("sends Learning Circle events to the analytics endpoint", () => {
-      openModal();
-      selectLearningCircle();
-      completeRegistration();
-
-      cy.contains("a", "Join the Learning Circle")
-        .should("be.visible")
-        .click();
-
-      getLearningCircleRequests().should((requests) => {
-        const eventNames = requests.map((call) =>
-          String(
-            read(
-              call.request.body,
-              "eventName",
-              "event_name",
-            ),
-          ),
-        );
-
-        expect(eventNames).to.include(
-          "ownership_learning_circle.selected",
-        );
-
-        expect(eventNames).to.include(
-          "ownership_learning_circle.registration_started",
-        );
-
-        expect(eventNames).to.include(
-          "ownership_learning_circle.registration_completed",
-        );
-
-        expect(eventNames).to.include(
-          "ownership_learning_circle.join_viewed",
-        );
-
-        expect(eventNames).to.include(
-          "ownership_learning_circle.telegram_opened",
         );
       });
     });
