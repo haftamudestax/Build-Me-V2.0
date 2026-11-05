@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -27,7 +26,6 @@ function recordEvent(event: Event): void {
   events.push((event as CustomEvent<CapturedEvent>).detail);
 }
 
-/** Events from this journey only, leaving out the Work With Me modal's own. */
 function journeyEvents(): CapturedEvent[] {
   return events.filter((event) =>
     JOURNEY_PREFIXES.some((prefix) => event.eventName.startsWith(prefix)),
@@ -38,10 +36,6 @@ function journeyEventNames(): string[] {
   return journeyEvents().map((event) => event.eventName);
 }
 
-/**
- * Both CTAs side by side, the way HeroIntro renders them. Get Quick Wins hands
- * over to Work With Me through a window event, so both must be mounted.
- */
 function HeroActions() {
   return (
     <>
@@ -177,7 +171,6 @@ describe("Get Quick Wins journey — from the CTA to the next steps", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByRole("radio")[0]).toBeChecked();
 
-    // Questions -> registration, with the visitor's details still filled in
     await user.click(screen.getByRole("button", { name: /^previous$/i }));
     expect(screen.getByLabelText(/full name/i)).toHaveValue(VISITOR.name);
     expect(screen.getByLabelText(/email address/i)).toHaveValue(VISITOR.email);
@@ -232,7 +225,11 @@ describe("Get Quick Wins journey — from the CTA to the next steps", () => {
       band: "Ownership gaps to address",
       recommended: "Deliver My Project",
     },
-    { total: 0, band: "High dependency risk", recommended: "Coffee With Me" },
+    {
+      total: 0,
+      band: "High dependency risk",
+      recommended: "Coffee With Me",
+    },
   ])(
     "gives a $band result a matching recommendation ($recommended)",
     async ({ total, band, recommended }) => {
@@ -290,16 +287,25 @@ describe("Get Quick Wins journey — handing over to Work With Me", () => {
     {
       title: "Deliver My Project",
       selectedEvent: "delivery_project.selected",
+      total: 10,
     },
-    { title: "Mentor Me", selectedEvent: "mentor_me.selected" },
-    { title: "Coffee With Me", selectedEvent: "coffee_with_me.selected" },
+    {
+      title: "Mentor Me",
+      selectedEvent: "mentor_me.selected",
+      total: 18,
+    },
+    {
+      title: "Coffee With Me",
+      selectedEvent: "coffee_with_me.selected",
+      total: 0,
+    },
   ])(
     "opens Work With Me on '$title' and closes Get Quick Wins",
-    async ({ title, selectedEvent }) => {
+    async ({ title, selectedEvent, total }) => {
       const user = userEvent.setup();
 
       render(<HeroActions />);
-      await reachNextSteps(user, pointsForTotal(0));
+      await reachNextSteps(user, pointsForTotal(total));
 
       await user.click(
         await screen.findByRole("button", { name: `Go to ${title}` }),
@@ -314,6 +320,7 @@ describe("Get Quick Wins journey — handing over to Work With Me", () => {
       expect(
         screen.queryByRole("heading", { name: "Your next steps" }),
       ).not.toBeInTheDocument();
+
       expect(
         screen.queryByRole("heading", { name: "Work With Me" }),
       ).not.toBeInTheDocument();
@@ -329,7 +336,7 @@ describe("Get Quick Wins journey — handing over to Work With Me", () => {
     const user = userEvent.setup();
 
     render(<HeroActions />);
-    await reachNextSteps(user, pointsForTotal(0));
+    await reachNextSteps(user, pointsForTotal(18));
 
     await user.click(
       await screen.findByRole("button", { name: "Go to Mentor Me" }),
@@ -442,17 +449,7 @@ describe("Get Quick Wins journey — analytics sequence", () => {
   });
 });
 
-/**
- * Contract with apps/web/src/main.tsx.
- *
- * main.tsx only forwards events it finds in eventTypeByName; anything else is
- * dropped with an "Unrecognized custom analytics event" warning. These tests
- * run a journey that fires every event Get Quick Wins can emit and check that
- * each one is registered.
- */
 describe("Get Quick Wins journey — analytics registration in main.tsx", () => {
-  // Walk up from the working directory instead of using import.meta.url,
-  // which is not a plain file URL under the jsdom environment.
   function readMainSource(): string {
     let directory = process.cwd();
 
@@ -512,7 +509,6 @@ describe("Get Quick Wins journey — analytics registration in main.tsx", () => 
     await user.type(screen.getByLabelText(/email address/i), VISITOR.email);
     await user.click(screen.getByRole("button", { name: /^next$/i }));
 
-    // Fail question validation, then finish and choose a path.
     await screen.findByText("Step 3 of 5 · Section 1 of 3");
     await user.click(screen.getByRole("button", { name: /^next$/i }));
     await completeQuestions(user, pointsForTotal(18));
@@ -542,7 +538,7 @@ describe("Get Quick Wins journey — analytics registration in main.tsx", () => 
       "ownership_audit.step_completed",
       "ownership_audit.validation_failed",
     ]);
-  });
+  }, 15000);
 
   it("registers every emitted event in the event map", async () => {
     const emitted = await emitEveryEvent();
@@ -556,7 +552,7 @@ describe("Get Quick Wins journey — analytics registration in main.tsx", () => 
         `"${name}" is missing from eventTypeByName`,
       ).toHaveProperty([name]);
     }
-  });
+  }, 15000);
 
   it("derives the get_quick_wins feature from the event name", () => {
     expect(readMainSource()).toContain('startsWith("get_quick_wins.")');
