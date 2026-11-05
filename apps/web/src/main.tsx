@@ -153,9 +153,11 @@ function sendCustomAnalyticsEvent(
         ? "coffee_with_me"
         : eventName.startsWith("ownership_audit.")
           ? "ownership_audit"
-          : eventName.startsWith("get_quick_wins.")
-            ? "get_quick_wins"
-            : "work_with_me";
+          : eventName.startsWith("ownership_toolkit.")
+            ? "ownership_toolkit"
+            : eventName.startsWith("get_quick_wins.")
+              ? "get_quick_wins"
+              : "work_with_me";
 
   const journey =
     detail.journey ??
