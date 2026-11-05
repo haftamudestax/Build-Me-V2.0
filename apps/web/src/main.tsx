@@ -76,6 +76,13 @@ const eventTypeByName: Record<string, AnalyticsEventType> = {
   // Get Quick Wins
   "get_quick_wins.opened": "click",
   "get_quick_wins.closed": "click",
+  // learning circle
+  "ownership_learning_circle.selected": "click",
+  "ownership_learning_circle.started": "feature_use",
+  "ownership_learning_circle.explanation_viewed": "view",
+  "ownership_learning_circle.join_clicked": "click",
+  "ownership_learning_circle.telegram_opened": "click",
+  "ownership_learning_circle.back_to_paths": "click",
 };
 
 interface CustomAnalyticsEventDetail {
