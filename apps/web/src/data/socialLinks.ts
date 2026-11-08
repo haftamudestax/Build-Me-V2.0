@@ -22,7 +22,7 @@ export const socialLinks: SocialLink[] = [
   },
   {
     name: "Instagram",
-    href: "https://www.instagram.com/haftamudesta/",
+    href: "https://www.instagram.com/haftamudesta",
     label: "Follow HDY on Instagram",
   },
 ];
