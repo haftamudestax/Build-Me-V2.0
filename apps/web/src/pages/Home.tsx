@@ -1,13 +1,7 @@
 import { HeroSection } from "../components/Hero/HeroSection";
 import { featureFlags } from "../config/featureFlags";
-import { Footer } from "../components/Footer/Footer";
 const Home = () => {
-  return (
-    <main>
-      {featureFlags.heroSection && <HeroSection />}
-      <Footer />
-    </main>
-  );
+  return <main>{featureFlags.heroSection && <HeroSection />}</main>;
 };
 
 export default Home;
