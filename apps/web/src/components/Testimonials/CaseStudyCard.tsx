@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
@@ -13,6 +14,11 @@ import {
 
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+
+import {
+  openWorkWithMe,
+  type WorkWithMePath,
+} from "../WorkWithMe/openWorkWithMe";
 
 import type { CaseStudy } from "./caseStudiesData";
 
@@ -24,6 +30,18 @@ interface CaseStudyItemProps {
   service: CaseStudy;
 }
 
+const caseStudyPaths: Record<string, WorkWithMePath> = {
+  "deliver-project": "delivery",
+  "mentor-me": "mentor",
+  "coffee-with-me": "coffee",
+};
+
+const caseStudyCtaLabels: Record<WorkWithMePath, string> = {
+  delivery: "Submit Your Project",
+  mentor: "Submit Mentorship request",
+  coffee: "Let's Talk",
+};
+
 function CaseStudyItem({ service }: CaseStudyItemProps) {
   const [open, setOpen] = useState(false);
 
@@ -34,6 +52,17 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
   const handleClose = (): void => {
     setOpen(false);
   };
+
+  const handleCtaClick = (): void => {
+    const path = caseStudyPaths[service.id];
+
+    if (!path) return;
+
+    handleClose();
+    openWorkWithMe(path);
+  };
+
+  const path = caseStudyPaths[service.id];
 
   return (
     <>
@@ -50,16 +79,10 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
           minWidth: 0,
           height: "100%",
           boxSizing: "border-box",
-
-          // Soft off-white background
           bgcolor: "#FAF8F5",
-
-          // Border and rounded corners
           border: 1,
           borderColor: "#E2E8F0",
           borderRadius: 3,
-
-          // Subtle elevation and smooth hover animation
           boxShadow: 1,
           transform: "translateY(0)",
           transition:
@@ -190,6 +213,7 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
           </IconButton>
         </DialogTitle>
 
+        {/* Full Description */}
         <DialogContent dividers>
           <Typography
             variant="body1"
@@ -203,6 +227,38 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
             {service.description}
           </Typography>
         </DialogContent>
+
+        {/* Call to Action */}
+        {path && (
+          <DialogActions
+            sx={{
+              px: 3,
+              py: 2,
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              endIcon={<ArrowForwardIcon />}
+              onClick={handleCtaClick}
+              sx={{
+                px: 2.5,
+                py: 1,
+                borderRadius: 2,
+                fontWeight: 700,
+                textTransform: "none",
+                boxShadow: "none",
+                "&:hover": {
+                  boxShadow: 2,
+                },
+              }}
+            >
+              {caseStudyCtaLabels[path]}
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
     </>
   );
