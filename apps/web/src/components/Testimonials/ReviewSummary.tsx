@@ -16,10 +16,10 @@ interface ReviewSummaryProps {
 }
 
 const DEFAULT_CATEGORIES: CategoryMetric[] = [
-  { key: "projectDelivery", label: "Project Delivery", score: 4.9 },
-  { key: "cleanCode", label: "Clean Code", score: 4.9 },
-  { key: "value", label: "Value", score: 4.9 },
-  { key: "communication", label: "Communication", score: 4.9 },
+  { key: "projectDelivery", label: "Project Delivery", score: 0 },
+  { key: "cleanCode", label: "Clean Code", score: 0 },
+  { key: "value", label: "Value", score: 0 },
+  { key: "communication", label: "Communication", score: 0 },
 ];
 
 export function ReviewSummary({
