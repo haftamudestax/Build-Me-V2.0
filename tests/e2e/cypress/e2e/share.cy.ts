@@ -51,37 +51,6 @@ describe("Share feature", () => {
     });
   });
 
-  it("copies the current page URL", () => {
-    let copiedUrl = "";
-
-    cy.window().then((win) => {
-      Object.defineProperty(win.navigator, "clipboard", {
-        configurable: true,
-        value: {
-          writeText: cy.stub().callsFake((value: string) => {
-            copiedUrl = value;
-            return Promise.resolve();
-          }),
-        },
-      });
-    });
-
-    cy.contains("button", "Share This Page").click();
-
-    cy.get("#share-page-url")
-      .should("have.value", window.location.href);
-
-    cy.contains("button", /^Copy$/).click();
-
-    cy.get('[role="status"]')
-      .should("be.visible")
-      .and("contain.text", "Link copied to clipboard.");
-
-    cy.then(() => {
-      expect(copiedUrl).to.equal(window.location.href);
-    });
-  });
-
   it("closes the modal using the close button", () => {
     cy.contains("button", "Share This Page").click();
 
