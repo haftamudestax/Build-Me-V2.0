@@ -1,7 +1,7 @@
 import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { ArrowRight } from "lucide-react";
 
-import type { WorkWithMePath } from "../WorkWithMe/openWorkWithMe";
+import type { WorkWithMePath } from "../../WorkWithMe/openWorkWithMe";
 import {
   getPathRecommendations,
   getRecommendedActions,
