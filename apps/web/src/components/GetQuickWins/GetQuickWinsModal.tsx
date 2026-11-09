@@ -271,10 +271,6 @@ export function GetQuickWinsModal() {
     window.setTimeout(() => openWorkWithMe(path), 0);
   }
 
-  // ---------------------------------------------------------------------------
-  // Technology Ownership Toolkit
-  // ---------------------------------------------------------------------------
-
   function selectToolkit(): void {
     setToolkitStep("why");
     setStep("toolkit");
@@ -287,10 +283,6 @@ export function GetQuickWinsModal() {
     // OwnershipToolkitFlow owns back_to_paths analytics.
     setStep("options");
   }
-
-  // ---------------------------------------------------------------------------
-  // Technology Ownership Learning Circle
-  // ---------------------------------------------------------------------------
 
   function selectLearningCircle(): void {
     setLearningCircleStep("why");

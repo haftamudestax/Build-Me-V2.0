@@ -23,9 +23,7 @@ interface OwnershipAuditQuestionsProps {
   sectionIndex: number;
   onSectionChange: (sectionIndex: number) => void;
   onAnswer: (questionId: string, points: number) => void;
-  /** Called from "Previous" on the first section. */
   onBack: () => void;
-  /** Called from "See my score" on the last section. */
   onFinish: () => void;
 }
 
