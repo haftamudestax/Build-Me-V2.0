@@ -1,4 +1,5 @@
 import { SocialConnections } from "./SocialConnections";
+import { ShareButton } from "./Share";
 
 export function Footer() {
   return (
@@ -7,7 +8,11 @@ export function Footer() {
         {/* Footer Components */}
         <div className="flex items-stretch">
           <SocialConnections />
-
+          <div className="flex items-stretch border-r border-gray-200 pr-8">
+            <div className="flex items-center">
+              <ShareButton />
+            </div>
+          </div>
           {/* Future footer components go here */}
         </div>
       </div>
