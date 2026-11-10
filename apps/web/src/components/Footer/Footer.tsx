@@ -1,5 +1,6 @@
 import { SocialConnections } from "./SocialConnections";
 import { ShareButton } from "./Share";
+import { ReferralButton } from "./Referrals";
 
 export function Footer() {
   return (
@@ -12,6 +13,10 @@ export function Footer() {
             <div className="flex items-center">
               <ShareButton />
             </div>
+          </div>
+          <div className="flex items-stretch"></div>
+          <div className="flex items-center">
+            <ReferralButton />
           </div>
           {/* Future footer components go here */}
         </div>
