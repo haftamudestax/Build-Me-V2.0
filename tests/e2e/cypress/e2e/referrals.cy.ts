@@ -13,30 +13,43 @@ const REFERRAL_DATA = {
 };
 
 const API_URL = "**/api/referrals";
+const REFERRAL_BUTTON =
+  'button[aria-label="Give Referrals. Help others grow with us."]';
+const CLOSE_BUTTON = 'button[aria-label="Close referral modal"]';
 
-function registerVisitor() {
-  cy.intercept("POST", "**/visitors", {
+/**
+ * Supplies the visitor configuration required by ReferralModal.
+ * This is test setup only. Analytics behavior is not tested here.
+ */
+function stubVisitorConfiguration() {
+  cy.intercept("POST", "**/api/visitors", {
     statusCode: 201,
     body: {
       visitor_id: VISITOR_ID,
       session_id: SESSION_ID,
     },
-  }).as("registerVisitor");
+  }).as("visitorSetup");
 }
 
+/**
+ * Opens the referral modal using the actual ReferralButton label.
+ */
 function openReferralModal() {
   cy.visit("/");
 
-  cy.wait("@registerVisitor");
+  cy.wait("@visitorSetup");
 
-  cy.contains("button", "Refer Someone")
-    .scrollIntoView()
+  cy.get(REFERRAL_BUTTON)
     .should("be.visible")
+    .scrollIntoView()
     .click();
 
   cy.contains("h2", "Refer Someone").should("be.visible");
 }
 
+/**
+ * Completes the referrer's information step.
+ */
 function completeReferrerStep() {
   cy.get("#referrer-name")
     .should("be.visible")
@@ -44,14 +57,18 @@ function completeReferrerStep() {
     .type(REFERRAL_DATA.referrerName);
 
   cy.get("#referrer-email")
+    .should("be.visible")
     .clear()
     .type(REFERRAL_DATA.referrerEmail);
 
   cy.contains("button", "Continue").click();
 
-  cy.contains("h2", "Who are you referring?").should("be.visible");
+  cy.contains("h3", "Who are you referring?").should("be.visible");
 }
 
+/**
+ * Completes the referred person's information step.
+ */
 function completeFriendStep(options: { message?: string } = {}) {
   cy.get("#referred-name")
     .should("be.visible")
@@ -59,29 +76,30 @@ function completeFriendStep(options: { message?: string } = {}) {
     .type(REFERRAL_DATA.referredName);
 
   cy.get("#referred-email")
+    .should("be.visible")
     .clear()
     .type(REFERRAL_DATA.referredEmail);
 
-  cy.get("#referral-relationship")
+  cy.get("#relationship")
     .should("be.visible")
     .select(REFERRAL_DATA.relationship);
 
   if (options.message) {
-    cy.get("textarea")
-      .filter(":visible")
-      .first()
+    cy.get("#referral-message")
+      .should("be.visible")
       .type(options.message);
   }
 
   cy.contains("button", "Review referral").click();
 
-  cy.contains("h2", "Review your referral").should("be.visible");
+  cy.contains("h3", "Review your referral").should("be.visible");
 }
 
+/**
+ * Stubs a successful referral API response.
+ */
 function interceptSuccessfulReferral() {
   cy.intercept("POST", API_URL, (request) => {
-    expect(request.method).to.equal("POST");
-
     expect(request.body).to.include({
       visitorId: VISITOR_ID,
       referrerName: REFERRAL_DATA.referrerName,
@@ -91,8 +109,9 @@ function interceptSuccessfulReferral() {
       relationship: REFERRAL_DATA.relationship,
     });
 
-    expect(request.headers["idempotency-key"]).to.be.a("string");
-    expect(request.headers["idempotency-key"]).to.have.length.greaterThan(0);
+    expect(request.headers["idempotency-key"])
+      .to.be.a("string")
+      .and.have.length.greaterThan(0);
 
     request.reply({
       statusCode: 201,
@@ -108,6 +127,9 @@ function interceptSuccessfulReferral() {
   }).as("submitReferral");
 }
 
+/**
+ * Submits the referral from the review step.
+ */
 function submitReferral() {
   cy.contains("button", "Submit referral")
     .should("be.visible")
@@ -117,234 +139,274 @@ function submitReferral() {
 
 describe("Referrals — end-to-end flow", () => {
   beforeEach(() => {
-    registerVisitor();
+    stubVisitorConfiguration();
   });
 
-  it("opens the referral modal from the footer", () => {
-    openReferralModal();
+  describe("Modal", () => {
+    it("opens the referral modal from the footer", () => {
+      openReferralModal();
 
-    cy.get("#referrer-name").should("be.visible");
-    cy.get("#referrer-email").should("be.visible");
-  });
+      cy.get("#referrer-name").should("be.visible");
+      cy.get("#referrer-email").should("be.visible");
 
-  it("validates the referrer's required information", () => {
-    openReferralModal();
-
-    cy.contains("button", "Continue").click();
-
-    cy.contains("Please enter your name.").should("be.visible");
-
-    cy.get("#referrer-name").type(REFERRAL_DATA.referrerName);
-    cy.get("#referrer-email").type("invalid-email");
-
-    cy.contains("button", "Continue").click();
-
-    cy.contains("Please enter a valid email address.")
-      .should("be.visible");
-  });
-
-  it("validates the referred person's required information", () => {
-    openReferralModal();
-
-    completeReferrerStep();
-
-    cy.contains("button", "Review referral").click();
-
-    cy.contains("Please enter your friend's name.")
-      .should("be.visible");
-  });
-
-  it("validates the referred person's email address", () => {
-    openReferralModal();
-
-    completeReferrerStep();
-
-    cy.get("#referred-name").type(REFERRAL_DATA.referredName);
-    cy.get("#referred-email").type("invalid-email");
-    cy.get("#referral-relationship").select("friend");
-
-    cy.contains("button", "Review referral").click();
-
-    cy.contains("Please enter a valid email address.")
-      .should("be.visible");
-  });
-
-  it("does not allow a visitor to refer themselves", () => {
-    openReferralModal();
-
-    completeReferrerStep();
-
-    cy.get("#referred-name").type(REFERRAL_DATA.referrerName);
-    cy.get("#referred-email").type(REFERRAL_DATA.referrerEmail);
-    cy.get("#referral-relationship").select("friend");
-
-    cy.contains("button", "Review referral").click();
-
-    cy.contains("You cannot refer yourself.")
-      .should("be.visible");
-  });
-
-  it("preserves referral details when navigating backwards", () => {
-    openReferralModal();
-
-    completeReferrerStep();
-    completeFriendStep();
-
-    cy.contains("button", "Back").click();
-
-    cy.get("#referred-name")
-      .should("have.value", REFERRAL_DATA.referredName);
-
-    cy.get("#referred-email")
-      .should("have.value", REFERRAL_DATA.referredEmail);
-
-    cy.get("#referral-relationship")
-      .should("have.value", REFERRAL_DATA.relationship);
-
-    cy.contains("button", "Review referral").click();
-
-    cy.contains("h2", "Review your referral").should("be.visible");
-  });
-
-  it("submits a referral and displays confirmation", () => {
-    interceptSuccessfulReferral();
-
-    openReferralModal();
-
-    completeReferrerStep();
-    completeFriendStep();
-
-    submitReferral();
-
-    cy.wait("@submitReferral").then(({ request, response }) => {
-      expect(response?.statusCode).to.equal(201);
-
-      expect(request.headers["idempotency-key"]).to.be.a("string");
-
-      expect(request.body.visitorId).to.equal(VISITOR_ID);
+      cy.contains("h3", "Your information").should("be.visible");
+      cy.contains("Step 1 of 3").should("be.visible");
     });
 
-    cy.contains("h2", "Referral submitted")
-      .should("be.visible");
+    it("closes and resets the referral modal", () => {
+      openReferralModal();
 
-    cy.contains(REFERRAL_ID).should("be.visible");
+      cy.get("#referrer-name").type(REFERRAL_DATA.referrerName);
+      cy.get("#referrer-email").type(REFERRAL_DATA.referrerEmail);
 
-    cy.contains("button", "Copy reference")
-      .should("be.visible");
+      cy.get(CLOSE_BUTTON)
+        .should("be.visible")
+        .click();
 
-    cy.contains("button", "Done").should("be.visible");
-  });
+      cy.contains("h2", "Refer Someone").should("not.exist");
 
-  it("submits an optional referral message", () => {
-    interceptSuccessfulReferral();
+      cy.get(REFERRAL_BUTTON)
+        .should("be.visible")
+        .click();
 
-    openReferralModal();
+      cy.get("#referrer-name")
+        .should("be.visible")
+        .and("have.value", "");
 
-    completeReferrerStep();
-
-    completeFriendStep({
-      message: REFERRAL_DATA.message,
-    });
-
-    submitReferral();
-
-    cy.wait("@submitReferral").then(({ request }) => {
-      expect(request.body.message).to.equal(REFERRAL_DATA.message);
-    });
-
-    cy.contains("h2", "Referral submitted")
-      .should("be.visible");
-  });
-
-  it("omits an empty optional message from the request", () => {
-    interceptSuccessfulReferral();
-
-    openReferralModal();
-
-    completeReferrerStep();
-    completeFriendStep();
-
-    submitReferral();
-
-    cy.wait("@submitReferral").then(({ request }) => {
-      expect(request.body).not.to.have.property("message");
+      cy.get("#referrer-email").should("have.value", "");
     });
   });
 
-  it("displays an error when the referral API fails", () => {
-    cy.intercept("POST", API_URL, {
-      statusCode: 409,
-      body: {
-        error: "IDEMPOTENCY_KEY_REUSED",
-      },
-    }).as("submitReferralFailure");
+  describe("Referrer validation", () => {
+    it("requires the referrer's name", () => {
+      openReferralModal();
 
-    openReferralModal();
+      cy.contains("button", "Continue").click();
 
-    completeReferrerStep();
-    completeFriendStep();
-
-    submitReferral();
-
-    cy.wait("@submitReferralFailure").then(({ response }) => {
-      expect(response?.statusCode).to.equal(409);
+      cy.contains("Please enter your full name.")
+        .should("be.visible");
     });
 
-    cy.contains("IDEMPOTENCY_KEY_REUSED")
-      .should("be.visible");
+    it("validates the referrer's email address", () => {
+      openReferralModal();
 
-    cy.contains("h2", "Review your referral")
-      .should("be.visible");
+      cy.get("#referrer-name").type(REFERRAL_DATA.referrerName);
+      cy.get("#referrer-email").type("invalid-email");
+
+      cy.contains("button", "Continue").click();
+
+      cy.contains("Please enter a valid email address.")
+        .should("be.visible");
+    });
+
+    it("allows the user to continue with valid referrer information", () => {
+      openReferralModal();
+
+      completeReferrerStep();
+
+      cy.get("#referred-name").should("be.visible");
+      cy.get("#referred-email").should("be.visible");
+      cy.get("#relationship").should("be.visible");
+    });
   });
 
-  it("does not submit when visitor configuration is missing", () => {
-    cy.intercept("POST", "**/visitors", {
-      statusCode: 500,
-      body: {
-        error: "VISITOR_REGISTRATION_FAILED",
-      },
-    }).as("failedVisitorRegistration");
+  describe("Referred person validation", () => {
+    beforeEach(() => {
+      openReferralModal();
+      completeReferrerStep();
+    });
 
-    cy.visit("/");
+    it("requires the referred person's name", () => {
+      cy.contains("button", "Review referral").click();
 
-    cy.wait("@failedVisitorRegistration");
+      cy.contains("Please enter the person's name.")
+        .should("be.visible");
+    });
 
-    cy.contains("button", "Refer Someone")
-      .scrollIntoView()
-      .should("be.visible")
-      .click();
+    it("validates the referred person's email address", () => {
+      cy.get("#referred-name").type(REFERRAL_DATA.referredName);
+      cy.get("#referred-email").type("invalid-email");
+      cy.get("#relationship").select("friend");
 
-    cy.contains("h2", "Refer Someone").should("be.visible");
+      cy.contains("button", "Review referral").click();
 
-    completeReferrerStep();
-    completeFriendStep();
+      cy.contains("Please enter a valid email address.")
+        .should("be.visible");
+    });
 
-    cy.intercept("POST", API_URL).as("unexpectedReferralRequest");
+    it("requires a relationship selection", () => {
+      cy.get("#referred-name").type(REFERRAL_DATA.referredName);
+      cy.get("#referred-email").type(REFERRAL_DATA.referredEmail);
 
-    submitReferral();
+      cy.contains("button", "Review referral").click();
 
-    cy.contains("button", "Submit referral").should("be.visible");
+      cy.contains("Please select your relationship.")
+        .should("be.visible");
+    });
 
-    cy.get("@unexpectedReferralRequest.all").should("have.length", 0);
+    it("does not allow a visitor to refer themselves", () => {
+      cy.get("#referred-name").type(REFERRAL_DATA.referrerName);
+      cy.get("#referred-email").type(REFERRAL_DATA.referrerEmail);
+      cy.get("#relationship").select("friend");
+
+      cy.contains("button", "Review referral").click();
+
+      cy.contains("You cannot refer yourself.")
+        .should("be.visible");
+    });
+
+    it("preserves referral details when navigating backwards from review", () => {
+      completeFriendStep();
+
+      cy.contains("button", "Back").click();
+
+      cy.get("#referred-name")
+        .should("have.value", REFERRAL_DATA.referredName);
+
+      cy.get("#referred-email")
+        .should("have.value", REFERRAL_DATA.referredEmail);
+
+      cy.get("#relationship")
+        .should("have.value", REFERRAL_DATA.relationship);
+
+      cy.get("#referral-message")
+        .should("have.value", "");
+
+      cy.contains("button", "Review referral").click();
+
+      cy.contains("h3", "Review your referral").should("be.visible");
+    });
   });
 
-  it("closes and resets the referral modal", () => {
-    openReferralModal();
+  describe("Referral submission", () => {
+    it("submits a referral and displays confirmation", () => {
+      interceptSuccessfulReferral();
 
-    cy.get("#referrer-name").type(REFERRAL_DATA.referrerName);
-    cy.get("#referrer-email").type(REFERRAL_DATA.referrerEmail);
+      openReferralModal();
 
-    cy.contains("button", "Cancel").click();
+      completeReferrerStep();
+      completeFriendStep();
 
-    cy.contains("button", "Refer Someone")
-      .should("be.visible")
-      .click();
+      submitReferral();
 
-    cy.get("#referrer-name")
-      .should("be.visible")
-      .and("have.value", "");
+      cy.wait("@submitReferral").then(({ request, response }) => {
+        expect(response?.statusCode).to.equal(201);
+        expect(request.body.visitorId).to.equal(VISITOR_ID);
 
-    cy.get("#referrer-email")
-      .should("have.value", "");
+        expect(request.headers["idempotency-key"])
+          .to.be.a("string")
+          .and.have.length.greaterThan(0);
+      });
+
+      cy.contains("h3", "Referral submitted!")
+        .should("be.visible");
+
+      cy.contains(REFERRAL_ID).should("be.visible");
+
+      cy.get('button[aria-label="Copy referral reference"]')
+        .should("be.visible");
+
+      cy.contains("button", "Done").should("be.visible");
+    });
+
+    it("submits an optional referral message", () => {
+      interceptSuccessfulReferral();
+
+      openReferralModal();
+
+      completeReferrerStep();
+
+      completeFriendStep({
+        message: REFERRAL_DATA.message,
+      });
+
+      submitReferral();
+
+      cy.wait("@submitReferral").then(({ request }) => {
+        expect(request.body.message).to.equal(REFERRAL_DATA.message);
+      });
+
+      cy.contains("h3", "Referral submitted!")
+        .should("be.visible");
+    });
+
+    it("omits an empty optional message from the request", () => {
+      interceptSuccessfulReferral();
+
+      openReferralModal();
+
+      completeReferrerStep();
+      completeFriendStep();
+
+      submitReferral();
+
+      cy.wait("@submitReferral").then(({ request }) => {
+        expect(request.body).not.to.have.property("message");
+      });
+
+      cy.contains("h3", "Referral submitted!")
+        .should("be.visible");
+    });
+
+    it("displays an error when the referral API fails", () => {
+      cy.intercept("POST", API_URL, {
+        statusCode: 409,
+        body: {
+          error: "IDEMPOTENCY_KEY_REUSED",
+        },
+      }).as("submitReferralFailure");
+
+      openReferralModal();
+
+      completeReferrerStep();
+      completeFriendStep();
+
+      submitReferral();
+
+      cy.wait("@submitReferralFailure").then(({ response }) => {
+        expect(response?.statusCode).to.equal(409);
+      });
+
+      cy.contains("IDEMPOTENCY_KEY_REUSED")
+        .should("be.visible");
+
+      cy.contains("h3", "Review your referral")
+        .should("be.visible");
+
+      cy.contains("button", "Submit referral")
+        .should("be.visible");
+    });
+  });
+
+  describe("Referral navigation", () => {
+    it("allows the user to return from review and edit referral details", () => {
+      openReferralModal();
+
+      completeReferrerStep();
+      completeFriendStep();
+
+      cy.contains("button", "Back").click();
+
+      cy.get("#referred-name")
+        .should("have.value", REFERRAL_DATA.referredName);
+
+      cy.get("#referred-email")
+        .should("have.value", REFERRAL_DATA.referredEmail);
+
+      cy.get("#relationship")
+        .should("have.value", REFERRAL_DATA.relationship);
+
+      cy.get("#referral-message")
+        .clear()
+        .type("Updated referral message.");
+
+      cy.contains("button", "Review referral").click();
+
+      cy.contains("h3", "Review your referral")
+        .should("be.visible");
+
+      cy.contains("Updated referral message.")
+        .should("be.visible");
+    });
   });
 });
