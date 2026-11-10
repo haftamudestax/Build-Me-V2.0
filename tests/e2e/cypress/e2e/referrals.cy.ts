@@ -12,32 +12,50 @@ const REFERRAL_DATA = {
   message: "Jordan would be a great addition to your network.",
 };
 
-const API_URL = "**/api/referrals";
+const REFERRAL_API_PATH = "/api/referrals";
+const VISITOR_API_PATH = "/api/visitors";
+
 const REFERRAL_BUTTON =
   'button[aria-label="Give Referrals. Help others grow with us."]';
+
 const CLOSE_BUTTON = 'button[aria-label="Close referral modal"]';
 
 /**
- * Supplies the visitor configuration required by ReferralModal.
- * This is test setup only. Analytics behavior is not tested here.
+ * Stubs visitor registration before the application loads.
+ *
+ * The pathname matcher works regardless of the analytics API
+ * hostname or port.
  */
-function stubVisitorConfiguration() {
-  cy.intercept("POST", "**/api/visitors", {
-    statusCode: 201,
-    body: {
-      visitor_id: VISITOR_ID,
-      session_id: SESSION_ID,
+function stubVisitorConfiguration(): void {
+  cy.intercept(
+    {
+      method: "POST",
+      pathname: VISITOR_API_PATH,
     },
-  }).as("visitorSetup");
+    {
+      statusCode: 201,
+      body: {
+        visitor_id: VISITOR_ID,
+        session_id: SESSION_ID,
+      },
+    },
+  ).as("visitorSetup");
 }
 
 /**
- * Opens the referral modal using the actual ReferralButton label.
+ * Opens the referral modal after visitor registration completes.
  */
-function openReferralModal() {
+function openReferralModal(): void {
   cy.visit("/");
 
-  cy.wait("@visitorSetup");
+  // The referral form requires the visitor ID configured by main.tsx.
+  cy.wait("@visitorSetup", { timeout: 10000 }).then(({ response }) => {
+    expect(response?.statusCode).to.equal(201);
+    expect(response?.body).to.deep.equal({
+      visitor_id: VISITOR_ID,
+      session_id: SESSION_ID,
+    });
+  });
 
   cy.get(REFERRAL_BUTTON)
     .should("be.visible")
@@ -50,7 +68,7 @@ function openReferralModal() {
 /**
  * Completes the referrer's information step.
  */
-function completeReferrerStep() {
+function completeReferrerStep(): void {
   cy.get("#referrer-name")
     .should("be.visible")
     .clear()
@@ -69,7 +87,9 @@ function completeReferrerStep() {
 /**
  * Completes the referred person's information step.
  */
-function completeFriendStep(options: { message?: string } = {}) {
+function completeFriendStep(
+  options: { message?: string } = {},
+): void {
   cy.get("#referred-name")
     .should("be.visible")
     .clear()
@@ -96,41 +116,48 @@ function completeFriendStep(options: { message?: string } = {}) {
 }
 
 /**
- * Stubs a successful referral API response.
+ * Stubs a successful referral API response and validates
+ * the submitted payload.
  */
-function interceptSuccessfulReferral() {
-  cy.intercept("POST", API_URL, (request) => {
-    expect(request.body).to.include({
-      visitorId: VISITOR_ID,
-      referrerName: REFERRAL_DATA.referrerName,
-      referrerEmail: REFERRAL_DATA.referrerEmail,
-      referredName: REFERRAL_DATA.referredName,
-      referredEmail: REFERRAL_DATA.referredEmail,
-      relationship: REFERRAL_DATA.relationship,
-    });
+function interceptSuccessfulReferral(): void {
+  cy.intercept(
+    {
+      method: "POST",
+      pathname: REFERRAL_API_PATH,
+    },
+    (request) => {
+      expect(request.body).to.include({
+        visitorId: VISITOR_ID,
+        referrerName: REFERRAL_DATA.referrerName,
+        referrerEmail: REFERRAL_DATA.referrerEmail,
+        referredName: REFERRAL_DATA.referredName,
+        referredEmail: REFERRAL_DATA.referredEmail,
+        relationship: REFERRAL_DATA.relationship,
+      });
 
-    expect(request.headers["idempotency-key"])
-      .to.be.a("string")
-      .and.have.length.greaterThan(0);
+      expect(request.headers["idempotency-key"])
+        .to.be.a("string")
+        .and.have.length.greaterThan(0);
 
-    request.reply({
-      statusCode: 201,
-      body: {
-        data: {
-          id: REFERRAL_ID,
-          reference: REFERRAL_ID,
-          status: "pending",
-          createdAt: "2026-11-06T10:00:00.000Z",
+      request.reply({
+        statusCode: 201,
+        body: {
+          data: {
+            id: REFERRAL_ID,
+            reference: REFERRAL_ID,
+            status: "pending",
+            createdAt: "2026-11-06T10:00:00.000Z",
+          },
         },
-      },
-    });
-  }).as("submitReferral");
+      });
+    },
+  ).as("submitReferral");
 }
 
 /**
  * Submits the referral from the review step.
  */
-function submitReferral() {
+function submitReferral(): void {
   cy.contains("button", "Submit referral")
     .should("be.visible")
     .and("not.be.disabled")
@@ -139,6 +166,7 @@ function submitReferral() {
 
 describe("Referrals — end-to-end flow", () => {
   beforeEach(() => {
+    // Register the intercept before cy.visit().
     stubVisitorConfiguration();
   });
 
@@ -349,12 +377,18 @@ describe("Referrals — end-to-end flow", () => {
     });
 
     it("displays an error when the referral API fails", () => {
-      cy.intercept("POST", API_URL, {
-        statusCode: 409,
-        body: {
-          error: "IDEMPOTENCY_KEY_REUSED",
+      cy.intercept(
+        {
+          method: "POST",
+          pathname: REFERRAL_API_PATH,
         },
-      }).as("submitReferralFailure");
+        {
+          statusCode: 409,
+          body: {
+            error: "IDEMPOTENCY_KEY_REUSED",
+          },
+        },
+      ).as("submitReferralFailure");
 
       openReferralModal();
 
