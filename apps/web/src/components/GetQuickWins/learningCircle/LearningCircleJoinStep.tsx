@@ -103,6 +103,10 @@ export function LearningCircleJoinStep({
           size="large"
           endIcon={<ExternalLink size={18} aria-hidden="true" />}
           onClick={handleTelegramOpen}
+          sx={{
+            bgcolor: "var(--color-light-yellow)",
+            fontWeight: 700,
+          }}
         >
           Join the Learning Circle
         </Button>

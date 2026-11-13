@@ -35,9 +35,9 @@ export function TestimonialCard({ testimonial }: TestimonialCardProps) {
           boxSizing: "border-box",
           p: 2.5,
           border: 1,
-          borderColor: "divider",
+          borderColor: "var(--color-dark-yellow)",
           borderRadius: 3,
-          bgcolor: "background.paper",
+          bgcolor: "",
           transition: "border-color 0.2s, box-shadow 0.2s",
           "&:hover": {
             borderColor: "primary.main",
@@ -76,6 +76,7 @@ export function TestimonialCard({ testimonial }: TestimonialCardProps) {
             px: 0,
             textTransform: "none",
             fontWeight: 700,
+            color: "var(--color-light-yellow)",
           }}
         >
           Read full review

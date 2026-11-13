@@ -1,3 +1,4 @@
+
 import request from "supertest";
 import {
   beforeEach,
@@ -6,7 +7,6 @@ import {
   it,
   vi,
 } from "vitest";
-import type { Mock } from "vitest";
 
 // Mock the booking service before importing the application.
 vi.mock("../../../services/api/src/services/bookings.service", () => ({
@@ -20,13 +20,8 @@ import {
 } from "../../../services/api/src/services/bookings.service";
 import app from "../../../services/api/src/app";
 
-const createBookingMock = vi.mocked(
-  createProjectBooking,
-) as Mock;
-
-const getBookingMock = vi.mocked(
-  getProjectBookingById,
-) as Mock;
+const createBookingMock = vi.mocked(createProjectBooking);
+const getBookingMock = vi.mocked(getProjectBookingById);
 
 const bookingId = "123e4567-e89b-42d3-a456-426614174000";
 const visitorId = "223e4567-e89b-42d3-a456-426614174000";
@@ -36,25 +31,45 @@ const validBooking = {
   name: "Integration Test User",
   email: "integration-test@example.com",
   projectTitle: "Integration Test Project",
-  projectType: "Web Application",
+  projectType: "web_application",
   description:
     "This is a sufficiently detailed project description for testing.",
   timeline: "1-3 months",
-  budget: "$1,000-$5,000",
+  budget: "1000_5000",
+  bookingType: "delivery_project",
+  requestDetails: {
+    package: {
+      tier: "beginner",
+    },
+  },
+};
+
+const normalizedPackage = {
+  tier: "beginner",
+  name: "Beginner",
+  price: 499,
+  currency: "USD",
+};
+
+const expectedBookingInput = {
+  ...validBooking,
+  requestDetails: {
+    package: normalizedPackage,
+  },
 };
 
 const createdBooking = {
   id: bookingId,
-  reference: bookingId,
   bookingType: "delivery_project",
   status: "pending",
+  createdAt: new Date("2026-01-01T00:00:00.000Z"),
 };
 
 const persistedBooking = {
   id: bookingId,
   booking_type: "delivery_project",
   status: "pending",
-  created_at: "2026-01-01T00:00:00.000Z",
+  created_at: new Date("2026-01-01T00:00:00.000Z"),
 };
 
 beforeEach(() => {
@@ -70,6 +85,7 @@ describe("GET /health", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ status: "ok" });
+
     expect(getBookingMock).not.toHaveBeenCalled();
     expect(createBookingMock).not.toHaveBeenCalled();
   });
@@ -106,6 +122,7 @@ describe("POST /api/bookings", () => {
       .send(validBooking);
 
     expect(response.status).toBe(201);
+
     expect(response.body.data).toMatchObject({
       id: bookingId,
       reference: bookingId,
@@ -113,9 +130,16 @@ describe("POST /api/bookings", () => {
       status: "pending",
     });
 
+    expect(response.body.data.createdAt).toBe(
+      createdBooking.createdAt.toISOString(),
+    );
+
     expect(createBookingMock).toHaveBeenCalledTimes(1);
+
+    // The validator expands the selected package tier into
+    // its server-defined package details.
     expect(createBookingMock).toHaveBeenCalledWith(
-      expect.objectContaining(validBooking),
+      expect.objectContaining(expectedBookingInput),
     );
   });
 
@@ -131,14 +155,16 @@ describe("POST /api/bookings", () => {
     expect(createBookingMock).not.toHaveBeenCalled();
   });
 
-  it("rejects a non-object request body", async () => {
+  it("rejects primitive JSON request bodies", async () => {
+    // Express strict JSON parsing rejects primitive JSON values.
     const response = await request(app)
       .post("/api/bookings")
-      .send("null")
-      .set("Content-Type", "application/json");
+      .set("Content-Type", "application/json")
+      .send('"not-an-object"');
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe("Invalid JSON");
+
     expect(createBookingMock).not.toHaveBeenCalled();
   });
 
@@ -154,6 +180,7 @@ describe("POST /api/bookings", () => {
     expect(response.body.error).toBe(
       "visitorId must be a valid UUID.",
     );
+
     expect(createBookingMock).not.toHaveBeenCalled();
   });
 
@@ -169,6 +196,7 @@ describe("POST /api/bookings", () => {
     expect(response.body.error).toBe(
       "A valid email address is required.",
     );
+
     expect(createBookingMock).not.toHaveBeenCalled();
   });
 
@@ -184,6 +212,7 @@ describe("POST /api/bookings", () => {
     expect(response.body.error).toBe(
       "Unsupported project timeline.",
     );
+
     expect(createBookingMock).not.toHaveBeenCalled();
   });
 
@@ -199,6 +228,7 @@ describe("POST /api/bookings", () => {
     expect(response.body.error).toBe(
       "description must be between 20 and 10000 characters.",
     );
+
     expect(createBookingMock).not.toHaveBeenCalled();
   });
 
@@ -214,6 +244,7 @@ describe("POST /api/bookings", () => {
     expect(response.body.error).toBe(
       "Budget must be a string of at most 120 characters.",
     );
+
     expect(createBookingMock).not.toHaveBeenCalled();
   });
 
@@ -227,7 +258,14 @@ describe("POST /api/bookings", () => {
       .send(validBooking);
 
     expect(response.status).toBe(400);
+    expect(response.body.error).toBe(
+      "The visitor does not exist. Initialize visitor tracking first.",
+    );
+
     expect(createBookingMock).toHaveBeenCalledTimes(1);
+    expect(createBookingMock).toHaveBeenCalledWith(
+      expect.objectContaining(expectedBookingInput),
+    );
   });
 
   it("forwards unexpected service errors to Express", async () => {
@@ -240,6 +278,8 @@ describe("POST /api/bookings", () => {
       .send(validBooking);
 
     expect(response.status).toBe(500);
+
+    expect(createBookingMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -253,6 +293,7 @@ describe("GET /api/bookings/:id", () => {
     expect(response.body).toEqual({
       error: "Invalid booking ID.",
     });
+
     expect(getBookingMock).not.toHaveBeenCalled();
   });
 
@@ -273,6 +314,7 @@ describe("GET /api/bookings/:id", () => {
     );
 
     expect(response.status).toBe(200);
+
     expect(response.body.data).toMatchObject({
       id: bookingId,
       bookingType: "delivery_project",

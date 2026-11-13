@@ -1,8 +1,6 @@
 import { Box, Button, Typography } from "@mui/material";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
-// Every step renders these ids, so the dialog always has an accessible name
-// and description.
 export const TITLE_ID = "get-quick-wins-title";
 export const DESCRIPTION_ID = "get-quick-wins-description";
 
@@ -26,7 +24,12 @@ export function StepHeader({ eyebrow, title, description }: StepHeaderProps) {
         variant="h5"
         component="h2"
         gutterBottom
-        sx={{ overflowWrap: "anywhere" }}
+        sx={{
+          overflowWrap: "anywhere",
+          color: "var(--color-dark-yellow)",
+          fontWeight: 700,
+          font: "bold",
+        }}
       >
         {title}
       </Typography>
@@ -69,6 +72,25 @@ export function StepFooter({ previous, next }: StepFooterProps) {
           variant="outlined"
           startIcon={<ArrowLeft size={16} aria-hidden="true" />}
           onClick={previous.onClick}
+          sx={{
+            width: { xs: "100%", sm: "auto" },
+            borderColor: "var(--color-dark-yellow)",
+            color: "var(--color-black)",
+            bgcolor: "var(--color-dark-yellow)",
+            py: 1.25,
+            px: 3,
+            borderRadius: "8px",
+            fontWeight: 700,
+            textTransform: "none",
+            boxShadow: "none",
+            transition: "all 0.2s ease-in-out",
+            "&:hover": {
+              borderColor: "var(--color-light-yellow)",
+              bgcolor: "var(--color-light-yellow)",
+              boxShadow: "0 4px 12px rgba(247, 183, 51, 0.25)",
+              transform: "translateY(-1px)",
+            },
+          }}
         >
           {previous.label}
         </Button>
@@ -80,6 +102,25 @@ export function StepFooter({ previous, next }: StepFooterProps) {
           variant="contained"
           endIcon={<ArrowRight size={16} aria-hidden="true" />}
           onClick={next.onClick}
+          sx={{
+            width: { xs: "100%", sm: "auto" },
+            borderColor: "var(--color-light-yellow)",
+            color: "var(--color-black)",
+            bgcolor: "var(--color-light-yellow)",
+            py: 1.25,
+            px: 3,
+            borderRadius: "8px",
+            fontWeight: 700,
+            textTransform: "none",
+            boxShadow: "none",
+            transition: "all 0.2s ease-in-out",
+            "&:hover": {
+              borderColor: "var(--color-dark-yellow)",
+              bgcolor: "var(--color-dark-yellow)",
+              boxShadow: "0 4px 12px rgba(247, 183, 51, 0.25)",
+              transform: "translateY(-1px)",
+            },
+          }}
         >
           {next.label}
         </Button>

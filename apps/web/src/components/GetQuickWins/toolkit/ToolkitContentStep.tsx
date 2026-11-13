@@ -134,7 +134,10 @@ export function ToolkitContentStep({
           variant="contained"
           startIcon={<Download size={18} aria-hidden="true" />}
           onClick={handleDownload}
-          sx={{ flexShrink: 0 }}
+          sx={{
+            flexShrink: 0,
+            bgcolor: "var(--color-dark-yellow)",
+          }}
         >
           Download PDF
         </Button>

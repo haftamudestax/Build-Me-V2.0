@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Alert, Button, IconButton, Typography } from "@mui/material";
 import {
   ArrowLeft,
@@ -26,8 +20,11 @@ import {
   type OpenWorkWithMeDetail,
 } from "./openWorkWithMe";
 
+type BookingPackageTier = "beginner" | "intermediate" | "advanced";
+
 type JourneyStep =
   | "paths"
+  | "packages"
   | "delivery"
   | "mentor"
   | "coffee"
@@ -47,6 +44,86 @@ interface PathDetails {
   confirmationMessage: string;
   icon: ReactNode;
 }
+
+interface PackageOption {
+  tier: BookingPackageTier;
+  name: string;
+  price: number;
+  description: string;
+}
+
+// Dynamic package options tailored per booking path
+const pathPackages: Record<BookingPath, PackageOption[]> = {
+  delivery_project: [
+    {
+      tier: "beginner",
+      name: "Starter MVP",
+      price: 1499,
+      description:
+        "A focused starting point for core features, landing pages, or small prototypes.",
+    },
+    {
+      tier: "intermediate",
+      name: "Standard Full-Stack",
+      price: 3499,
+      description:
+        "A comprehensive build covering database architecture, auth, APIs, and responsive UI.",
+    },
+    {
+      tier: "advanced",
+      name: "Enterprise System",
+      price: 6999,
+      description:
+        "A robust, scalable solution featuring custom microservices, security hardening, and deep integrations.",
+    },
+  ],
+  mentor_me: [
+    {
+      tier: "beginner",
+      name: "Code & Architecture Review",
+      price: 199,
+      description:
+        "A single deep-dive session reviewing your codebase, design patterns, and immediate blockers.",
+    },
+    {
+      tier: "intermediate",
+      name: "Monthly Growth Mentorship",
+      price: 799,
+      description:
+        "Bi-weekly 1-on-1 sessions, continuous code reviews, and tailored career/technical guidance.",
+    },
+    {
+      tier: "advanced",
+      name: "Engineering Leadership Intensive",
+      price: 1499,
+      description:
+        "Comprehensive multi-week advisory focusing on system architecture, team scaling, and production deployment.",
+    },
+  ],
+  coffee_with_me: [
+    {
+      tier: "beginner",
+      name: "Quick Catch-up",
+      price: 50,
+      description:
+        "A fast 20-minute coffee chat to swap tech insights, ask quick questions, or say hello.",
+    },
+    {
+      tier: "intermediate",
+      name: "Deep-Dive Coffee",
+      price: 120,
+      description:
+        "A full 45-minute structured discussion on a specific project idea, tech stack choice, or hurdle.",
+    },
+    {
+      tier: "advanced",
+      name: "Strategic Brainstorming",
+      price: 250,
+      description:
+        "An extended brainstorming session mapping out product roadmap ideas and technical viability.",
+    },
+  ],
+};
 
 const bookingPathDetails: Record<BookingPath, PathDetails> = {
   delivery_project: {
@@ -68,7 +145,7 @@ const bookingPathDetails: Record<BookingPath, PathDetails> = {
   coffee_with_me: {
     title: "Coffee With Me",
     description:
-      "Schedule a 30-minute conversation to discuss ideas, technology, collaboration, or career opportunities.",
+      "Schedule a conversation to discuss ideas, technology, collaboration, or career opportunities.",
     confirmationMessage:
       "Your Coffee With Me request has been submitted. I'll review your preferred meeting time and follow up to confirm availability.",
     icon: <Coffee size={28} aria-hidden="true" />,
@@ -78,7 +155,7 @@ const bookingPathDetails: Record<BookingPath, PathDetails> = {
 const pageStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 20,
+  gap: 8,
   width: "100%",
   minWidth: 0,
   minHeight: 0,
@@ -88,7 +165,7 @@ const pageStyle: CSSProperties = {
 const pathGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr)",
-  gap: 16,
+  gap: 14,
   width: "100%",
   minWidth: 0,
   boxSizing: "border-box",
@@ -98,20 +175,48 @@ const pathButtonStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
   alignItems: "flex-start",
-  gap: 12,
+  gap: 8,
   width: "100%",
   minWidth: 0,
-  minHeight: 180,
+  minHeight: 0,
   boxSizing: "border-box",
-  padding: 20,
-  border: "1px solid var(--mui-palette-divider, #d9dfe8)",
+  padding: "16px 20px",
+  border: "1px solid rgba(15, 23, 42, 0.08)",
   borderRadius: 12,
-  background: "transparent",
+  backgroundColor: "rgba(255, 255, 255, 0.78)",
+  backdropFilter: "blur(12px)",
+  WebkitBackdropFilter: "blur(12px)",
+  boxShadow:
+    "0 6px 18px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04)",
   color: "inherit",
   textAlign: "left",
   font: "inherit",
   cursor: "pointer",
-  transition: "border-color 160ms ease, background-color 160ms ease",
+  transition:
+    "transform 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease",
+  overflowWrap: "anywhere",
+};
+
+const packageCardStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  gap: 10,
+  width: "100%",
+  minWidth: 0,
+  padding: "18px",
+  border: "1px solid rgba(255, 255, 255, 0.35)",
+  borderRadius: 12,
+  backgroundColor: "rgba(255, 255, 255, 0.72)",
+  backdropFilter: "blur(12px)",
+  WebkitBackdropFilter: "blur(12px)",
+  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+  color: "inherit",
+  textAlign: "left",
+  font: "inherit",
+  cursor: "pointer",
+  transition:
+    "border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease",
   overflowWrap: "anywhere",
 };
 
@@ -134,6 +239,40 @@ function trackJourneyEvent(eventName: string): void {
   );
 }
 
+function getBookingType(step: "delivery" | "mentor" | "coffee"): BookingPath {
+  switch (step) {
+    case "delivery":
+      return "delivery_project";
+    case "mentor":
+      return "mentor_me";
+    case "coffee":
+      return "coffee_with_me";
+  }
+}
+
+function getFormStep(
+  bookingType: BookingPath,
+): "delivery" | "mentor" | "coffee" {
+  switch (bookingType) {
+    case "delivery_project":
+      return "delivery";
+    case "mentor_me":
+      return "mentor";
+    case "coffee_with_me":
+      return "coffee";
+  }
+}
+
+function getStepFromOpenPath(
+  path: OpenWorkWithMeDetail["path"],
+): "delivery" | "mentor" | "coffee" | null {
+  if (path === "delivery" || path === "mentor" || path === "coffee") {
+    return path;
+  }
+
+  return null;
+}
+
 interface PathCardProps {
   title: string;
   description: string;
@@ -145,35 +284,29 @@ function PathCard({ title, description, icon, onSelect }: PathCardProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>): void {
-    // Native buttons already support Enter and Space.
-    // Leave activation to the browser to avoid duplicate click events.
-    if (event.key === "Enter" || event.key === " ") {
-      return;
-    }
-  }
+  const isActive = isFocused || isHovered;
 
   return (
     <button
       type="button"
       onClick={onSelect}
-      onKeyDown={handleKeyDown}
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
         ...pathButtonStyle,
-        borderColor:
-          isFocused || isHovered
-            ? "var(--mui-palette-primary-main, #1976d2)"
-            : pathButtonStyle.borderColor,
+        borderColor: isActive
+          ? "var(--color-dark-yellow)"
+          : pathButtonStyle.borderColor,
         backgroundColor: isHovered
-          ? "var(--mui-palette-action-hover, rgba(0, 0, 0, 0.04))"
-          : "transparent",
-        outline: isFocused
-          ? "2px solid var(--mui-palette-primary-main, #1976d2)"
-          : "none",
+          ? "rgba(255, 255, 255, 0.94)"
+          : pathButtonStyle.backgroundColor,
+        boxShadow: isActive
+          ? "0 14px 28px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(217, 155, 22, 0.18)"
+          : pathButtonStyle.boxShadow,
+        transform: isHovered ? "translateY(-2px)" : "translateY(0)",
+        outline: isFocused ? "2px solid var(--color-dark-yellow)" : "none",
         outlineOffset: 2,
       }}
       aria-label={`${title}: ${description}`}
@@ -181,7 +314,7 @@ function PathCard({ title, description, icon, onSelect }: PathCardProps) {
       <span
         style={{
           display: "inline-flex",
-          color: "var(--mui-palette-primary-main, #1976d2)",
+          color: "var(--color-dark-yellow)",
         }}
       >
         {icon}
@@ -206,7 +339,7 @@ function PathCard({ title, description, icon, onSelect }: PathCardProps) {
       <span
         style={{
           fontSize: "0.875rem",
-          lineHeight: 1.6,
+          lineHeight: 1.5,
           color: "var(--mui-palette-text-secondary, #666)",
           overflowWrap: "anywhere",
         }}
@@ -217,34 +350,131 @@ function PathCard({ title, description, icon, onSelect }: PathCardProps) {
   );
 }
 
+interface PackageCardProps {
+  option: PackageOption;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+function PackageCard({ option, isSelected, onSelect }: PackageCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      aria-pressed={isSelected}
+      style={{
+        ...packageCardStyle,
+        borderColor:
+          isSelected || isHovered
+            ? "var(--color-dark-yellow)"
+            : packageCardStyle.borderColor,
+        backgroundColor: isSelected
+          ? "color-mix(in srgb, var(--color-light-yellow) 16%, rgba(255, 255, 255, 0.85))"
+          : isHovered
+            ? "rgba(255, 255, 255, 0.9)"
+            : packageCardStyle.backgroundColor,
+        outline: isSelected ? "2px solid var(--color-dark-yellow)" : "none",
+        outlineOffset: 1,
+      }}
+    >
+      <span
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          width: "100%",
+          flexWrap: "wrap",
+        }}
+      >
+        <span style={{ fontWeight: 700, fontSize: "1.05rem" }}>
+          {option.name}
+        </span>
+
+        <span
+          style={{
+            fontWeight: 800,
+            fontSize: "1.15rem",
+            color: "var(--color-dark-yellow)",
+          }}
+        >
+          ${option.price.toLocaleString("en-US")} USD
+        </span>
+      </span>
+
+      <span
+        style={{
+          fontSize: "0.875rem",
+          lineHeight: 1.5,
+          color: "var(--mui-palette-text-secondary, #666)",
+        }}
+      >
+        {option.description}
+      </span>
+
+      <span
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: "0.85rem",
+          fontWeight: 600,
+          color: isSelected
+            ? "var(--color-dark-yellow)"
+            : "var(--mui-palette-text-secondary, #666)",
+        }}
+      >
+        {isSelected ? (
+          <>
+            <CheckCircle2 size={16} aria-hidden="true" />
+            Selected
+          </>
+        ) : (
+          <>
+            Choose package
+            <ArrowRight size={16} aria-hidden="true" />
+          </>
+        )}
+      </span>
+    </button>
+  );
+}
+
 export function WorkWithMeModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<JourneyStep>("paths");
+  const [selectedPath, setSelectedPath] = useState<BookingPath | null>(null);
+  const [selectedPackage, setSelectedPackage] =
+    useState<BookingPackageTier | null>(null);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
 
-  // Lets other components (for example the last step of Get Quick Wins) open
-  // this modal, optionally straight on one of its paths.
   useEffect(() => {
     function handleOpenRequest(event: Event): void {
       const path = (event as CustomEvent<OpenWorkWithMeDetail>).detail?.path;
+      const requestedStep = getStepFromOpenPath(path);
 
       setConfirmation(null);
       setCopyError(null);
-      setStep(path ?? "paths");
+      setSelectedPackage(null);
+
+      if (requestedStep) {
+        const bookingType = getBookingType(requestedStep);
+
+        setSelectedPath(bookingType);
+        setStep("packages");
+        trackJourneyEvent(`${bookingType}.selected`);
+      } else {
+        setSelectedPath(null);
+        setStep("paths");
+      }
+
       setIsOpen(true);
       trackJourneyEvent("work_with_me.opened");
-
-      if (path) {
-        const bookingType: BookingPath =
-          path === "delivery"
-            ? "delivery_project"
-            : path === "mentor"
-              ? "mentor_me"
-              : "coffee_with_me";
-
-        trackJourneyEvent(`${bookingType}.selected`);
-      }
     }
 
     window.addEventListener(OPEN_WORK_WITH_ME_EVENT, handleOpenRequest);
@@ -254,52 +484,55 @@ export function WorkWithMeModal() {
     };
   }, []);
 
-  function openModal(): void {
-    setStep("paths");
-    setConfirmation(null);
-    setCopyError(null);
-    setIsOpen(true);
-    trackJourneyEvent("work_with_me.opened");
-  }
-
   function closeModal(): void {
     setIsOpen(false);
     trackJourneyEvent("work_with_me.closed");
   }
 
   function selectPath(
-    nextStep: Exclude<JourneyStep, "paths" | "confirmed" | "ownership_audit">,
+    nextStep: Exclude<
+      JourneyStep,
+      "paths" | "packages" | "confirmed" | "ownership_audit"
+    >,
   ): void {
-    const bookingType: BookingPath =
-      nextStep === "delivery"
-        ? "delivery_project"
-        : nextStep === "mentor"
-          ? "mentor_me"
-          : "coffee_with_me";
+    const bookingType = getBookingType(nextStep);
 
-    setStep(nextStep);
+    setSelectedPath(bookingType);
+    setSelectedPackage(null);
+    setStep("packages");
     setCopyError(null);
+
     trackJourneyEvent(`${bookingType}.selected`);
   }
 
-  function handleBackToPaths(): void {
-    const currentBookingType: BookingPath | null =
-      step === "delivery"
-        ? "delivery_project"
-        : step === "mentor"
-          ? "mentor_me"
-          : step === "coffee"
-            ? "coffee_with_me"
-            : null;
+  function selectPackage(tier: BookingPackageTier): void {
+    if (!selectedPath) return;
 
-    if (currentBookingType) {
-      trackJourneyEvent(`${currentBookingType}.back_to_paths`);
+    setSelectedPackage(tier);
+    setStep(getFormStep(selectedPath));
+    setCopyError(null);
+
+    trackJourneyEvent(`${selectedPath}.package_selected`);
+  }
+
+  function handleBackToPaths(): void {
+    if (selectedPath) {
+      trackJourneyEvent(`${selectedPath}.back_to_paths`);
     } else if (step === "ownership_audit") {
       trackJourneyEvent("ownership_audit.back_to_paths");
     }
 
     setStep("paths");
+    setSelectedPath(null);
+    setSelectedPackage(null);
     setCopyError(null);
+  }
+
+  function handleBackToPackages(): void {
+    if (selectedPath) {
+      trackJourneyEvent(`${selectedPath}.back_to_packages`);
+      setStep("packages");
+    }
   }
 
   function handleSubmitted(bookingType: BookingPath, reference: string): void {
@@ -332,33 +565,35 @@ export function WorkWithMeModal() {
     ? bookingPathDetails[confirmation.bookingType]
     : null;
 
+  const selectedPathDetails = selectedPath
+    ? bookingPathDetails[selectedPath]
+    : null;
+
+  // Retrieve path-specific package options dynamically
+  const currentPathPackages = selectedPath ? pathPackages[selectedPath] : [];
+
   return (
     <>
-      <Button
-        type="button"
-        variant="contained"
-        onClick={openModal}
-        aria-haspopup="dialog"
-      >
-        Work With Me
-      </Button>
-
       <Modal
         isOpen={isOpen}
         onClose={closeModal}
         labelledBy="work-with-me-title"
         describedBy="work-with-me-description"
         closeOnEscape
+        size="xl"
         closeOnOverlayClick
       >
         <div
           style={{
             ...pageStyle,
             position: "relative",
-            maxWidth: 600,
-            maxHeight: "min(720px, calc(100dvh - 32px))",
+            width: "100%",
+            maxWidth: 960,
+            height: "min(760px, calc(100dvh - 64px))",
+            maxHeight: "calc(100dvh - 64px)",
+            minHeight: 0,
             marginInline: "auto",
-            paddingTop: 44,
+            padding: 16,
             overflow: "hidden",
           }}
         >
@@ -370,8 +605,8 @@ export function WorkWithMeModal() {
             size="small"
             sx={{
               position: "absolute",
-              top: 4,
-              right: 4,
+              top: 10,
+              right: 10,
               zIndex: 2,
               color: "text.secondary",
               backgroundColor: "background.paper",
@@ -391,7 +626,12 @@ export function WorkWithMeModal() {
 
           {step === "paths" && (
             <>
-              <header style={{ flexShrink: 0, padding: "4px 2px 0" }}>
+              <header
+                style={{
+                  flex: "0 0 auto",
+                  padding: "2px 40px 8px 2px",
+                }}
+              >
                 <Typography
                   id="work-with-me-title"
                   variant="h4"
@@ -400,6 +640,8 @@ export function WorkWithMeModal() {
                   sx={{
                     fontSize: { xs: "1.8rem", sm: "2.125rem" },
                     overflowWrap: "anywhere",
+                    color: "var(--color-dark-yellow)",
+                    fontWeight: 700,
                   }}
                 >
                   Work With Me
@@ -420,10 +662,7 @@ export function WorkWithMeModal() {
                   flex: "1 1 auto",
                   minHeight: 0,
                   overflowY: "auto",
-                  overflowX: "hidden",
-                  overscrollBehaviorY: "contain",
-                  WebkitOverflowScrolling: "touch",
-                  padding: "4px 4px 12px",
+                  padding: "6px 8px 16px",
                 }}
               >
                 <PathCard
@@ -450,16 +689,17 @@ export function WorkWithMeModal() {
             </>
           )}
 
-          {(step === "delivery" || step === "mentor" || step === "coffee") && (
+          {step === "packages" && selectedPathDetails && selectedPath && (
             <div
               style={{
                 ...pageStyle,
                 flex: "1 1 auto",
+                minHeight: 0,
                 overflowY: "auto",
                 overflowX: "hidden",
                 overscrollBehaviorY: "contain",
                 WebkitOverflowScrolling: "touch",
-                padding: "4px 4px 12px",
+                padding: "4px 8px 16px",
               }}
             >
               <div style={{ flexShrink: 0 }}>
@@ -468,49 +708,149 @@ export function WorkWithMeModal() {
                   variant="text"
                   startIcon={<ArrowLeft size={18} />}
                   onClick={handleBackToPaths}
+                  sx={{ color: "var(--color-dark-yellow)" }}
                 >
                   All project paths
                 </Button>
               </div>
 
-              {step === "delivery" && (
-                <DeliveryProjectForm
-                  onBack={handleBackToPaths}
-                  onSubmitted={(reference) =>
-                    handleSubmitted("delivery_project", reference)
-                  }
-                />
-              )}
+              <header style={{ padding: "4px 2px 8px" }}>
+                <Typography
+                  id="work-with-me-title"
+                  variant="h4"
+                  component="h2"
+                  gutterBottom
+                  sx={{
+                    fontSize: { xs: "1.65rem", sm: "2rem" },
+                    color: "var(--color-light-yellow)",
+                    fontWeight: 700,
+                    overflowWrap: "anywhere",
+                  }}
+                >
+                  Choose Your Package
+                </Typography>
 
-              {step === "mentor" && (
-                <MentorMeForm
-                  onBack={handleBackToPaths}
-                  onSubmitted={(reference) =>
-                    handleSubmitted("mentor_me", reference)
-                  }
-                />
-              )}
+                <Typography variant="body1" color="text.secondary">
+                  {selectedPathDetails.title}
+                </Typography>
 
-              {step === "coffee" && (
-                <CoffeeWithMeForm
-                  onBack={handleBackToPaths}
-                  onSubmitted={(reference) =>
-                    handleSubmitted("coffee_with_me", reference)
-                  }
-                />
-              )}
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1 }}
+                >
+                  Select the package that best matches your needs.
+                </Typography>
+              </header>
+
+              <div
+                style={{
+                  ...pathGridStyle,
+                  flex: "1 1 auto",
+                  padding: "4px",
+                }}
+              >
+                {currentPathPackages.map((option) => (
+                  <PackageCard
+                    key={option.tier}
+                    option={option}
+                    isSelected={selectedPackage === option.tier}
+                    onSelect={() => selectPackage(option.tier)}
+                  />
+                ))}
+              </div>
             </div>
           )}
+
+          {(step === "delivery" || step === "mentor" || step === "coffee") &&
+            selectedPackage && (
+              <div
+                style={{
+                  ...pageStyle,
+                  flex: "1 1 auto",
+                  minHeight: 0,
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  overscrollBehaviorY: "contain",
+                  WebkitOverflowScrolling: "touch",
+                  padding: "4px 8px 16px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    flexShrink: 0,
+                  }}
+                >
+                  <Button
+                    type="button"
+                    variant="text"
+                    startIcon={<ArrowLeft size={18} />}
+                    onClick={handleBackToPaths}
+                    sx={{
+                      color: "var(--color-light-yellow)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    All project paths
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="text"
+                    onClick={handleBackToPackages}
+                    sx={{
+                      color: "var(--color-light-yellow)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Change package
+                  </Button>
+                </div>
+
+                {step === "delivery" && (
+                  <DeliveryProjectForm
+                    selectedPackage={selectedPackage}
+                    onBack={handleBackToPackages}
+                    onSubmitted={(reference) =>
+                      handleSubmitted("delivery_project", reference)
+                    }
+                  />
+                )}
+
+                {step === "mentor" && (
+                  <MentorMeForm
+                    selectedPackage={selectedPackage}
+                    onBack={handleBackToPackages}
+                    onSubmitted={(reference) =>
+                      handleSubmitted("mentor_me", reference)
+                    }
+                  />
+                )}
+
+                {step === "coffee" && (
+                  <CoffeeWithMeForm
+                    selectedPackage={selectedPackage}
+                    onBack={handleBackToPackages}
+                    onSubmitted={(reference) =>
+                      handleSubmitted("coffee_with_me", reference)
+                    }
+                  />
+                )}
+              </div>
+            )}
 
           {step === "confirmed" && confirmation && currentPath && (
             <div
               style={{
                 ...pageStyle,
-                flex: "1 1 auto",
-                overflowY: "auto",
-                overflowX: "hidden",
-                overscrollBehaviorY: "contain",
-                WebkitOverflowScrolling: "touch",
+                flex: "0 1 auto",
+                minHeight: 0,
+                overflow: "visible",
                 padding: "4px",
               }}
               aria-live="polite"

@@ -14,7 +14,12 @@ const deliveryBooking = {
   description:
     "This is a dedicated integration test booking for the Build Me API.",
   timeline: "1-3 months",
-  budget: "$1,000-$5,000",
+  budget: "1000_5000",
+  requestDetails: {
+    package: {
+      tier: "beginner",
+    },
+  },
 };
 
 const coffeeMeeting = {
@@ -27,6 +32,9 @@ const coffeeMeeting = {
   ).toISOString(),
   meetingDurationMinutes: 30,
   requestDetails: {
+    package: {
+      tier: "beginner",
+    },
     preferredFormat: "online",
     timezone: "Africa/Addis_Ababa",
     additionalContext: "Discuss a potential web development project.",
@@ -116,7 +124,8 @@ describe("Bookings API — PostgreSQL integration", () => {
       body: BookingResponse & { error?: string };
     };
 
-    expect(response.status).toBe(201);
+    expect(response.status, response.body.error).toBe(201);
+
     expect(response.body.data).toMatchObject({
       bookingType: "delivery_project",
       status: "pending",
@@ -141,6 +150,14 @@ describe("Bookings API — PostgreSQL integration", () => {
       project_description: string;
       timeline: string;
       budget: string | null;
+      request_details: {
+        package: {
+          tier: string;
+          name: string;
+          price: number;
+          currency: string;
+        };
+      };
     }>(
       `SELECT
          id,
@@ -153,13 +170,15 @@ describe("Bookings API — PostgreSQL integration", () => {
          project_type,
          project_description,
          timeline,
-         budget
+         budget,
+         request_details
        FROM bookings
        WHERE id = $1`,
       [bookingId],
     );
 
     expect(result.rowCount).toBe(1);
+
     expect(result.rows[0]).toMatchObject({
       id: bookingId,
       visitor_id: visitorId,
@@ -172,6 +191,14 @@ describe("Bookings API — PostgreSQL integration", () => {
       project_description: deliveryBooking.description,
       timeline: deliveryBooking.timeline,
       budget: deliveryBooking.budget,
+      request_details: {
+        package: {
+          tier: "beginner",
+          name: "Beginner",
+          price: 499,
+          currency: "USD",
+        },
+      },
     });
   });
 
@@ -186,7 +213,8 @@ describe("Bookings API — PostgreSQL integration", () => {
       body: BookingResponse & { error?: string };
     };
 
-    expect(response.status).toBe(201);
+    expect(response.status, response.body.error).toBe(201);
+
     expect(response.body.data).toMatchObject({
       bookingType: "coffee_with_me",
       status: "pending",
@@ -207,6 +235,12 @@ describe("Bookings API — PostgreSQL integration", () => {
       name: string;
       email: string;
       request_details: {
+        package: {
+          tier: string;
+          name: string;
+          price: number;
+          currency: string;
+        };
         preferredFormat: string;
         timezone: string;
         additionalContext?: string;
@@ -241,7 +275,18 @@ describe("Bookings API — PostgreSQL integration", () => {
       name: coffeeMeeting.name,
       email: coffeeMeeting.email,
       meeting_duration_minutes: 30,
-      request_details: coffeeMeeting.requestDetails,
+      request_details: {
+        package: {
+          tier: "beginner",
+          name: "Beginner",
+          price: 499,
+          currency: "USD",
+        },
+        preferredFormat: "online",
+        timezone: "Africa/Addis_Ababa",
+        additionalContext:
+          "Discuss a potential web development project.",
+      },
     });
 
     expect(new Date(saved.meeting_start_at).toISOString()).toBe(
@@ -256,7 +301,7 @@ describe("Bookings API — PostgreSQL integration", () => {
       .post("/api/bookings")
       .send({ ...deliveryBooking, visitorId });
 
-    expect(createResponse.status).toBe(201);
+    expect(createResponse.status, createResponse.body.error).toBe(201);
 
     const bookingId = createResponse.body.data.id as string;
     testBookingIds.push(bookingId);
@@ -264,6 +309,7 @@ describe("Bookings API — PostgreSQL integration", () => {
     const response = await request(app).get(`/api/bookings/${bookingId}`);
 
     expect(response.status).toBe(200);
+
     expect(response.body.data).toMatchObject({
       id: bookingId,
       bookingType: "delivery_project",
@@ -277,6 +323,7 @@ describe("Bookings API — PostgreSQL integration", () => {
 
   it("returns the same booking for an identical idempotent retry", async () => {
     const { default: request } = await import("supertest");
+
     const idempotencyKey = `coffee-${randomUUID()}`;
     const payload = { ...coffeeMeeting, visitorId };
 
@@ -285,7 +332,7 @@ describe("Bookings API — PostgreSQL integration", () => {
       .set("Idempotency-Key", idempotencyKey)
       .send(payload);
 
-    expect(firstResponse.status).toBe(201);
+    expect(firstResponse.status, firstResponse.body.error).toBe(201);
 
     const bookingId = firstResponse.body.data.id as string;
     testBookingIds.push(bookingId);
@@ -295,7 +342,7 @@ describe("Bookings API — PostgreSQL integration", () => {
       .set("Idempotency-Key", idempotencyKey)
       .send(payload);
 
-    expect(retryResponse.status).toBe(201);
+    expect(retryResponse.status, retryResponse.body.error).toBe(201);
     expect(retryResponse.body.data.id).toBe(bookingId);
 
     const count = await pool.query<{ count: string }>(
@@ -310,6 +357,7 @@ describe("Bookings API — PostgreSQL integration", () => {
 
   it("rejects reuse of an idempotency key for a different request", async () => {
     const { default: request } = await import("supertest");
+
     const idempotencyKey = `coffee-${randomUUID()}`;
 
     const firstResponse = await request(app)
@@ -317,7 +365,8 @@ describe("Bookings API — PostgreSQL integration", () => {
       .set("Idempotency-Key", idempotencyKey)
       .send({ ...coffeeMeeting, visitorId });
 
-    expect(firstResponse.status).toBe(201);
+    expect(firstResponse.status, firstResponse.body.error).toBe(201);
+
     testBookingIds.push(firstResponse.body.data.id);
 
     const conflictingResponse = await request(app)
@@ -346,7 +395,11 @@ describe("Bookings API — PostgreSQL integration", () => {
 
     const response = await request(app)
       .post("/api/bookings")
-      .send({ ...deliveryBooking, visitorId, email: "not-an-email" });
+      .send({
+        ...deliveryBooking,
+        visitorId,
+        email: "not-an-email",
+      });
 
     expect(response.status).toBe(400);
 
@@ -394,7 +447,10 @@ describe("Bookings API — PostgreSQL integration", () => {
 
     const response = await request(app)
       .post("/api/bookings")
-      .send({ ...deliveryBooking, visitorId: randomUUID() });
+      .send({
+        ...deliveryBooking,
+        visitorId: randomUUID(),
+      });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toContain("visitor does not exist");

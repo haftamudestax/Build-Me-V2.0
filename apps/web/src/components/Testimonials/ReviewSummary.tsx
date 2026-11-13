@@ -1,32 +1,20 @@
 import { Box, LinearProgress, Rating, Typography } from "@mui/material";
 import {
-  formatReviewCount,
   type ReviewSummaryData,
+  type CategoryMetric,
+  DEFAULT_CATEGORIES,
 } from "../../utils/testimonialsData";
-
-export interface CategoryMetric {
-  key: string;
-  label: string;
-  score: number;
-}
 
 interface ReviewSummaryProps {
   summary: ReviewSummaryData;
   categories?: CategoryMetric[];
 }
 
-const DEFAULT_CATEGORIES: CategoryMetric[] = [
-  { key: "projectDelivery", label: "Project Delivery", score: 0 },
-  { key: "cleanCode", label: "Clean Code", score: 0 },
-  { key: "value", label: "Value", score: 0 },
-  { key: "communication", label: "Communication", score: 0 },
-];
-
 export function ReviewSummary({
   summary,
-  categories = DEFAULT_CATEGORIES,
+  categories = summary.categories || DEFAULT_CATEGORIES,
 }: ReviewSummaryProps) {
-  const { average, count, ratedCount } = summary;
+  const { average, displayReviewText } = summary;
 
   return (
     <Box
@@ -38,93 +26,71 @@ export function ReviewSummary({
         flexDirection: { xs: "column", sm: "row" },
         alignItems: "center",
         justifyContent: "center",
-        gap: { xs: 2.5, sm: 4 },
-        p: { xs: 2.5, sm: 3 },
-        maxWidth: 580,
+        gap: { xs: 3, sm: 6 },
+        p: { xs: 2.5, sm: 4 },
+        maxWidth: 920,
         mx: "auto",
         borderRadius: 3,
         bgcolor: (theme) =>
           theme.palette.mode === "dark" ? "grey.900" : "#FAF8F5",
         border: "1px solid",
         borderColor: (theme) =>
-          theme.palette.mode === "dark" ? "divider" : "#EFECE6",
+          theme.palette.mode === "dark" ? "divider" : "#1746B5",
       }}
     >
-      {/* Left Column: Overall Stats */}
       <Box
         sx={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           textAlign: "center",
-          minWidth: 150,
+          minWidth: 160,
         }}
       >
-        {ratedCount > 0 ? (
-          <>
-            <Typography
-              component="p"
-              variant="h3"
-              data-testid="review-average"
-              sx={{ fontWeight: 800, lineHeight: 1 }}
-            >
-              {average.toFixed(1)}
-            </Typography>
+        <Typography
+          component="p"
+          variant="h2"
+          data-testid="review-average"
+          sx={{ fontWeight: 800, lineHeight: 1, mb: 0.5 }}
+        >
+          {average.toFixed(1)}
+        </Typography>
 
-            <Rating
-              value={average}
-              precision={0.1}
-              readOnly
-              size="small"
-              getLabelText={(value) => `${value} out of 5 stars`}
-              sx={{ my: 0.5 }}
-            />
-          </>
-        ) : (
-          <Typography
-            component="p"
-            variant="body2"
-            data-testid="review-average"
-            sx={{ fontWeight: 600, mb: 0.5 }}
-          >
-            No ratings yet
-          </Typography>
-        )}
+        <Rating
+          value={5}
+          readOnly
+          size="medium"
+          getLabelText={() => "5 out of 5 stars"}
+          sx={{ my: 0.5, color: "#F59E0B" }}
+        />
 
         <Typography
           component="span"
-          variant="subtitle2"
-          sx={{ fontWeight: 700 }}
+          variant="subtitle1"
+          sx={{ fontWeight: 700, mt: 0.5 }}
         >
           Overall Experience
         </Typography>
 
         <Typography
           component="span"
-          variant="caption"
-          color="text.secondary"
+          variant="body2"
+          sx={{ fontWeight: 700, mt: 0.5 }}
           data-testid="review-count"
         >
-          {formatReviewCount(count)} Reviews
+          {displayReviewText ?? "0.0 Reviews"}
         </Typography>
-
-        {ratedCount !== count && (
-          <Typography component="span" variant="caption" color="text.secondary">
-            {formatReviewCount(ratedCount)} with a rating
-          </Typography>
-        )}
       </Box>
 
-      {/* Right Column: Category Breakdown Bars */}
       <Box
         component="ul"
         aria-label="Review categories breakdown"
         sx={{
           listStyle: "none",
           display: "grid",
-          gap: 1,
+          gap: 1.5,
           width: "100%",
-          maxWidth: 300,
+          maxWidth: 320,
           m: 0,
           p: 0,
         }}
@@ -138,14 +104,14 @@ export function ReviewSummary({
               key={cat.key}
               sx={{
                 display: "grid",
-                gridTemplateColumns: "110px minmax(0, 1fr) 28px",
+                gridTemplateColumns: "120px minmax(0, 1fr) 32px",
                 alignItems: "center",
-                gap: 1,
+                gap: 1.5,
               }}
             >
               <Typography
                 component="span"
-                variant="caption"
+                variant="body2"
                 sx={{ fontWeight: 500 }}
               >
                 {cat.label}
@@ -156,19 +122,19 @@ export function ReviewSummary({
                 value={percent}
                 aria-label={`${cat.label}: ${cat.score.toFixed(1)} out of 5`}
                 sx={{
-                  height: 6,
-                  borderRadius: 3,
-                  bgcolor: "rgba(0, 0, 0, 0.06)", // Subtle track color matching cream background
+                  height: 8,
+                  borderRadius: 4,
+                  bgcolor: "rgba(0, 0, 0, 0.06)",
                   "& .MuiLinearProgress-bar": {
-                    borderRadius: 3,
-                    bgcolor: "#F59E0B", // Crisp amber/gold for progress fill
+                    borderRadius: 4,
+                    bgcolor: "#F59E0B",
                   },
                 }}
               />
 
               <Typography
                 component="span"
-                variant="caption"
+                variant="body2"
                 sx={{ fontWeight: 600 }}
                 align="right"
               >

@@ -120,7 +120,8 @@ export function Testimonials() {
           sx={{
             fontWeight: 900,
             letterSpacing: "-0.04em",
-            color: "text.primary",
+            color: "var(--color-dark-yellow)",
+            font: "bold",
             mb: 1.5,
           }}
         >
@@ -146,16 +147,24 @@ export function Testimonials() {
       <Box sx={{ mb: 3 }}>
         <ReviewSummary summary={summary} />
       </Box>
-
-      {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
           aria-label="Testimonials and case studies"
           variant="fullWidth"
-          textColor="primary"
-          indicatorColor="primary"
+          sx={{
+            "& .MuiTab-root": {
+              fontWeight: 700,
+              font: "bold",
+            },
+            "& .MuiTab-root.Mui-selected": {
+              color: "var(--color-dark-yellow)",
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "#1746B5",
+            },
+          }}
         >
           <Tab
             value="testimonials"
@@ -172,8 +181,6 @@ export function Testimonials() {
           />
         </Tabs>
       </Box>
-
-      {/* Testimonials Tab */}
       <Box
         role="tabpanel"
         id="testimonials-panel"

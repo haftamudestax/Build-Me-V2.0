@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Users } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { Box, Button, Stack, Typography } from "@mui/material";
 
 import { StepHeader } from "../ownershipAudit/StepParts";
@@ -19,18 +19,6 @@ export function LearningCircleWhyStep({
         title="Technology Ownership Learning Circle"
         description="Learn how to take control of the technology your business depends on."
       />
-
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          py: 2,
-          color: "primary.main",
-        }}
-      >
-        <Users size={52} aria-hidden="true" />
-      </Box>
 
       <Typography variant="body1" color="text.secondary">
         The Technology Ownership Learning Circle is a community for people who
@@ -96,7 +84,15 @@ export function LearningCircleWhyStep({
           justifyContent: "space-between",
         }}
       >
-        <Button type="button" variant="text" onClick={onBack}>
+        <Button
+          type="button"
+          variant="text"
+          onClick={onBack}
+          sx={{
+            bgcolor: "var(--color-light-yellow)",
+            fontWeight: 700,
+          }}
+        >
           Back to options
         </Button>
 
@@ -105,6 +101,10 @@ export function LearningCircleWhyStep({
           variant="contained"
           onClick={onNext}
           endIcon={<ArrowRight size={18} />}
+          sx={{
+            bgcolor: "var(--color-light-yellow)",
+            fontWeight: 700,
+          }}
         >
           Continue to registration
         </Button>

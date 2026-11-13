@@ -66,7 +66,6 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
 
   return (
     <>
-      {/* Case Study Card */}
       <Box
         component="article"
         data-testid="case-study-card"
@@ -81,7 +80,7 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
           boxSizing: "border-box",
           bgcolor: "#FAF8F5",
           border: 1,
-          borderColor: "#E2E8F0",
+          borderColor: "#1746B5",
           borderRadius: 3,
           boxShadow: 1,
           transform: "translateY(0)",
@@ -96,7 +95,6 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
           },
         }}
       >
-        {/* Service Icon */}
         <Box
           sx={{
             display: "grid",
@@ -115,12 +113,10 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
           {service.icon}
         </Box>
 
-        {/* Service Title */}
         <Typography component="h3" variant="h6" sx={{ fontWeight: 700 }}>
           {service.title}
         </Typography>
 
-        {/* Truncated Description */}
         <Typography
           component="p"
           variant="body2"
@@ -136,7 +132,6 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
           {service.description}
         </Typography>
 
-        {/* Read More */}
         <Button
           variant="text"
           size="small"
@@ -149,13 +144,13 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
             mt: "auto",
             textTransform: "none",
             fontWeight: 700,
+            color: "var(--color-dark-yellow)",
           }}
         >
           Read more
         </Button>
       </Box>
 
-      {/* Full Description Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
@@ -173,7 +168,6 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
             pr: 2,
           }}
         >
-          {/* Service Icon */}
           <Avatar
             variant="rounded"
             sx={{
@@ -189,7 +183,6 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
             {service.icon}
           </Avatar>
 
-          {/* Dialog Title */}
           <Typography
             component="span"
             variant="h6"
@@ -201,8 +194,6 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
           >
             {service.title}
           </Typography>
-
-          {/* Close Button */}
           <IconButton
             aria-label="Close description"
             onClick={handleClose}
@@ -213,7 +204,6 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
           </IconButton>
         </DialogTitle>
 
-        {/* Full Description */}
         <DialogContent dividers>
           <Typography
             variant="body1"
@@ -228,7 +218,6 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
           </Typography>
         </DialogContent>
 
-        {/* Call to Action */}
         {path && (
           <DialogActions
             sx={{

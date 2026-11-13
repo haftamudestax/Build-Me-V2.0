@@ -29,7 +29,7 @@ describe("HeroSection", () => {
     expect(heading).toHaveTextContent(/Build Better\s*Digital Experiences/i);
   });
 
-  it("renders the complete HeroIntro inside the section", () => {
+  it("renders the complete Hero-Top, Hero-Left, and Hero-Right content inside the section", () => {
     render(<HeroSection />);
 
     const hero = screen.getByRole("region", {
@@ -52,23 +52,13 @@ describe("HeroSection", () => {
       }),
     ).toBeInTheDocument();
 
-    const paragraphs = within(hero).getAllByText(
-      (_, element) => element?.tagName.toLowerCase() === "p",
-    );
-
-    const description = paragraphs.find((paragraph) =>
-      paragraph.textContent?.includes("Websites and apps that are easy to use"),
+    const description = within(hero).getByText((content) =>
+      content.includes("Get a dedicated developer who turns your ideas"),
     );
 
     expect(description).toBeDefined();
     expect(description).toHaveTextContent(
-      "Websites and apps that are easy to use",
-    );
-    expect(description).toHaveTextContent("look great, and work fast.");
-    expect(description).toHaveTextContent("Get more customers with ease.");
-    expect(description).toHaveTextContent("No stress, no confusion");
-    expect(description).toHaveTextContent(
-      "reliable solutions that help you grow.",
+      "Get a dedicated developer who turns your ideas into polished, high-speed websites and apps. Designed for simplicity and built to convert, so you can focus on growing your business without technical headaches.",
     );
   });
 

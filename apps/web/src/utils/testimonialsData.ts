@@ -10,6 +10,12 @@ export interface Testimonial {
   isSample?: boolean;
 }
 
+export interface CategoryMetric {
+  key: string;
+  label: string;
+  score: number;
+}
+
 export const TESTIMONIALS_PER_PAGE = 4;
 
 export const RATING_VALUES: readonly Rating[] = [5, 4, 3, 2, 1];
@@ -23,7 +29,6 @@ export const testimonials: Testimonial[] = [
     quote:
       "Desta is an excellent software developer, and it has always been a pleasure to work with him. We pair-programmed extensively together while enrolled at a software development program, Microverse, and in that time his professionalism and technical skills blew me away. He writes clean, DRY code, and he gives attention to details. He's so approachable and easy to talk to. Collaborating with him left me with the feeling that we've known each other for years. He's the perfect match if you need a full-stack developer.",
   },
-  
 ];
 
 export interface ReviewSummaryData {
@@ -31,7 +36,17 @@ export interface ReviewSummaryData {
   ratedCount: number;
   average: number;
   distribution: Record<Rating, number>;
+  categories: CategoryMetric[];
+  displayReviewText?: string;
+  displayCustomerText?: string;
 }
+
+export const DEFAULT_CATEGORIES: CategoryMetric[] = [
+  { key: "technicalExpertise", label: "Technical Expertise", score: 0 },
+  { key: "reliability", label: "Reliability", score: 0 },
+  { key: "collaboration", label: "Collaboration", score: 0 },
+  { key: "qualityOfWork", label: "Quality of Work", score: 0 },
+];
 
 export function summarizeReviews(items: Testimonial[]): ReviewSummaryData {
   const distribution: Record<Rating, number> = {
@@ -53,14 +68,17 @@ export function summarizeReviews(items: Testimonial[]): ReviewSummaryData {
     ratedCount += 1;
   }
 
+  const average =
+    ratedCount === 0 ? 0 : Math.round((totalRating / ratedCount) * 10) / 10;
+
   return {
     count: items.length,
     ratedCount,
-    average:
-      ratedCount === 0
-        ? 0
-        : Math.round((totalRating / ratedCount) * 10) / 10,
+    average,
     distribution,
+    categories: DEFAULT_CATEGORIES,
+    displayReviewText: `${ratedCount.toFixed(1)} Reviews`,
+    displayCustomerText: "100+ Customers",
   };
 }
 

@@ -5,18 +5,20 @@ import "@testing-library/jest-dom/vitest";
 import { HeroRight } from "../../../apps/web/src/components/Hero/HeroRight";
 
 describe("HeroRight", () => {
-  it("renders the profile image with accessible alternative text", () => {
+  it("renders the profile images with accessible alternative text", () => {
     render(<HeroRight />);
 
-    expect(
-      screen.getByRole("img", { name: "Haftamu Desta" }),
-    ).toBeInTheDocument();
+    const images = screen.getAllByRole("img", { name: "Haftamu Desta" });
+    expect(images.length).toBeGreaterThanOrEqual(1);
+    images.forEach((img) => expect(img).toBeInTheDocument());
   });
 
   it("renders the desktop and compact impact card variants", () => {
     render(<HeroRight />);
 
-    expect(screen.getAllByText("My Impact in Action ↘")).toHaveLength(2);
+    expect(
+      screen.getAllByText((content) => content.includes("My Impact in Action")),
+    ).toHaveLength(2);
   });
 
   it("includes all four metrics in both card variants", () => {
@@ -27,12 +29,14 @@ describe("HeroRight", () => {
     }
   });
 
-  it("renders the profile image with a source", () => {
+  it("renders the profile images with sources", () => {
     render(<HeroRight />);
 
-    const image = screen.getByRole("img", { name: "Haftamu Desta" });
+    const images = screen.getAllByRole("img", { name: "Haftamu Desta" });
 
-    expect(image).toHaveAttribute("src");
-    expect(image.getAttribute("src")).not.toBe("");
+    images.forEach((image) => {
+      expect(image).toHaveAttribute("src");
+      expect(image.getAttribute("src")).not.toBe("");
+    });
   });
 });

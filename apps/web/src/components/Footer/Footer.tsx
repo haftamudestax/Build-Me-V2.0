@@ -17,29 +17,17 @@ export function Footer() {
             <SocialConnections />
           </div>
 
-          {/* Footer actions */}
           <div
             className="
-              flex w-full min-w-0 flex-col items-stretch gap-4
-              sm:flex-row sm:flex-wrap sm:items-center
-              md:w-auto md:justify-end
-            "
-          >
-            {/* Share */}
-            <div
-              className="
                 flex min-w-0 items-center
                 border-b border-gray-200 pb-4
                 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-6
               "
-            >
-              <ShareButton />
-            </div>
-
-            {/* Referral */}
-            <div className="flex min-w-0 items-center">
-              <ReferralButton />
-            </div>
+          >
+            <ShareButton />
+          </div>
+          <div className="flex min-w-0 items-center">
+            <ReferralButton />
           </div>
         </div>
       </div>

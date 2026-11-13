@@ -27,12 +27,8 @@ describe("Hero Left Section integration", () => {
     ).toBeInTheDocument();
 
     expect(
-      within(hero).getByText(
-        (_, element) =>
-          element?.tagName.toLowerCase() === "p" &&
-          element.textContent?.includes(
-            "reliable solutions that help you grow.",
-          ) === true,
+      within(hero).getByText((content) =>
+        content.includes("Get a dedicated developer who turns your ideas"),
       ),
     ).toBeInTheDocument();
   });
@@ -41,10 +37,10 @@ describe("Hero Left Section integration", () => {
     render(<HeroSection />);
 
     const heading = screen.getByRole("heading", { level: 1 });
-    const blueText = within(heading).getByText("Digital Experiences");
+    const emphasizedText = within(heading).getByText("Digital Experiences");
 
-    expect(blueText.tagName).toBe("SPAN");
-    expect(blueText).toHaveStyle({ color: "#1746B5" });
+    expect(emphasizedText.tagName).toBe("SPAN");
+    expect(emphasizedText).toHaveStyle({ color: "var(--color-dark-yellow)" });
   });
 
   it("maintains an accessible heading hierarchy", () => {
@@ -55,7 +51,7 @@ describe("Hero Left Section integration", () => {
     });
 
     expect(within(hero).getAllByRole("heading", { level: 1 })).toHaveLength(1);
-
     expect(within(hero).getAllByRole("heading", { level: 2 })).toHaveLength(1);
+    expect(within(hero).getAllByRole("heading", { level: 3 })).toHaveLength(1);
   });
 });

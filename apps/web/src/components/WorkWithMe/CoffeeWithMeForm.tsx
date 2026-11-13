@@ -10,11 +10,25 @@ import {
 } from "@mui/material";
 import { getAnalyticsConfig } from "@build-me/utils";
 
+type BookingPackageTier = "beginner" | "intermediate" | "advanced";
 type MeetingFormat = "online" | "in_person";
+
+const BOOKING_PACKAGE_PRICES: Record<BookingPackageTier, number> = {
+  beginner: 499,
+  intermediate: 999,
+  advanced: 1499,
+};
+
+const packageLabels: Record<BookingPackageTier, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
 
 interface CoffeeWithMeFormProps {
   onBack: () => void;
   onSubmitted: (reference: string) => void;
+  selectedPackage: BookingPackageTier;
 }
 
 interface CoffeeWithMeFormData {
@@ -106,6 +120,7 @@ function getErrorMessage(response: BookingResponse): string {
 export function CoffeeWithMeForm({
   onBack,
   onSubmitted,
+  selectedPackage,
 }: CoffeeWithMeFormProps) {
   const [formData, setFormData] =
     useState<CoffeeWithMeFormData>(initialFormData);
@@ -200,7 +215,6 @@ export function CoffeeWithMeForm({
       return;
     }
 
-    // Capture the validated date before starting the asynchronous request.
     const meetingStartAt = selectedDate!.toISOString();
 
     setIsSubmitting(true);
@@ -208,6 +222,7 @@ export function CoffeeWithMeForm({
     trackBookingEvent("coffee_with_me.started", {
       preferredFormat: formData.preferredFormat,
       meetingDurationMinutes: COFFEE_MEETING_DURATION_MINUTES,
+      packageTier: selectedPackage,
     });
 
     try {
@@ -225,6 +240,9 @@ export function CoffeeWithMeForm({
           meetingStartAt,
           meetingDurationMinutes: COFFEE_MEETING_DURATION_MINUTES,
           requestDetails: {
+            package: {
+              tier: selectedPackage,
+            },
             preferredFormat: formData.preferredFormat,
             timezone,
             ...(additionalContext ? { additionalContext } : {}),
@@ -252,6 +270,7 @@ export function CoffeeWithMeForm({
         reference,
         bookingType: result.data?.bookingType ?? "coffee_with_me",
         status: result.data?.status,
+        packageTier: selectedPackage,
       });
 
       onSubmitted(reference);
@@ -284,13 +303,34 @@ export function CoffeeWithMeForm({
     >
       <Stack spacing={2.5} sx={{ minWidth: 0 }}>
         <Box>
-          <Typography variant="h5" component="h2" gutterBottom>
+          <Typography
+            variant="h5"
+            component="h2"
+            gutterBottom
+            sx={{
+              color: "var(--color-dark-yellow)",
+              fontWeight: 700,
+            }}
+          >
             Coffee With Me
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
             Request a 30-minute conversation. Your preferred time is subject to
             availability and confirmation.
+          </Typography>
+
+          <Typography
+            variant="body2"
+            sx={{
+              mt: 1.5,
+              fontWeight: 700,
+              color: "var(--color-light-yellow)",
+            }}
+          >
+            Selected package: {packageLabels[selectedPackage]} — $
+            {BOOKING_PACKAGE_PRICES[selectedPackage].toLocaleString("en-US")}{" "}
+            USD
           </Typography>
         </Box>
 
@@ -390,7 +430,25 @@ export function CoffeeWithMeForm({
             onClick={onBack}
             disabled={isSubmitting}
             fullWidth
-            sx={{ width: { xs: "100%", sm: "auto" } }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              borderColor: "var(--color-dark-yellow)",
+              color: "var(--color-black)",
+              bgcolor: "var(--color-dark-yellow)",
+              py: 1.25,
+              px: 3,
+              borderRadius: "8px",
+              fontWeight: 700,
+              textTransform: "none",
+              boxShadow: "none",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                borderColor: "var(--color-light-yellow)",
+                bgcolor: "var(--color-light-yellow)",
+                boxShadow: "0 4px 12px rgba(247, 183, 51, 0.25)",
+                transform: "translateY(-1px)",
+              },
+            }}
           >
             Back
           </Button>
@@ -400,7 +458,25 @@ export function CoffeeWithMeForm({
             variant="contained"
             disabled={isSubmitting}
             fullWidth
-            sx={{ width: { xs: "100%", sm: "auto" } }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              borderColor: "var(--color-dark-yellow)",
+              color: "var(--color-black)",
+              bgcolor: "var(--color-dark-yellow)",
+              py: 1.25,
+              px: 3,
+              borderRadius: "8px",
+              fontWeight: 700,
+              textTransform: "none",
+              boxShadow: "none",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                borderColor: "var(--color-light-yellow)",
+                bgcolor: "var(--color-light-yellow)",
+                boxShadow: "0 4px 12px rgba(247, 183, 51, 0.25)",
+                transform: "translateY(-1px)",
+              },
+            }}
           >
             {isSubmitting ? "Submitting..." : "Submit request"}
           </Button>
