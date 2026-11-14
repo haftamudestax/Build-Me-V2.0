@@ -10,12 +10,26 @@ import {
 } from "@mui/material";
 import { getAnalyticsConfig } from "@build-me/utils";
 
+type BookingPackageTier = "beginner" | "intermediate" | "advanced";
 type ExperienceLevel = "beginner" | "intermediate" | "advanced" | "other";
 type MeetingFormat = "online" | "in_person";
+
+const BOOKING_PACKAGE_PRICES: Record<BookingPackageTier, number> = {
+  beginner: 499,
+  intermediate: 999,
+  advanced: 1499,
+};
+
+const packageLabels: Record<BookingPackageTier, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
 
 interface MentorMeFormProps {
   onBack: () => void;
   onSubmitted: (reference: string) => void;
+  selectedPackage: BookingPackageTier;
 }
 
 interface MentorMeFormData {
@@ -95,7 +109,11 @@ function getErrorMessage(response: BookingResponse): string {
   );
 }
 
-export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
+export function MentorMeForm({
+  onBack,
+  onSubmitted,
+  selectedPackage,
+}: MentorMeFormProps) {
   const [formData, setFormData] = useState<MentorMeFormData>(initialFormData);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -164,6 +182,7 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
     trackBookingEvent("mentor_me.started", {
       experienceLevel: formData.experienceLevel,
       preferredFormat: formData.preferredFormat,
+      packageTier: selectedPackage,
     });
 
     try {
@@ -179,6 +198,9 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
           name,
           email,
           requestDetails: {
+            package: {
+              tier: selectedPackage,
+            },
             mentoringTopic,
             goals,
             experienceLevel: formData.experienceLevel,
@@ -203,11 +225,12 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
           "Your request may have been received, but no booking reference was returned. Please contact us before submitting again.",
         );
       }
-      console.log("result:", result);
+
       trackBookingEvent("mentor_me.booking_submitted", {
         reference,
         bookingType: result.data?.bookingType ?? "mentor_me",
         status: result.data?.status,
+        packageTier: selectedPackage,
       });
 
       onSubmitted(reference);
@@ -236,13 +259,31 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
     >
       <Stack spacing={2.5} sx={{ minWidth: 0 }}>
         <Box>
-          <Typography variant="h5" component="h2" gutterBottom>
+          <Typography
+            variant="h5"
+            component="h2"
+            gutterBottom
+            sx={{ color: "var(--color-dark-yellow)", fontWeight: 700 }}
+          >
             Mentor Me
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
             Tell me what you want to learn, the challenges you are facing, and
             how you would prefer to work together.
+          </Typography>
+
+          <Typography
+            variant="body2"
+            sx={{
+              mt: 1.5,
+              fontWeight: 700,
+              color: "var(--color-light-yellow)",
+            }}
+          >
+            Selected package: {packageLabels[selectedPackage]} — $
+            {BOOKING_PACKAGE_PRICES[selectedPackage].toLocaleString("en-US")}{" "}
+            USD
           </Typography>
         </Box>
 
@@ -369,7 +410,25 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
             onClick={onBack}
             disabled={isSubmitting}
             fullWidth
-            sx={{ width: { xs: "100%", sm: "auto" } }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              borderColor: "var(--color-dark-yellow)",
+              color: "var(--color-black)",
+              bgcolor: "var(--color-dark-yellow)",
+              py: 1.25,
+              px: 3,
+              borderRadius: "8px",
+              fontWeight: 700,
+              textTransform: "none",
+              boxShadow: "none",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                borderColor: "var(--color-light-yellow)",
+                bgcolor: "var(--color-light-yellow)",
+                boxShadow: "0 4px 12px rgba(247, 183, 51, 0.25)",
+                transform: "translateY(-1px)",
+              },
+            }}
           >
             Back
           </Button>
@@ -379,7 +438,25 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
             variant="contained"
             disabled={isSubmitting}
             fullWidth
-            sx={{ width: { xs: "100%", sm: "auto" } }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              borderColor: "var(--color-dark-yellow)",
+              color: "var(--color-black)",
+              bgcolor: "var(--color-dark-yellow)",
+              py: 1.25,
+              px: 3,
+              borderRadius: "8px",
+              fontWeight: 700,
+              textTransform: "none",
+              boxShadow: "none",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                borderColor: "var(--color-light-yellow)",
+                bgcolor: "var(--color-light-yellow)",
+                boxShadow: "0 4px 12px rgba(247, 183, 51, 0.25)",
+                transform: "translateY(-1px)",
+              },
+            }}
           >
             {isSubmitting ? "Submitting..." : "Submit request"}
           </Button>

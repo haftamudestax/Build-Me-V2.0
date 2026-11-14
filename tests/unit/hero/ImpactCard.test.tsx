@@ -8,7 +8,9 @@ describe("ImpactCard", () => {
   it("renders the impact heading", () => {
     render(<ImpactCard />);
 
-    expect(screen.getByText("My Impact in Action ↘")).toBeInTheDocument();
+    expect(
+      screen.getByText((content) => content.includes("My Impact in Action")),
+    ).toBeInTheDocument();
   });
 
   it("renders all four impact metrics", () => {

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   FormControl,
   FormControlLabel,
   FormLabel,
@@ -10,7 +9,6 @@ import {
   Typography,
 } from "@mui/material";
 
-import { trackEvent } from "./analytics";
 import {
   TOTAL_QUESTIONS,
   auditSections,
@@ -23,9 +21,7 @@ interface OwnershipAuditQuestionsProps {
   sectionIndex: number;
   onSectionChange: (sectionIndex: number) => void;
   onAnswer: (questionId: string, points: number) => void;
-  /** Called from "Previous" on the first section. */
   onBack: () => void;
-  /** Called from "See my score" on the last section. */
   onFinish: () => void;
 }
 
@@ -37,125 +33,175 @@ export function OwnershipAuditQuestions({
   onBack,
   onFinish,
 }: OwnershipAuditQuestionsProps) {
-  const [error, setError] = useState("");
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(() =>
+    auditSections
+      .slice(0, sectionIndex)
+      .reduce((total, section) => total + section.questions.length, 0),
+  );
 
-  const section = auditSections[sectionIndex];
-  const isLastSection = sectionIndex === auditSections.length - 1;
-  const questionsBefore = auditSections
-    .slice(0, sectionIndex)
-    .reduce((total, item) => total + item.questions.length, 0);
+  const allQuestions = auditSections.flatMap((section, index) =>
+    section.questions.map((question) => ({
+      ...question,
+      sectionIndex: index,
+      sectionTitle: section.title,
+    })),
+  );
 
-  function handleAnswer(questionId: string, points: number): void {
-    setError("");
-    onAnswer(questionId, points);
+  const currentQuestion = allQuestions[currentQuestionIndex];
+
+  if (!currentQuestion) {
+    return null;
   }
 
-  function handlePrevious(): void {
-    setError("");
+  const isFirstQuestion = currentQuestionIndex === 0;
+  const isLastQuestion = currentQuestionIndex === TOTAL_QUESTIONS - 1;
 
-    if (sectionIndex === 0) {
-      onBack();
-      return;
-    }
+  function handleAnswer(points: number): void {
+    onAnswer(currentQuestion.id, points);
 
-    onSectionChange(sectionIndex - 1);
-  }
-
-  function handleNext(): void {
-    const hasUnanswered = section.questions.some(
-      (question) => answers[question.id] === undefined,
-    );
-
-    if (hasUnanswered) {
-      setError("Please answer every question before continuing.");
-      trackEvent("ownership_audit.validation_failed", {
-        step: 3,
-        section: sectionIndex + 1,
-      });
-      return;
-    }
-
-    setError("");
-
-    if (isLastSection) {
+    if (isLastQuestion) {
       onFinish();
       return;
     }
 
-    onSectionChange(sectionIndex + 1);
+    const nextQuestion = allQuestions[currentQuestionIndex + 1];
+
+    // Update the parent when moving into another section.
+    if (nextQuestion.sectionIndex !== currentQuestion.sectionIndex) {
+      onSectionChange(nextQuestion.sectionIndex);
+    }
+
+    // Automatically display the next question.
+    setCurrentQuestionIndex((previous) => previous + 1);
+  }
+
+  function handlePrevious(): void {
+    if (isFirstQuestion) {
+      onBack();
+      return;
+    }
+
+    const previousQuestion = allQuestions[currentQuestionIndex - 1];
+
+    if (previousQuestion.sectionIndex !== currentQuestion.sectionIndex) {
+      onSectionChange(previousQuestion.sectionIndex);
+    }
+
+    setCurrentQuestionIndex((previous) => previous - 1);
   }
 
   return (
-    <Stack spacing={2.5} sx={{ minWidth: 0 }}>
+    <Stack spacing={3} sx={{ minWidth: 0 }}>
       <StepHeader
-        eyebrow={`Step 3 of 5 · Section ${sectionIndex + 1} of ${auditSections.length}`}
-        title={section.title}
+        eyebrow={`Step 3 of 5 · Question ${currentQuestionIndex + 1}/${TOTAL_QUESTIONS}`}
+        title={currentQuestion.sectionTitle}
         description="Choose the answer that best describes your situation today."
       />
 
-      {section.questions.map((question, index) => (
-        <FormControl
-          key={question.id}
-          component="fieldset"
-          fullWidth
+      {/* Question progress */}
+      <Stack spacing={1}>
+        <Stack
           sx={{
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 2,
-            p: 2,
-            m: 0,
-            minWidth: 0,
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          <FormLabel
-            component="legend"
-            sx={{ color: "text.primary", fontWeight: 600, px: 0.5 }}
-          >
-            {question.question}
-          </FormLabel>
-
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            {question.help}
+          <Typography component="p" variant="body2" color="text.secondary">
+            Question {currentQuestionIndex + 1} of {TOTAL_QUESTIONS}
           </Typography>
 
-          <RadioGroup
-            name={question.id}
-            value={
-              answers[question.id] === undefined
-                ? ""
-                : String(answers[question.id])
-            }
-            onChange={(event) =>
-              handleAnswer(question.id, Number(event.target.value))
-            }
-          >
-            {question.answers.map((answer) => (
-              <FormControlLabel
-                key={answer.label}
-                value={String(answer.points)}
-                control={<Radio />}
-                label={answer.label}
-              />
-            ))}
-          </RadioGroup>
-
-          <Typography variant="caption" color="text.secondary">
-            Question {questionsBefore + index + 1} of {TOTAL_QUESTIONS}
+          <Typography variant="body2" color="text.secondary">
+            {Math.round(((currentQuestionIndex + 1) / TOTAL_QUESTIONS) * 100)}%
           </Typography>
-        </FormControl>
-      ))}
+        </Stack>
 
-      {error && (
-        <Alert severity="warning" role="alert">
-          {error}
-        </Alert>
-      )}
+        <Stack
+          direction="row"
+          sx={{
+            width: "100%",
+            height: 6,
+            borderRadius: 10,
+            overflow: "hidden",
+            bgcolor: "action.hover",
+          }}
+        >
+          <Stack
+            sx={{
+              width: `${((currentQuestionIndex + 1) / TOTAL_QUESTIONS) * 100}%`,
+              bgcolor: "primary.main",
+              transition: "width 250ms ease",
+            }}
+          />
+        </Stack>
+      </Stack>
 
+      {/* One question at a time */}
+      <FormControl
+        component="fieldset"
+        fullWidth
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 2,
+          p: 3,
+          minWidth: 0,
+        }}
+      >
+        <FormLabel
+          component="legend"
+          sx={{
+            color: "text.primary",
+            fontWeight: 700,
+            fontSize: "1.1rem",
+            mb: 1,
+          }}
+        >
+          {currentQuestion.question}
+        </FormLabel>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {currentQuestion.help}
+        </Typography>
+
+        <RadioGroup
+          name={currentQuestion.id}
+          value={
+            answers[currentQuestion.id] === undefined
+              ? ""
+              : String(answers[currentQuestion.id])
+          }
+          onChange={(event) => handleAnswer(Number(event.target.value))}
+        >
+          {currentQuestion.answers.map((answer) => (
+            <FormControlLabel
+              key={answer.label}
+              value={String(answer.points)}
+              control={<Radio />}
+              label={answer.label}
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1.5,
+                mx: 0,
+                my: 0.5,
+                px: 1,
+                py: 0.5,
+                "&:hover": {
+                  bgcolor: "action.hover",
+                },
+              }}
+            />
+          ))}
+        </RadioGroup>
+      </FormControl>
+
+      {/* Navigation */}
       <StepFooter
-        previous={{ label: "Previous", onClick: handlePrevious }}
-        next={{
-          label: isLastSection ? "See my score" : "Next",
-          onClick: handleNext,
+        previous={{
+          label: "Previous",
+          onClick: handlePrevious,
         }}
       />
     </Stack>

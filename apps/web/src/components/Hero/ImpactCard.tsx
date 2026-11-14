@@ -6,50 +6,74 @@ const impactItems = [
     icon: Shield,
     value: "99.9%",
     label: "System Reliability",
-    color: "#2563eb",
+    color: "#1746B5",
     background: "#dbeafe",
   },
   {
     icon: Rocket,
     value: "Faster",
     label: "Time to Market",
-    color: "#4f46e5",
+    color: "#1746B5",
     background: "#e0e7ff",
   },
   {
     icon: CircleDollarSign,
     value: "Lower",
     label: "Operational Costs",
-    color: "#0891b2",
+    color: "#1746B5",
     background: "#cffafe",
   },
   {
     icon: Award,
     value: "Stronger",
     label: "Security & Trust",
-    color: "#0d9488",
+    color: "#1746B5",
     background: "#ccfbf1",
   },
 ];
 
 export function ImpactCard() {
   return (
-    <Box sx={{ width: { xs: 250, sm: 270 }, maxWidth: "100%" }}>
-      <Typography
-        component="p"
+    <Box sx={{ width: { xs: 260, sm: 280 }, maxWidth: "100%" }}>
+      {/* Header Container with Handwritten Text and Arrow Aligned to the Top-Right */}
+      <Box
         sx={{
-          mb: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: 1.5,
+          mb: 1,
           pr: 1,
-          textAlign: "right",
-          fontFamily: "Georgia, serif",
-          fontSize: "1.05rem",
-          fontStyle: "italic",
-          fontWeight: 700,
-          color: "#059669",
         }}
       >
-        My Impact in Action ↘
-      </Typography>
+        <span
+          style={{ fontFamily: "'Caveat', cursive, sans-serif" }}
+          className="text-xl font-semibold text-light-yellow transform -rotate-2 select-none"
+        >
+          My Impact in Action
+        </span>
+
+        <svg
+          className="w-9 h-9 text-light-yellow overflow-visible shrink-0"
+          viewBox="0 0 50 40"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M5 8 C 25 8, 35 15, 42 32"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+          <path
+            d="M33 27 L44 34 L40 21"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </Box>
 
       <Card
         elevation={0}
@@ -100,7 +124,8 @@ export function ImpactCard() {
                         fontSize: "0.95rem",
                         lineHeight: 1.3,
                         fontWeight: 800,
-                        color: "#0f172a",
+                        font: "bold",
+                        color: "var(--color-light-yellow)",
                       }}
                     >
                       {item.value}

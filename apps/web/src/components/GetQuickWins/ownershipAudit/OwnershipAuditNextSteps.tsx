@@ -1,7 +1,7 @@
 import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { ArrowRight } from "lucide-react";
 
-import type { WorkWithMePath } from "../WorkWithMe/openWorkWithMe";
+import type { WorkWithMePath } from "../../WorkWithMe/openWorkWithMe";
 import {
   getPathRecommendations,
   getRecommendedActions,
@@ -90,8 +90,17 @@ export function OwnershipAuditNextSteps({
                 {recommendation.recommended && (
                   <Chip
                     label="Recommended for you"
-                    color="primary"
                     size="small"
+                    sx={{
+                      bgcolor: "var(--color-light-yellow)",
+                      fontWeight: 700,
+                      animation: "pulseBlink 1.5s infinite ease-in-out",
+                      "@keyframes pulseBlink": {
+                        "0%": { opacity: 1 },
+                        "50%": { opacity: 0.35 },
+                        "100%": { opacity: 1 },
+                      },
+                    }}
                   />
                 )}
               </Box>
@@ -109,6 +118,10 @@ export function OwnershipAuditNextSteps({
                   size="small"
                   endIcon={<ArrowRight size={16} aria-hidden="true" />}
                   onClick={() => onSelectPath(recommendation.path)}
+                  sx={{
+                    bgcolor: "var(--color-light-yellow)",
+                    color: "var(--color-black)",
+                  }}
                 >
                   Go to {recommendation.title}
                 </Button>

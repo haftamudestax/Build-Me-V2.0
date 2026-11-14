@@ -1,46 +1,25 @@
-/**
- * Technology Ownership Toolkit: the one source of content.
- *
- * Both the online view (ToolkitContentStep) and the PDF generator
- * (apps/web/scripts/generate-toolkit-pdf.ts) read this file, so they cannot
- * drift apart. Keep it free of React and browser code: the PDF script runs it
- * in Node. After changing any text here, regenerate the PDF:
- *
- *   pnpm --filter @build-me/web generate:toolkit-pdf
- *
- * Keep the text plain (no curly quotes, long dashes or symbols): the PDF uses
- * a standard font that only covers basic Latin characters.
- */
-
 export const TOOLKIT_TITLE = "Technology Ownership Toolkit";
 
 export const TOOLKIT_TAGLINE =
   "Nine practical checklists and templates to find, record and secure the technology your business depends on.";
 
-/** Where the generated PDF is served from (apps/web/public/downloads). */
 export const TOOLKIT_PDF_PATH = "/downloads/technology-ownership-toolkit.pdf";
 export const TOOLKIT_PDF_FILE_NAME = "Technology-Ownership-Toolkit.pdf";
 
 export const TOOLKIT_VERSION = "1.0";
 
 export interface ToolkitTemplate {
-  /** Name of the fill-in template. */
   title: string;
-  /** What to record, one column per detail. */
   columns: string[];
-  /** Blank rows to leave in the PDF. */
   rows: number;
 }
 
 export interface ToolkitTool {
-  /** Lowercase slug used in analytics. Never reuse or rename an id. */
   id: string;
   title: string;
-  /** One line: what the tool is for. */
   purpose: string;
   checklist: string[];
   template: ToolkitTemplate;
-  /** The test that tells the visitor they are finished. */
   doneWhen: string;
 }
 
@@ -52,9 +31,9 @@ export interface ToolkitPart {
 }
 
 export const toolkitIntro = {
-  what: "A short pack of nine one-page tools. Each one is a checklist to work through and a template to fill in. Together they help you find out what technology your business owns, record who controls it, and close the gaps.",
-  why: "Many businesses only learn who really controls their website or systems when something goes wrong: a provider leaves, a renewal lapses or a backup fails. Writing it down now turns those surprises into a plan.",
-  who: "Business owners, founders and operations leads who rely on a website, app or system that someone else built or runs for them. No technical background is needed.",
+  what: "A short pack of nine one-page tools. Each one is a checklist to work through and a template to fill in.",
+  why: "Many businesses only learn who really controls their website or systems when something goes wrong.",
+  who: "Business owners, founders and operations leads who rely on a website, app or system that someone else built or runs for them. ",
   format:
     "Read it online here, or download the PDF to print, fill in and share with your team.",
 };

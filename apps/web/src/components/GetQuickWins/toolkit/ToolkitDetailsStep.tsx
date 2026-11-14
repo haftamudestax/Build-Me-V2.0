@@ -51,8 +51,6 @@ export function ToolkitDetailsStep({
         fields: invalidFields,
       });
 
-      // Move focus to the first problem so keyboard and screen reader users
-      // land on it.
       if (found.name) nameRef.current?.focus();
       else emailRef.current?.focus();
 

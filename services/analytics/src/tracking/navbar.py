@@ -25,6 +25,12 @@ from src.events.ownership_audit import OwnershipAuditEventIn
 from src.tracking.ownership_audit import (
     persist_ownership_audit_event,
 )
+from src.events.ownership_learning_circle import (
+    OwnershipLearningCircleEventIn,
+)
+from src.tracking.ownership_learning_circle import (
+    persist_ownership_learning_circle_event,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +97,7 @@ async def create_analytics_event(
         | MentorMeEventIn
         | CoffeeWithMeEventIn
         | OwnershipAuditEventIn
+        | OwnershipLearningCircleEventIn
     ),
 ):
     """Persist Navbar, Hero, Delivery Project, Mentor Me, and Coffee With Me events."""
@@ -109,6 +116,8 @@ async def create_analytics_event(
             record = await persist_hero_event(event)
         elif isinstance(event, OwnershipAuditEventIn):
             record = await persist_ownership_audit_event(event)
+        elif isinstance(event, OwnershipLearningCircleEventIn):
+            record = await persist_ownership_learning_circle_event(event)
 
         else:
             record = await persist_navbar_event(event)

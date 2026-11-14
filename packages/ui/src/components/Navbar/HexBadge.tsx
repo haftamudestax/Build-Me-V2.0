@@ -14,7 +14,7 @@ export function HexBadge({
   size = 58,
   outerColor = "#FFFFFF",
   midColor = "#F7B733",
-  innerColor = "#0B1740",
+  innerColor = "#F7B733",
   children,
   decorations,
   className,

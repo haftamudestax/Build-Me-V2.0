@@ -36,6 +36,13 @@
       "when": 1792759548521,
       "tag": "0004_true_galactus",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794310263999,
+      "tag": "0005_famous_stephen_strange",
+      "breakpoints": true
     }
   ]
 }
