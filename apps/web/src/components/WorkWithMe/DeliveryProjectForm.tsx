@@ -3,7 +3,15 @@ import { Box, Button, MenuItem, TextField, Typography } from "@mui/material";
 import { Card } from "@build-me/ui";
 import { getAnalyticsConfig } from "@build-me/utils";
 
-export interface DeliveryProjectRequest {
+type BookingPackageTier = "beginner" | "intermediate" | "advanced";
+
+const BOOKING_PACKAGE_PRICES: Record<BookingPackageTier, number> = {
+  beginner: 499,
+  intermediate: 999,
+  advanced: 1499,
+};
+
+interface DeliveryProjectRequest {
   name: string;
   email: string;
   projectTitle: string;
@@ -16,6 +24,7 @@ export interface DeliveryProjectRequest {
 interface DeliveryProjectFormProps {
   onBack: () => void;
   onSubmitted: (reference: string) => void;
+  selectedPackage: BookingPackageTier;
 }
 
 interface CreateBookingResponse {
@@ -46,9 +55,16 @@ const timelineLabels: Record<string, string> = {
   flexible: "Flexible",
 };
 
+const packageLabels: Record<BookingPackageTier, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
 export function DeliveryProjectForm({
   onBack,
   onSubmitted,
+  selectedPackage,
 }: DeliveryProjectFormProps) {
   const [form, setForm] = useState<DeliveryProjectRequest>(initialForm);
   const [errors, setErrors] = useState<
@@ -142,7 +158,12 @@ export function DeliveryProjectForm({
           timeline: timelineLabels[form.timeline],
           budget: form.budget || null,
           visitorId,
-          type: "delivery_project",
+          bookingType: "delivery_project",
+          requestDetails: {
+            package: {
+              tier: selectedPackage,
+            },
+          },
         }),
       });
 
@@ -156,7 +177,6 @@ export function DeliveryProjectForm({
         );
       }
 
-      // The API returns the booking reference inside `data`.
       const reference = result.data?.reference ?? result.data?.id;
 
       if (!reference) {
@@ -172,6 +192,7 @@ export function DeliveryProjectForm({
             metadata: {
               reference,
               bookingType: result.data?.bookingType ?? "delivery_project",
+              packageTier: selectedPackage,
             },
           },
         }),
@@ -192,12 +213,24 @@ export function DeliveryProjectForm({
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate>
       <Card.Header>
-        <Typography variant="h5" component="h3" sx={{ fontWeight: 800 }}>
+        <Typography
+          variant="h5"
+          component="h3"
+          sx={{ fontWeight: 800, color: "var(--color-dark-yellow)" }}
+        >
           Deliver My Project
         </Typography>
 
         <Typography color="text.secondary" sx={{ mt: 1 }}>
           Tell me about your project. Required fields are marked below.
+        </Typography>
+
+        <Typography
+          variant="body2"
+          sx={{ mt: 1.5, fontWeight: 700, color: "var(--color-light-yellow)" }}
+        >
+          Selected package: {packageLabels[selectedPackage]} — $
+          {BOOKING_PACKAGE_PRICES[selectedPackage].toLocaleString("en-US")} USD
         </Typography>
       </Card.Header>
 
@@ -311,7 +344,11 @@ export function DeliveryProjectForm({
             variant="contained"
             disabled={submitting}
             fullWidth
-            sx={{ py: 1.4, fontWeight: 700 }}
+            sx={{
+              py: 1.4,
+              fontWeight: 700,
+              bgcolor: "var(--color-dark-yellow)",
+            }}
           >
             {submitting ? "Submitting request…" : "Submit project request"}
           </Button>
@@ -321,6 +358,7 @@ export function DeliveryProjectForm({
             variant="text"
             disabled={submitting}
             onClick={onBack}
+            sx={{ color: "var(--color-light-yellow)" }}
           >
             Back to project paths
           </Button>

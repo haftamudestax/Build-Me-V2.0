@@ -3,7 +3,6 @@ export type WorkWithMePath = "delivery" | "mentor" | "coffee";
 export const OPEN_WORK_WITH_ME_EVENT = "build-me:open-work-with-me";
 
 export interface OpenWorkWithMeDetail {
-  /** Path to open directly. Omit to open the paths view. */
   path?: WorkWithMePath;
 }
 

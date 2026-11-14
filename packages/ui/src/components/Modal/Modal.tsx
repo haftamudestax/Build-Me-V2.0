@@ -1,15 +1,24 @@
 import { useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import type { ModalProps } from "./Modal.types";
+import type { ModalProps, ModalSize } from "./Modal.types";
 import { useFocusTrap } from "./useFocusTrap";
 import { useLockBodyScroll } from "./useLockBodyScroll";
 import { ModalLoading, ModalError, ModalSuccess } from "./ModalStates";
+
+const modalSizes: Record<ModalSize, string> = {
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-3xl",
+  xl: "max-w-[960px]",
+  full: "max-w-none",
+};
 
 export function Modal({
   isOpen,
   onClose,
   onConfirm,
   state = "idle",
+  size = "md",
   errorMessage = "Something went wrong.",
   successMessage = "Done!",
   closeOnEscape = true,
@@ -62,7 +71,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={labelledBy}
         aria-describedby={describedBy}
-        className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4"
+        className={`bg-white rounded-lg shadow-lg w-full ${modalSizes[size]} max-h-[calc(100dvh-32px)] mx-auto overflow-hidden`}
       >
         {state === "loading" && <ModalLoading />}
         {state === "error" && (
