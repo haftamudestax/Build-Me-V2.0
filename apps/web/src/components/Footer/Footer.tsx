@@ -10,25 +10,29 @@ export function Footer() {
     <footer className="border-t border-gray-200 bg-white">
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-10">
         {/* Footer Components */}
-        <div className="flex items-stretch">
-          <SocialConnections />
-          <div className="flex items-stretch border-r border-gray-200 pr-8">
-            <div className="flex items-center">
-              <ShareButton />
-            </div>
+        <div className="flex flex-col items-stretch gap-5 lg:flex-row lg:gap-0">
+          <div className="min-w-0">
+            <SocialConnections />
           </div>
-          <div className="flex items-stretch"></div>
-          <div className="flex items-center">
+
+          <div className="flex items-center border-gray-200 lg:border-r lg:pr-8">
+            <ShareButton />
+          </div>
+
+          <div className="flex min-w-0 items-center">
             <ReferralButton />
           </div>
-          <div className="flex items-center">
+
+          <div className="flex min-w-0 items-center">
             <AboutLink />
           </div>
-          <div className="flex items-center">
+
+          <div className="flex min-w-0 items-center">
             <Copyright />
           </div>
         </div>
       </div>
+
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-10">
         <LegalLinks />
       </div>
