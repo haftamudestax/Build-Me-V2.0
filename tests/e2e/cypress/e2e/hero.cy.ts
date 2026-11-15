@@ -1,7 +1,13 @@
+
 describe("Hero Left Section", () => {
   const WEB_BASE_URL = Cypress.env("webBaseUrl");
 
   beforeEach(() => {
+    expect(
+      WEB_BASE_URL,
+      "Cypress env 'webBaseUrl' must be configured",
+    ).to.be.a("string").and.not.be.empty;
+
     cy.visit(WEB_BASE_URL);
   });
 
@@ -15,9 +21,7 @@ describe("Hero Left Section", () => {
         .should("be.visible")
         .invoke("text")
         .then((text) => {
-          const normalizedText = text.replace(/\s+/g, " ").trim();
-
-          expect(normalizedText).to.equal(
+          expect(text.replace(/\s+/g, " ").trim()).to.equal(
             "Build Better Digital Experiences",
           );
         });
@@ -46,9 +50,8 @@ describe("Hero Left Section", () => {
   });
 
   it("renders the dark-yellow heading emphasis", () => {
-    cy.get("#hero-title").should("be.visible");
-
     cy.get("#hero-title")
+      .should("be.visible")
       .find("span")
       .should("be.visible")
       .and("contain.text", "Digital Experiences")
@@ -74,8 +77,8 @@ describe("Hero Left Section", () => {
 
   it("renders without horizontal overflow on mobile", () => {
     cy.viewport(375, 812);
-    cy.visit(WEB_BASE_URL);
 
+    cy.visit(WEB_BASE_URL);
     cy.get("#hero", { timeout: 10000 }).should("be.visible");
 
     cy.document().then((document) => {
@@ -123,30 +126,20 @@ describe("Hero Left Section", () => {
         2,
       );
 
-      cy.log(
-        `Mobile viewport: ${viewportWidth}px`,
-      );
-
+      cy.log(`Mobile viewport: ${viewportWidth}px`);
       cy.log(
         `Document scroll width: ${documentElement.scrollWidth}px`,
       );
+      cy.log(`Body scroll width: ${body.scrollWidth}px`);
 
-      cy.log(
-        `Body scroll width: ${body.scrollWidth}px`,
-      );
-
-      // Detailed diagnostic output in the browser console.
       console.group("Mobile Horizontal Overflow Diagnostics");
-
       console.log("Viewport width:", viewportWidth);
       console.log(
         "Document scroll width:",
         documentElement.scrollWidth,
       );
       console.log("Body scroll width:", body.scrollWidth);
-
       console.table(overflowingElements);
-
       console.groupEnd();
 
       expect(
@@ -163,8 +156,8 @@ describe("Hero Left Section", () => {
 
   it("renders without horizontal overflow on desktop", () => {
     cy.viewport(1440, 900);
-    cy.visit(WEB_BASE_URL);
 
+    cy.visit(WEB_BASE_URL);
     cy.get("#hero").should("be.visible");
 
     cy.document().should((document) => {
