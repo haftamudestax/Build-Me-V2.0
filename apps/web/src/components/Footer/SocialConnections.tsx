@@ -92,7 +92,7 @@ export function SocialConnections() {
     >
       <h2
         id="social-connections-heading"
-        className="text-base font-bold text-blue-900"
+        className="text-base font-bold text-black"
       >
         Follow Me
       </h2>

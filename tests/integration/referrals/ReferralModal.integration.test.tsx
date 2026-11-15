@@ -1,5 +1,3 @@
-import "@testing-library/jest-dom/vitest";
-
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -49,7 +47,7 @@ function createErrorResponse(
 async function openReferralModal(user: ReturnType<typeof userEvent.setup>) {
   await user.click(
     screen.getByRole("button", {
-      name: /give referrals\. help others grow with us\./i,
+      name: /give referrals.*help others grow with us/i,
     }),
   );
 
@@ -62,40 +60,80 @@ async function openReferralModal(user: ReturnType<typeof userEvent.setup>) {
 
 async function completeReferrerStep(user: ReturnType<typeof userEvent.setup>) {
   await user.type(
-    screen.getByRole("textbox", { name: /your name/i }),
+    screen.getByRole("textbox", {
+      name: /your name/i,
+    }),
     "John Doe",
   );
 
   await user.type(
-    screen.getByRole("textbox", { name: /your email/i }),
+    screen.getByRole("textbox", {
+      name: /your email/i,
+    }),
     "john@example.com",
   );
 
-  await user.click(screen.getByRole("button", { name: /continue/i }));
+  await user.click(
+    screen.getByRole("button", {
+      name: /continue/i,
+    }),
+  );
 }
 
-async function completeFriendStep(user: ReturnType<typeof userEvent.setup>) {
+/**
+ * Selects a relationship from the custom relationship dropdown.
+ *
+ * The relationship field is a button-based dropdown, not a native select.
+ */
+async function chooseRelationship(
+  user: ReturnType<typeof userEvent.setup>,
+  relationship: RegExp,
+) {
+  await user.click(
+    screen.getByRole("button", {
+      name: /select relationship/i,
+    }),
+  );
+
+  await user.click(
+    await screen.findByRole("button", {
+      name: relationship,
+    }),
+  );
+}
+
+async function completeFriendStep(
+  user: ReturnType<typeof userEvent.setup>,
+  relationship: RegExp = /^Colleague$/i,
+) {
   await user.type(
-    screen.getByRole("textbox", { name: /their name/i }),
+    screen.getByRole("textbox", {
+      name: /their name/i,
+    }),
     "Jane Smith",
   );
 
   await user.type(
-    screen.getByRole("textbox", { name: /their email/i }),
+    screen.getByRole("textbox", {
+      name: /their email/i,
+    }),
     "jane@example.com",
   );
 
-  await user.selectOptions(
-    screen.getByRole("combobox", { name: /your relationship/i }),
-    "colleague",
-  );
+  await chooseRelationship(user, relationship);
 
   await user.type(
-    screen.getByRole("textbox", { name: /personal message/i }),
+    screen.getByRole("textbox", {
+      name: /personal message/i,
+    }),
     "I think you would enjoy working together.",
   );
 
-  await user.click(screen.getByRole("button", { name: /review referral/i }));
+  await user.click(
+    screen.getByRole("button", {
+      name: /review referral/i,
+    }),
+  );
 }
 
 async function completeReferralForm(user: ReturnType<typeof userEvent.setup>) {
@@ -112,6 +150,7 @@ describe("ReferralModal integration", () => {
     });
 
     mockFetch.mockReset();
+
     vi.stubGlobal("fetch", mockFetch);
   });
 
@@ -132,7 +171,9 @@ describe("ReferralModal integration", () => {
     expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
 
     expect(
-      screen.getByRole("textbox", { name: /your name/i }),
+      screen.getByRole("textbox", {
+        name: /your name/i,
+      }),
     ).toBeInTheDocument();
 
     expect(mockFetch).not.toHaveBeenCalled();
@@ -145,14 +186,20 @@ describe("ReferralModal integration", () => {
 
     await openReferralModal(user);
 
-    await user.click(screen.getByRole("button", { name: /continue/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /continue/i,
+      }),
+    );
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Please enter your full name.",
     );
 
     expect(
-      screen.getByRole("heading", { name: "Your information" }),
+      screen.getByRole("heading", {
+        name: "Your information",
+      }),
     ).toBeInTheDocument();
 
     expect(mockFetch).not.toHaveBeenCalled();
@@ -164,9 +211,14 @@ describe("ReferralModal integration", () => {
     render(<ReferralButton />);
 
     await openReferralModal(user);
+
     await completeReferrerStep(user);
 
-    await user.click(screen.getByRole("button", { name: /review referral/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /review referral/i,
+      }),
+    );
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Please enter the person's name.",
@@ -183,33 +235,46 @@ describe("ReferralModal integration", () => {
     await openReferralModal(user);
 
     await user.type(
-      screen.getByRole("textbox", { name: /your name/i }),
+      screen.getByRole("textbox", {
+        name: /your name/i,
+      }),
       "John Doe",
     );
 
     await user.type(
-      screen.getByRole("textbox", { name: /your email/i }),
+      screen.getByRole("textbox", {
+        name: /your email/i,
+      }),
       "john@example.com",
     );
 
-    await user.click(screen.getByRole("button", { name: /continue/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /continue/i,
+      }),
+    );
 
     await user.type(
-      screen.getByRole("textbox", { name: /their name/i }),
+      screen.getByRole("textbox", {
+        name: /their name/i,
+      }),
       "John Doe",
     );
 
     await user.type(
-      screen.getByRole("textbox", { name: /their email/i }),
+      screen.getByRole("textbox", {
+        name: /their email/i,
+      }),
       "JOHN@example.com",
     );
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: /your relationship/i }),
-      "friend",
-    );
+    await chooseRelationship(user, /^Friend$/i);
 
-    await user.click(screen.getByRole("button", { name: /review referral/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /review referral/i,
+      }),
+    );
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "You cannot refer yourself.",
@@ -229,13 +294,19 @@ describe("ReferralModal integration", () => {
     await completeReferralForm(user);
 
     expect(
-      screen.getByRole("heading", { name: /review your referral/i }),
+      screen.getByRole("heading", {
+        name: /review your referral/i,
+      }),
     ).toBeInTheDocument();
 
     expect(screen.getByText("John Doe")).toBeInTheDocument();
     expect(screen.getByText("Jane Smith")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /submit referral/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /submit referral/i,
+      }),
+    );
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -285,26 +356,36 @@ describe("ReferralModal integration", () => {
     render(<ReferralButton />);
 
     await openReferralModal(user);
+
     await completeReferrerStep(user);
 
     await user.type(
-      screen.getByRole("textbox", { name: /their name/i }),
+      screen.getByRole("textbox", {
+        name: /their name/i,
+      }),
       "Jane Smith",
     );
 
     await user.type(
-      screen.getByRole("textbox", { name: /their email/i }),
+      screen.getByRole("textbox", {
+        name: /their email/i,
+      }),
       "jane@example.com",
     );
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: /your relationship/i }),
-      "friend",
+    await chooseRelationship(user, /^Friend$/i);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /review referral/i,
+      }),
     );
 
-    await user.click(screen.getByRole("button", { name: /review referral/i }));
-
-    await user.click(screen.getByRole("button", { name: /submit referral/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /submit referral/i,
+      }),
+    );
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -335,18 +416,26 @@ describe("ReferralModal integration", () => {
     await openReferralModal(user);
     await completeReferralForm(user);
 
-    await user.click(screen.getByRole("button", { name: /submit referral/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /submit referral/i,
+      }),
+    );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "This idempotency key was already used for a different referral request.",
     );
 
     expect(
-      screen.getByRole("heading", { name: /review your referral/i }),
+      screen.getByRole("heading", {
+        name: /review your referral/i,
+      }),
     ).toBeInTheDocument();
 
     expect(
-      screen.queryByRole("heading", { name: "Referral submitted!" }),
+      screen.queryByRole("heading", {
+        name: "Referral submitted!",
+      }),
     ).not.toBeInTheDocument();
   });
 
@@ -360,7 +449,11 @@ describe("ReferralModal integration", () => {
     await openReferralModal(user);
     await completeReferralForm(user);
 
-    await user.click(screen.getByRole("button", { name: /submit referral/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /submit referral/i,
+      }),
+    );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "We couldn't verify your visitor session. Please refresh the page and try again.",
@@ -375,21 +468,32 @@ describe("ReferralModal integration", () => {
     render(<ReferralButton />);
 
     await openReferralModal(user);
+
     await completeReferrerStep(user);
 
     expect(
-      screen.getByRole("heading", { name: /who are you referring/i }),
+      screen.getByRole("heading", {
+        name: /who are you referring/i,
+      }),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /^back$/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /^back$/i,
+      }),
+    );
 
     expect(
-      screen.getByRole("heading", { name: /your information/i }),
+      screen.getByRole("heading", {
+        name: /your information/i,
+      }),
     ).toBeInTheDocument();
 
-    expect(screen.getByRole("textbox", { name: /your name/i })).toHaveValue(
-      "John Doe",
-    );
+    expect(
+      screen.getByRole("textbox", {
+        name: /your name/i,
+      }),
+    ).toHaveValue("John Doe");
   });
 
   it("closes and resets the referral modal when reopened", async () => {
@@ -400,17 +504,25 @@ describe("ReferralModal integration", () => {
     await openReferralModal(user);
 
     await user.type(
-      screen.getByRole("textbox", { name: /your name/i }),
+      screen.getByRole("textbox", {
+        name: /your name/i,
+      }),
       "John Doe",
     );
 
     await user.click(
-      screen.getByRole("button", { name: /close referral modal/i }),
+      screen.getByRole("button", {
+        name: /close referral modal/i,
+      }),
     );
 
     await openReferralModal(user);
 
-    expect(screen.getByRole("textbox", { name: /your name/i })).toHaveValue("");
+    expect(
+      screen.getByRole("textbox", {
+        name: /your name/i,
+      }),
+    ).toHaveValue("");
 
     expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
   });

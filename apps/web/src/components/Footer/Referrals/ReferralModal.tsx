@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useState, useRef, useEffect, type CSSProperties } from "react";
 import {
   Alert,
   Box,
@@ -7,7 +7,16 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { ArrowLeft, ArrowRight, Check, Copy, Gift, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  Check,
+  Copy,
+  Gift,
+  X,
+} from "lucide-react";
 
 import { Modal } from "@build-me/ui";
 import { getAnalyticsConfig } from "@build-me/utils";
@@ -109,7 +118,7 @@ function ReferralField({
     py: 0.5,
     font: "inherit",
     fontSize: "0.875rem",
-    color: "text.primary",
+    color: "var(--color-black)",
     backgroundColor: "background.paper",
     outline: "none",
     transition: "border-color 160ms ease",
@@ -177,6 +186,145 @@ function ReferralField({
         </Typography>
       )}
     </Stack>
+  );
+}
+
+interface CustomRelationshipSelectProps {
+  value: Relationship | "";
+  onChange: (value: Relationship | "") => void;
+  error?: boolean;
+}
+
+function CustomRelationshipSelect({
+  value,
+  onChange,
+  error,
+}: CustomRelationshipSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const options: { label: string; value: Relationship | "" }[] = [
+    { label: "Friend", value: "friend" },
+    { label: "Family", value: "family" },
+    { label: "Colleague", value: "colleague" },
+  ];
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <Box
+      ref={containerRef}
+      sx={{ position: "relative", width: "100%", boxSizing: "border-box" }}
+    >
+      <Box
+        component="button"
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        aria-invalid={error}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          boxSizing: "border-box",
+          border: "1.5px solid",
+          borderColor: error ? "error.main" : "var(--color-black, #000000)",
+          borderRadius: 0,
+          px: 2,
+          py: 1.5,
+          font: "inherit",
+          fontSize: "0.95rem",
+          fontWeight: 700,
+          color: "var(--color-black, #000000)",
+          bgcolor: "#ffffff",
+          cursor: "pointer",
+          textAlign: "left",
+          transition: "background-color 150ms ease",
+          "&:hover": {
+            bgcolor: "rgba(0, 0, 0, 0.03)",
+          },
+          "&:focus-visible": {
+            outline: "2px solid var(--color-black, #000000)",
+            outlineOffset: "2px",
+          },
+        }}
+      >
+        <span>
+          {selectedOption ? selectedOption.label : "Select relationship"}
+        </span>
+        {isOpen ? <ArrowUp size={18} /> : <ArrowDown size={18} />}
+      </Box>
+
+      {isOpen && (
+        <Box
+          sx={{
+            position: "relative",
+            mt: "8px",
+            pl: 2.5,
+            borderLeft: "2px solid",
+            borderColor: "var(--color-black, #000000)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            boxSizing: "border-box",
+            zIndex: 99,
+          }}
+        >
+          {options.map((opt) => (
+            <Box
+              key={opt.value}
+              component="button"
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                boxSizing: "border-box",
+                border: "1.5px solid",
+                borderColor: "var(--color-black, #000000)",
+                borderRadius: 0,
+                px: 2,
+                py: 1.5,
+                font: "inherit",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                color: "var(--color-black, #000000)",
+                bgcolor: "#ffffff",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "background-color 150ms ease, transform 150ms ease",
+                "&:hover": {
+                  bgcolor: "rgba(0, 0, 0, 0.05)",
+                  transform: "translateX(2px)",
+                },
+              }}
+            >
+              <span>{opt.label}</span>
+              <ArrowRight size={18} />
+            </Box>
+          ))}
+        </Box>
+      )}
+    </Box>
   );
 }
 
@@ -450,7 +598,7 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                 display: "flex",
                 alignItems: "center",
                 gap: 0.75,
-                color: "primary.main",
+                color: "var(--color-dark-yellow)",
               }}
             >
               <Gift size={18} aria-hidden="true" />
@@ -490,7 +638,7 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                   Step {stepNumber} of 3
                 </Typography>
 
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color="var(--color-dark-yellow)">
                   {Math.round((stepNumber / 3) * 100)}%
                 </Typography>
               </Box>
@@ -507,7 +655,7 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                   sx={{
                     width: `${(stepNumber / 3) * 100}%`,
                     height: "100%",
-                    bgcolor: "primary.main",
+                    bgcolor: "var(--color-light-yellow)",
                     borderRadius: 10,
                     transition: "width 160ms ease",
                   }}
@@ -567,6 +715,19 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                   variant="contained"
                   size="medium"
                   endIcon={<ArrowRight size={16} />}
+                  sx={{
+                    color: "var(--color-black)",
+                    bgcolor: "var(--color-dark-yellow)",
+                    border: "2px solid var(--color-black)",
+                    transition:
+                      "background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease",
+                    "&:hover": {
+                      bgcolor: "var(--color-yellow, var(--color-dark-yellow))",
+                      borderColor: "var(--color-black)",
+                      filter: "brightness(0.95)",
+                      transform: "translateY(-1px)",
+                    },
+                  }}
                 >
                   Continue
                 </Button>
@@ -630,37 +791,11 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                   </Box>
                 </Typography>
 
-                <Box
-                  component="select"
-                  id="relationship"
-                  name="relationship"
+                <CustomRelationshipSelect
                   value={form.relationship}
-                  onChange={(event) =>
-                    updateForm(
-                      "relationship",
-                      event.target.value as Relationship | "",
-                    )
-                  }
-                  aria-invalid={Boolean(friendError && !form.relationship)}
-                  sx={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 2,
-                    px: 1.5,
-                    py: 1.1,
-                    font: "inherit",
-                    fontSize: "0.875rem",
-                    color: "text.primary",
-                    bgcolor: "background.paper",
-                  }}
-                >
-                  <option value="">Select relationship</option>
-                  <option value="friend">Friend</option>
-                  <option value="family">Family</option>
-                  <option value="colleague">Colleague</option>
-                </Box>
+                  onChange={(val) => updateForm("relationship", val)}
+                  error={Boolean(friendError && !form.relationship)}
+                />
               </Stack>
 
               <ReferralField
@@ -688,6 +823,11 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                   size="medium"
                   onClick={handleBack}
                   startIcon={<ArrowLeft size={16} />}
+                  sx={{
+                    bgcolor: "var(--color-dark-yellow)",
+                    border: "2px solid black",
+                    color: "var(--color-black)",
+                  }}
                 >
                   Back
                 </Button>
@@ -697,6 +837,11 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                   variant="contained"
                   size="medium"
                   endIcon={<ArrowRight size={16} />}
+                  sx={{
+                    bgcolor: "var(--color-dark-yellow)",
+                    border: "2px solid black",
+                    color: "var(--color-black)",
+                  }}
                 >
                   Review referral
                 </Button>
@@ -757,7 +902,11 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                   <Typography variant="body2" color="text.secondary">
                     {form.referredEmail}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ textTransform: "capitalize" }}
+                  >
                     {form.relationship}
                   </Typography>
                 </Stack>

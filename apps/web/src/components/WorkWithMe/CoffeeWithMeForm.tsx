@@ -1,13 +1,13 @@
-import { useState, type FormEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import {
   Alert,
   Box,
   Button,
-  MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import { ArrowRight, ArrowUp, ArrowDown } from "lucide-react";
 import { getAnalyticsConfig } from "@build-me/utils";
 
 type BookingPackageTier = "beginner" | "intermediate" | "advanced";
@@ -35,7 +35,7 @@ interface CoffeeWithMeFormData {
   name: string;
   email: string;
   meetingStartAt: string;
-  preferredFormat: MeetingFormat;
+  preferredFormat: MeetingFormat | "";
   additionalContext: string;
 }
 
@@ -117,6 +117,182 @@ function getErrorMessage(response: BookingResponse): string {
   );
 }
 
+interface CustomSelectOption {
+  label: string;
+  value: string;
+}
+
+interface CustomSelectProps {
+  id: string;
+  label: string;
+  value: string;
+  options: CustomSelectOption[];
+  onChange: (value: string) => void;
+  error?: string;
+  required?: boolean;
+  disabled?: boolean;
+}
+
+function CustomSelect({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+  error,
+  required = false,
+  disabled = false,
+}: CustomSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <Box
+      ref={containerRef}
+      sx={{ position: "relative", width: "100%", boxSizing: "border-box" }}
+    >
+      <Typography
+        component="label"
+        htmlFor={id}
+        variant="body2"
+        sx={{ fontWeight: 600, display: "block", mb: 0.4 }}
+      >
+        {label}
+        {required && (
+          <Box component="span" sx={{ color: "error.main", ml: 0.5 }}>
+            *
+          </Box>
+        )}
+      </Typography>
+
+      <Box
+        component="button"
+        type="button"
+        id={id}
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        aria-invalid={Boolean(error)}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          boxSizing: "border-box",
+          border: "1.5px solid",
+          borderColor: error ? "error.main" : "var(--color-black, #000000)",
+          borderRadius: 0,
+          px: 2,
+          py: 1.5,
+          font: "inherit",
+          fontSize: "0.95rem",
+          fontWeight: 700,
+          color: "var(--color-black, #000000)",
+          bgcolor: disabled ? "action.disabledBackground" : "#ffffff",
+          cursor: disabled ? "not-allowed" : "pointer",
+          textAlign: "left",
+          transition: "background-color 150ms ease",
+          "&:hover": {
+            bgcolor: disabled ? undefined : "rgba(0, 0, 0, 0.03)",
+          },
+          "&:focus-visible": {
+            outline: "2px solid var(--color-black, #000000)",
+            outlineOffset: "2px",
+          },
+        }}
+      >
+        <span>
+          {selectedOption
+            ? selectedOption.label
+            : `Select ${label.toLowerCase()}`}
+        </span>
+        {isOpen ? <ArrowUp size={18} /> : <ArrowDown size={18} />}
+      </Box>
+
+      {isOpen && (
+        <Box
+          sx={{
+            position: "relative",
+            mt: "8px",
+            pl: 2.5,
+            borderLeft: "2px solid",
+            borderColor: "var(--color-black, #000000)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            boxSizing: "border-box",
+            zIndex: 99,
+          }}
+        >
+          {options.map((opt) => (
+            <Box
+              key={opt.value}
+              component="button"
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                boxSizing: "border-box",
+                border: "1.5px solid",
+                borderColor: "var(--color-black, #000000)",
+                borderRadius: 0,
+                px: 2,
+                py: 1.5,
+                font: "inherit",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                color: "var(--color-black, #000000)",
+                bgcolor: "#ffffff",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "background-color 150ms ease, transform 150ms ease",
+                "&:hover": {
+                  bgcolor: "rgba(0, 0, 0, 0.05)",
+                  transform: "translateX(2px)",
+                },
+              }}
+            >
+              <span>{opt.label}</span>
+              <ArrowRight size={18} />
+            </Box>
+          ))}
+        </Box>
+      )}
+
+      {error && (
+        <Typography
+          variant="caption"
+          color="error"
+          sx={{ mt: 0.5, display: "block" }}
+        >
+          {error}
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
 export function CoffeeWithMeForm({
   onBack,
   onSubmitted,
@@ -165,6 +341,8 @@ export function CoffeeWithMeForm({
       validationMessage = "Please enter a valid email address.";
     } else if (!formData.meetingStartAt) {
       validationMessage = "Please select your preferred meeting date and time.";
+    } else if (!formData.preferredFormat) {
+      validationMessage = "Please select your preferred meeting format.";
     }
 
     const selectedDate = formData.meetingStartAt
@@ -386,21 +564,20 @@ export function CoffeeWithMeForm({
           disabled={isSubmitting}
         />
 
-        <TextField
-          select
+        <CustomSelect
+          id="preferred-format"
           label="Preferred meeting format"
-          name="preferredFormat"
-          value={formData.preferredFormat}
-          onChange={(event) =>
-            updateField("preferredFormat", event.target.value as MeetingFormat)
-          }
           required
-          fullWidth
           disabled={isSubmitting}
-        >
-          <MenuItem value="online">Online</MenuItem>
-          <MenuItem value="in_person">In person</MenuItem>
-        </TextField>
+          value={formData.preferredFormat}
+          onChange={(value) =>
+            updateField("preferredFormat", value as MeetingFormat)
+          }
+          options={[
+            { label: "Online", value: "online" },
+            { label: "In person", value: "in_person" },
+          ]}
+        />
 
         <TextField
           label="What would you like to discuss? (optional)"

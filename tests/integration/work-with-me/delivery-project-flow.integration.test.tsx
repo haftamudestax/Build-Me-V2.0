@@ -1,11 +1,5 @@
 import { act } from "react";
-import {
-  cleanup,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -170,22 +164,29 @@ async function choosePackage(
   );
 }
 
+/**
+ * Selects an option from the custom dropdown buttons used by DeliveryProjectForm.
+ *
+ * These controls are buttons rather than native combobox elements.
+ * After opening the dropdown, the available option is selected by its visible text.
+ */
 async function chooseSelectOption(
   user: ReturnType<typeof userEvent.setup>,
   label: string | RegExp,
   option: RegExp,
 ) {
-  const select = screen.getByRole("combobox", {
-    name: label,
+  const triggerName =
+    typeof label === "string"
+      ? new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+      : label;
+
+  const trigger = screen.getByRole("button", {
+    name: triggerName,
   });
 
-  await user.click(select);
+  await user.click(trigger);
 
-  const listbox = await screen.findByRole("listbox");
-
-  // MUI Select options are rendered inside the listbox.
-  // Query their visible text rather than relying on a particular option role.
-  const optionElement = await within(listbox).findByText(option);
+  const optionElement = await screen.findByText(option);
 
   await user.click(optionElement);
 }
