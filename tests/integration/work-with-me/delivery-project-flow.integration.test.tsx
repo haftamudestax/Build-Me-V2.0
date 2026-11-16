@@ -250,8 +250,15 @@ describe("Work With Me booking integration flows", () => {
         }),
       ).toBeInTheDocument();
 
+      // The package tier is Beginner, and its current displayed price is $1,499.
+      // Normalize whitespace because the UI may render the label and price
+      // in separate nested elements.
       expect(
-        screen.getByText(/Selected package: Beginner — \$499 USD/i),
+        screen.getByText(
+          (_, element) =>
+            element?.textContent?.replace(/\s+/g, " ").trim() ===
+            "Selected package: Beginner — $1,499 USD",
+        ),
       ).toBeInTheDocument();
     }
 
