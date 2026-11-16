@@ -9,6 +9,7 @@ import {
 
 import { WorkWithMeModal } from "../../../apps/web/src/components/WorkWithMe/WorkWithMeModal";
 import { OPEN_WORK_WITH_ME_EVENT } from "../../../apps/web/src/components/WorkWithMe/openWorkWithMe";
+import type { BookingSubmission } from "../../../apps/web/src/components/WorkWithMe/bookingConfirmation";
 
 vi.mock("@build-me/ui", async () => {
   const React = await import("react");
@@ -31,7 +32,6 @@ vi.mock("@build-me/ui", async () => {
       children,
       labelledBy,
       describedBy,
-      onClose,
     }: React.PropsWithChildren<{
       isOpen: boolean;
       labelledBy?: string;
@@ -63,11 +63,18 @@ vi.mock(
     const React = await import("react");
 
     interface FormProps {
-      onSubmitted: (reference: string) => void;
+      onSubmitted: (submission: BookingSubmission) => void;
       onBack: () => void;
     }
 
     function MockDeliveryProjectForm({ onSubmitted, onBack }: FormProps) {
+      const submission: BookingSubmission = {
+        bookingType: "delivery_project",
+        reference: "TEST-123",
+        invoice: null,
+        invoiceEmailStatus: "not_sent",
+      };
+
       return React.createElement(
         "div",
         { "data-testid": "delivery-project-form" },
@@ -81,7 +88,7 @@ vi.mock(
           "button",
           {
             type: "button",
-            onClick: () => onSubmitted("TEST-123"),
+            onClick: () => onSubmitted(submission),
           },
           "Submit delivery request",
         ),
@@ -100,11 +107,18 @@ vi.mock(
     const React = await import("react");
 
     interface FormProps {
-      onSubmitted: (reference: string) => void;
+      onSubmitted: (submission: BookingSubmission) => void;
       onBack: () => void;
     }
 
     function MockMentorMeForm({ onSubmitted, onBack }: FormProps) {
+      const submission: BookingSubmission = {
+        bookingType: "mentor_me",
+        reference: "MENTOR-123",
+        invoice: null,
+        invoiceEmailStatus: "not_sent",
+      };
+
       return React.createElement(
         "div",
         { "data-testid": "mentor-me-form" },
@@ -118,7 +132,7 @@ vi.mock(
           "button",
           {
             type: "button",
-            onClick: () => onSubmitted("MENTOR-123"),
+            onClick: () => onSubmitted(submission),
           },
           "Submit mentor request",
         ),
@@ -137,11 +151,18 @@ vi.mock(
     const React = await import("react");
 
     interface FormProps {
-      onSubmitted: (reference: string) => void;
+      onSubmitted: (submission: BookingSubmission) => void;
       onBack: () => void;
     }
 
     function MockCoffeeWithMeForm({ onSubmitted, onBack }: FormProps) {
+      const submission: BookingSubmission = {
+        bookingType: "coffee_with_me",
+        reference: "COFFEE-123",
+        invoice: null,
+        invoiceEmailStatus: "not_sent",
+      };
+
       return React.createElement(
         "div",
         { "data-testid": "coffee-with-me-form" },
@@ -155,7 +176,7 @@ vi.mock(
           "button",
           {
             type: "button",
-            onClick: () => onSubmitted("COFFEE-123"),
+            onClick: () => onSubmitted(submission),
           },
           "Submit coffee request",
         ),
