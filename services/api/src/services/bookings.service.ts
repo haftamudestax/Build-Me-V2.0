@@ -2,6 +2,7 @@
 import { isDeepStrictEqual } from "node:util";
 import { Pool, type PoolClient } from "pg";
 
+import { getBookingPackage } from "../config/pricing";
 import type { CreateBookingInput } from "../validators/bookings.validator";
 
 const connectionString = process.env.DATABASE_URL;
@@ -44,6 +45,11 @@ interface BookingDetailsRow {
   meeting_duration_minutes: number | null;
 }
 
+interface CreatedInvoiceRow {
+  id: string;
+  invoice_number: string;
+}
+
 const BOOKING_COLUMNS = `
   id,
   booking_type,
@@ -74,12 +80,42 @@ function toCreatedBooking(row: BookingRow): CreatedBooking {
   };
 }
 
-function normalizeMeetingTime(value: Date | string | null | undefined): string | null {
+function normalizeMeetingTime(
+  value: Date | string | null | undefined,
+): string | null {
   if (!value) {
     return null;
   }
 
   return new Date(value).toISOString();
+}
+
+/**
+ * Generates a unique, readable invoice number.
+ *
+ * The booking UUID makes the number unique without relying on
+ * sequential counters or race-prone MAX(invoice_number) queries.
+ */
+function generateInvoiceNumber(booking: BookingRow): string {
+  const date = new Date(booking.created_at)
+    .toISOString()
+    .slice(0, 10)
+    .replaceAll("-", "");
+
+  return `INV-${date}-${booking.id.toUpperCase()}`;
+}
+
+/**
+ * Converts a USD price into integer cents.
+ */
+function toCents(price: number): number {
+  const cents = Math.round(price * 100);
+
+  if (!Number.isSafeInteger(cents) || cents <= 0) {
+    throw new Error("INVALID_BOOKING_PACKAGE_PRICE");
+  }
+
+  return cents;
 }
 
 /**
@@ -106,12 +142,6 @@ async function getBookingDetails(
   return booking;
 }
 
-/**
- * Checks whether a saved booking represents the same request.
- *
- * request_details includes the selected package. Comparing the complete
- * object ensures that a retry with a different package is rejected.
- */
 function isSameBookingRequest(
   saved: BookingDetailsRow,
   input: CreateBookingInput,
@@ -136,10 +166,6 @@ function isSameBookingRequest(
   );
 }
 
-/**
- * Retrieves an existing booking for an idempotency key and verifies
- * that the incoming request is identical to the original request.
- */
 async function getExistingIdempotentBooking(
   client: PoolClient,
   visitorId: string,
@@ -170,6 +196,99 @@ async function verifyIdempotentBooking(
   }
 }
 
+/**
+ * Creates an invoice and its line item inside the booking transaction.
+ *
+ * This function must only be called for a newly inserted booking.
+ * Email delivery is intentionally handled after the transaction commits.
+ */
+async function createBookingInvoice(
+  client: PoolClient,
+  booking: BookingRow,
+  input: CreateBookingInput,
+): Promise<CreatedInvoiceRow> {
+  const selectedPackage = input.requestDetails.package;
+
+  if (!selectedPackage) {
+    throw new Error("BOOKING_PACKAGE_REQUIRED");
+  }
+
+  // Resolve the package again from server-side pricing.
+  // Never use a client-submitted price as the invoice amount.
+  const bookingPackage = getBookingPackage(
+    input.bookingType,
+    selectedPackage.tier,
+  );
+
+  if (!bookingPackage) {
+    throw new Error("INVALID_BOOKING_PACKAGE");
+  }
+
+  const unitPriceCents = toCents(bookingPackage.price);
+  const subtotalCents = unitPriceCents;
+  const taxCents = 0;
+  const totalCents = subtotalCents + taxCents;
+
+  const invoiceNumber = generateInvoiceNumber(booking);
+
+  const invoiceResult = await client.query<CreatedInvoiceRow>(
+    `INSERT INTO invoices (
+       invoice_number,
+       booking_id,
+       customer_name,
+       customer_email,
+       currency,
+       subtotal_cents,
+       tax_cents,
+       total_cents,
+       status,
+       email_status
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     RETURNING id, invoice_number`,
+    [
+      invoiceNumber,
+      booking.id,
+      input.name,
+      input.email,
+      bookingPackage.currency,
+      subtotalCents,
+      taxCents,
+      totalCents,
+      "pending",
+      "not_sent",
+    ],
+  );
+
+  const invoice = invoiceResult.rows[0];
+
+  if (!invoice) {
+    throw new Error("INVOICE_CREATION_FAILED");
+  }
+
+  await client.query(
+    `INSERT INTO invoice_items (
+       invoice_id,
+       description,
+       package_tier,
+       quantity,
+       unit_price_cents,
+       line_total_cents
+     )
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [
+      invoice.id,
+      bookingPackage.name,
+      bookingPackage.tier,
+      1,
+      unitPriceCents,
+      unitPriceCents,
+    ],
+  );
+
+  return invoice;
+}
+
 export async function createProjectBooking(
   input: CreateBookingInput,
 ): Promise<CreatedBooking> {
@@ -178,7 +297,6 @@ export async function createProjectBooking(
   try {
     await client.query("BEGIN");
 
-    // Ensure the visitor exists before creating a booking.
     const visitor = await client.query(
       `SELECT id
        FROM visitors
@@ -191,7 +309,8 @@ export async function createProjectBooking(
       throw new Error("VISITOR_NOT_FOUND");
     }
 
-    // Handle an identical retry before attempting a new insert.
+    // Return an existing booking when the idempotency key and
+    // submitted request match. Do not create another invoice.
     if (input.idempotencyKey) {
       const existingBooking = await getExistingIdempotentBooking(
         client,
@@ -200,7 +319,11 @@ export async function createProjectBooking(
       );
 
       if (existingBooking) {
-        await verifyIdempotentBooking(client, existingBooking, input);
+        await verifyIdempotentBooking(
+          client,
+          existingBooking,
+          input,
+        );
 
         await client.query("COMMIT");
 
@@ -208,8 +331,6 @@ export async function createProjectBooking(
       }
     }
 
-    // Create the booking. Package information is stored inside
-    // request_details as part of the validated requestDetails object.
     const result = await client.query<BookingRow>(
       `INSERT INTO bookings (
          visitor_id,
@@ -252,30 +373,39 @@ export async function createProjectBooking(
       ],
     );
 
-    let booking = result.rows[0];
+    const booking = result.rows[0];
 
-    // Another request may have inserted the same idempotency key
-    // while this transaction was attempting its insert.
+    // A concurrent request may have inserted the same booking
+    // after our initial idempotency lookup.
     if (!booking && input.idempotencyKey) {
       const existingBooking = await getExistingIdempotentBooking(
-      client,
-      input.visitorId,
-      input.idempotencyKey,
-    );
+        client,
+        input.visitorId,
+        input.idempotencyKey,
+      );
 
-    if (!existingBooking) {
-      throw new Error("BOOKING_CREATION_FAILED");
-    }
-    booking = existingBooking;
+      if (!existingBooking) {
+        throw new Error("BOOKING_CREATION_FAILED");
+      }
 
-      // A concurrent retry is only valid when every submitted field,
-      // including the selected package, matches the original booking.
-      await verifyIdempotentBooking(client, booking, input);
+      await verifyIdempotentBooking(
+        client,
+        existingBooking,
+        input,
+      );
+
+      await client.query("COMMIT");
+
+      return toCreatedBooking(existingBooking);
     }
 
     if (!booking) {
       throw new Error("BOOKING_CREATION_FAILED");
     }
+
+    // Create the invoice and its line item before committing.
+    // Any failure here rolls back the booking as well.
+    await createBookingInvoice(client, booking, input);
 
     await client.query("COMMIT");
 

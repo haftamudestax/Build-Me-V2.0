@@ -9,14 +9,15 @@ import {
 } from "@mui/material";
 import { ArrowRight, ArrowUp, ArrowDown } from "lucide-react";
 import { getAnalyticsConfig } from "@build-me/utils";
+import type { BookingSubmission } from "./bookingConfirmation";
 
 type BookingPackageTier = "beginner" | "intermediate" | "advanced";
 type ExperienceLevel = "beginner" | "intermediate" | "advanced" | "other";
 type MeetingFormat = "online" | "in_person";
 
 const BOOKING_PACKAGE_PRICES: Record<BookingPackageTier, number> = {
-  beginner: 499,
-  intermediate: 999,
+  beginner: 199,
+  intermediate: 799,
   advanced: 1499,
 };
 
@@ -28,7 +29,7 @@ const packageLabels: Record<BookingPackageTier, string> = {
 
 interface MentorMeFormProps {
   onBack: () => void;
-  onSubmitted: (reference: string) => void;
+  onSubmitted: (submission: BookingSubmission) => void;
   selectedPackage: BookingPackageTier;
 }
 
@@ -46,9 +47,11 @@ interface BookingResponse {
   data?: {
     id?: string;
     reference?: string;
-    bookingType?: string;
+    bookingType?: BookingSubmission["bookingType"];
     status?: string;
     createdAt?: string;
+    invoice?: BookingSubmission["invoice"];
+    invoiceEmailStatus?: BookingSubmission["invoiceEmailStatus"];
   };
   error?: string | { message?: string };
   message?: string;
@@ -149,8 +152,12 @@ function CustomSelect({
         setIsOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   return (
@@ -336,9 +343,11 @@ export function MentorMeForm({
 
     if (validationMessage) {
       setError(validationMessage);
+
       trackBookingEvent("mentor_me.validation_failed", {
         reason: "client_validation",
       });
+
       return;
     }
 
@@ -406,14 +415,24 @@ export function MentorMeForm({
         );
       }
 
-      trackBookingEvent("mentor_me.booking_submitted", {
+      const submission: BookingSubmission = {
+        id: result.data?.id,
         reference,
         bookingType: result.data?.bookingType ?? "mentor_me",
         status: result.data?.status,
+        createdAt: result.data?.createdAt,
+        invoice: result.data?.invoice ?? null,
+        invoiceEmailStatus: result.data?.invoiceEmailStatus ?? "not_sent",
+      };
+
+      trackBookingEvent("mentor_me.booking_submitted", {
+        reference: submission.reference,
+        bookingType: submission.bookingType,
+        status: submission.status,
         packageTier: selectedPackage,
       });
 
-      onSubmitted(reference);
+      onSubmitted(submission);
     } catch (submissionError) {
       const message =
         submissionError instanceof Error

@@ -44,10 +44,12 @@ const validBooking = {
   },
 };
 
+// Expected package details are resolved by the server-side pricing
+// configuration, not supplied by the client.
 const normalizedPackage = {
   tier: "beginner",
-  name: "Beginner",
-  price: 499,
+  name: "Starter MVP",
+  price: 1499,
   currency: "USD",
 };
 

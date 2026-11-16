@@ -15,6 +15,7 @@ import { Modal } from "@build-me/ui";
 import { CoffeeWithMeForm } from "./CoffeeWithMeForm";
 import { DeliveryProjectForm } from "./DeliveryProjectForm";
 import { MentorMeForm } from "./MentorMeForm";
+import type { BookingSubmission } from "./bookingConfirmation";
 import {
   OPEN_WORK_WITH_ME_EVENT,
   type OpenWorkWithMeDetail,
@@ -31,12 +32,9 @@ type JourneyStep =
   | "ownership_audit"
   | "confirmed";
 
-type BookingPath = "delivery_project" | "mentor_me" | "coffee_with_me";
+type BookingPath = BookingSubmission["bookingType"];
 
-interface Confirmation {
-  reference: string;
-  bookingType: BookingPath;
-}
+type FormStep = "delivery" | "mentor" | "coffee";
 
 interface PathDetails {
   title: string;
@@ -52,7 +50,6 @@ interface PackageOption {
   description: string;
 }
 
-// Dynamic package options tailored per booking path
 const pathPackages: Record<BookingPath, PackageOption[]> = {
   delivery_project: [
     {
@@ -239,7 +236,7 @@ function trackJourneyEvent(eventName: string): void {
   );
 }
 
-function getBookingType(step: "delivery" | "mentor" | "coffee"): BookingPath {
+function getBookingType(step: FormStep): BookingPath {
   switch (step) {
     case "delivery":
       return "delivery_project";
@@ -250,9 +247,7 @@ function getBookingType(step: "delivery" | "mentor" | "coffee"): BookingPath {
   }
 }
 
-function getFormStep(
-  bookingType: BookingPath,
-): "delivery" | "mentor" | "coffee" {
+function getFormStep(bookingType: BookingPath): FormStep {
   switch (bookingType) {
     case "delivery_project":
       return "delivery";
@@ -265,12 +260,34 @@ function getFormStep(
 
 function getStepFromOpenPath(
   path: OpenWorkWithMeDetail["path"],
-): "delivery" | "mentor" | "coffee" | null {
+): FormStep | null {
   if (path === "delivery" || path === "mentor" || path === "coffee") {
     return path;
   }
 
   return null;
+}
+
+function formatInvoiceTotal(totalCents: number, currency: string): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(totalCents / 100);
+}
+
+function getEmailStatusLabel(
+  status: BookingSubmission["invoiceEmailStatus"],
+): string {
+  switch (status) {
+    case "sent":
+      return "Sent";
+    case "failed":
+      return "Failed";
+    case "not_sent":
+      return "Not sent";
+    default:
+      return "Not available";
+  }
 }
 
 interface PathCardProps {
@@ -450,7 +467,9 @@ export function WorkWithMeModal() {
   const [selectedPath, setSelectedPath] = useState<BookingPath | null>(null);
   const [selectedPackage, setSelectedPackage] =
     useState<BookingPackageTier | null>(null);
-  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const [confirmation, setConfirmation] = useState<BookingSubmission | null>(
+    null,
+  );
   const [copyError, setCopyError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -489,12 +508,7 @@ export function WorkWithMeModal() {
     trackJourneyEvent("work_with_me.closed");
   }
 
-  function selectPath(
-    nextStep: Exclude<
-      JourneyStep,
-      "paths" | "packages" | "confirmed" | "ownership_audit"
-    >,
-  ): void {
+  function selectPath(nextStep: FormStep): void {
     const bookingType = getBookingType(nextStep);
 
     setSelectedPath(bookingType);
@@ -535,11 +549,13 @@ export function WorkWithMeModal() {
     }
   }
 
-  function handleSubmitted(bookingType: BookingPath, reference: string): void {
-    setConfirmation({ bookingType, reference });
+  function handleSubmitted(submission: BookingSubmission): void {
+    setConfirmation(submission);
+    setSelectedPath(submission.bookingType);
     setStep("confirmed");
     setCopyError(null);
-    trackJourneyEvent(`${bookingType}.confirmation_viewed`);
+
+    trackJourneyEvent(`${submission.bookingType}.confirmation_viewed`);
   }
 
   async function copyReference(): Promise<void> {
@@ -569,7 +585,6 @@ export function WorkWithMeModal() {
     ? bookingPathDetails[selectedPath]
     : null;
 
-  // Retrieve path-specific package options dynamically
   const currentPathPackages = selectedPath ? pathPackages[selectedPath] : [];
 
   return (
@@ -816,9 +831,7 @@ export function WorkWithMeModal() {
                   <DeliveryProjectForm
                     selectedPackage={selectedPackage}
                     onBack={handleBackToPackages}
-                    onSubmitted={(reference) =>
-                      handleSubmitted("delivery_project", reference)
-                    }
+                    onSubmitted={handleSubmitted}
                   />
                 )}
 
@@ -826,9 +839,7 @@ export function WorkWithMeModal() {
                   <MentorMeForm
                     selectedPackage={selectedPackage}
                     onBack={handleBackToPackages}
-                    onSubmitted={(reference) =>
-                      handleSubmitted("mentor_me", reference)
-                    }
+                    onSubmitted={handleSubmitted}
                   />
                 )}
 
@@ -836,9 +847,7 @@ export function WorkWithMeModal() {
                   <CoffeeWithMeForm
                     selectedPackage={selectedPackage}
                     onBack={handleBackToPackages}
-                    onSubmitted={(reference) =>
-                      handleSubmitted("coffee_with_me", reference)
-                    }
+                    onSubmitted={handleSubmitted}
                   />
                 )}
               </div>
@@ -854,6 +863,7 @@ export function WorkWithMeModal() {
                 padding: "4px",
               }}
               aria-live="polite"
+              className="bg-light-yellow border-r-4 border-b-4 border-r-black border-b-black"
             >
               <div
                 style={{
@@ -867,11 +877,19 @@ export function WorkWithMeModal() {
               >
                 <CheckCircle2
                   size={48}
-                  color="var(--mui-palette-success-main, #2e7d32)"
+                  color="var(--color-white)"
                   aria-hidden="true"
                 />
 
-                <Typography id="work-with-me-title" variant="h4" component="h2">
+                <Typography
+                  id="work-with-me-title"
+                  variant="h4"
+                  component="h2"
+                  sx={{
+                    color: "var(--color-black)",
+                    font: 700,
+                  }}
+                >
                   Request submitted
                 </Typography>
 
@@ -884,22 +902,118 @@ export function WorkWithMeModal() {
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 8,
+                  gap: 12,
                   padding: 16,
                   border: "1px solid var(--mui-palette-divider, #d9dfe8)",
                   borderRadius: 8,
                   overflowWrap: "anywhere",
                 }}
+                className="bg-dark-yellow"
               >
-                <Typography variant="subtitle2">Your reference</Typography>
+                <div>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: "var(--color-white)",
+                      font: 700,
+                    }}
+                  >
+                    Booking reference
+                  </Typography>
 
-                <Typography
-                  variant="body1"
-                  component="p"
-                  sx={{ overflowWrap: "anywhere", fontFamily: "monospace" }}
-                >
-                  {confirmation.reference}
-                </Typography>
+                  <Typography
+                    variant="body1"
+                    component="p"
+                    sx={{
+                      overflowWrap: "anywhere",
+                      fontFamily: "monospace",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {confirmation.reference}
+                  </Typography>
+                </div>
+
+                <div>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: "var(--color-white)",
+                      font: 700,
+                    }}
+                  >
+                    Invoice number
+                  </Typography>
+
+                  <Typography variant="body1" component="p">
+                    {confirmation.invoice?.invoiceNumber ??
+                      "Invoice details are being prepared."}
+                  </Typography>
+                </div>
+
+                {confirmation.invoice && (
+                  <>
+                    <div>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          color: "var(--color-white)",
+                          font: 700,
+                        }}
+                      >
+                        Invoice total
+                      </Typography>
+
+                      <Typography
+                        variant="h6"
+                        component="p"
+                        sx={{ fontWeight: 700 }}
+                      >
+                        {formatInvoiceTotal(
+                          confirmation.invoice.totalCents,
+                          confirmation.invoice.currency,
+                        )}
+                      </Typography>
+                    </div>
+
+                    <div>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          color: "var(--color-white)",
+                          font: 700,
+                        }}
+                      >
+                        Payment status
+                      </Typography>
+
+                      <Typography sx={{ fontWeight: 700 }}>
+                        {confirmation.invoice?.status
+                          ? confirmation.invoice.status
+                              .charAt(0)
+                              .toUpperCase() +
+                            confirmation.invoice.status.slice(1)
+                          : "Unavailable"}
+                      </Typography>
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: "var(--color-white)",
+                      font: 700,
+                    }}
+                  >
+                    Invoice email status
+                  </Typography>
+
+                  <Typography variant="body1" component="p">
+                    {getEmailStatusLabel(confirmation.invoiceEmailStatus)}
+                  </Typography>
+                </div>
 
                 <div style={footerStyle}>
                   <Button
@@ -907,19 +1021,69 @@ export function WorkWithMeModal() {
                     variant="outlined"
                     startIcon={<Copy size={16} />}
                     onClick={() => void copyReference()}
+                    sx={{
+                      backgroundColor: "var(--color-black)",
+                      color: "var(--color-light-yellow)",
+                      fontWeight: 700,
+                      border: "1.5px solid var(--color-black)",
+                      borderRadius: 0,
+                      boxShadow: "none",
+                      px: 3,
+                      py: 1,
+                      textTransform: "none",
+                      transition: "all 0.2s ease-in-out",
+                      "&:hover": {
+                        backgroundColor: "var(--color-light-yellow)",
+                        color: "var(--color-black)",
+                        border: "1.5px solid var(--color-black)",
+                        boxShadow: "none",
+                      },
+                    }}
                   >
                     Copy reference
                   </Button>
-
                   <Button
                     type="button"
                     variant="contained"
                     onClick={closeModal}
+                    sx={{
+                      backgroundColor: "var(--color-white)",
+                      color: "var(--color-black)",
+                      fontWeight: 700,
+                      border: "1.5px solid var(--color-black)",
+                      borderRadius: 0,
+                      boxShadow: "none",
+                      px: 3,
+                      py: 1,
+                      textTransform: "none",
+                      transition: "all 0.2s ease-in-out",
+                      "&:hover": {
+                        backgroundColor: "var(--color-light-yellow)",
+                        color: "var(--color-black)",
+                        border: "1.5px solid var(--color-black)",
+                        boxShadow: "none",
+                      },
+                    }}
                   >
                     Done
                   </Button>
                 </div>
               </div>
+
+              {!confirmation.invoice && (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  Your booking was submitted successfully. Invoice information
+                  is not available in the response yet. You can keep your
+                  booking reference for future correspondence.
+                </Alert>
+              )}
+
+              {confirmation.invoiceEmailStatus === "failed" && (
+                <Alert severity="warning" sx={{ mt: 1 }}>
+                  Your booking was successful, but the invoice email could not
+                  be sent. Your booking reference is available above.
+                </Alert>
+              )}
 
               {copyError && (
                 <Alert severity="warning" role="alert">

@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { ArrowRight, ArrowUp, ArrowDown } from "lucide-react";
 import { getAnalyticsConfig } from "@build-me/utils";
+import type { BookingSubmission } from "./bookingConfirmation";
 
 type BookingPackageTier = "beginner" | "intermediate" | "advanced";
 type MeetingFormat = "online" | "in_person";
@@ -27,7 +28,7 @@ const packageLabels: Record<BookingPackageTier, string> = {
 
 interface CoffeeWithMeFormProps {
   onBack: () => void;
-  onSubmitted: (reference: string) => void;
+  onSubmitted: (submission: BookingSubmission) => void;
   selectedPackage: BookingPackageTier;
 }
 
@@ -43,8 +44,11 @@ interface BookingResponse {
   data?: {
     id?: string;
     reference?: string;
-    bookingType?: string;
+    bookingType?: "delivery_project" | "mentor_me" | "coffee_with_me";
     status?: string;
+    createdAt?: string;
+    invoice?: BookingSubmission["invoice"];
+    invoiceEmailStatus?: BookingSubmission["invoiceEmailStatus"];
   };
   error?: string | { message?: string };
   message?: string;
@@ -451,7 +455,15 @@ export function CoffeeWithMeForm({
         packageTier: selectedPackage,
       });
 
-      onSubmitted(reference);
+      onSubmitted({
+        id: result.data?.id,
+        reference,
+        bookingType: result.data?.bookingType ?? "coffee_with_me",
+        status: result.data?.status,
+        createdAt: result.data?.createdAt,
+        invoice: result.data?.invoice ?? null,
+        invoiceEmailStatus: result.data?.invoiceEmailStatus ?? "not_sent",
+      });
     } catch (submissionError) {
       const message =
         submissionError instanceof Error

@@ -3,13 +3,14 @@ import { Box, Button, TextField, Typography } from "@mui/material";
 import { ArrowRight, ArrowUp, ArrowDown } from "lucide-react";
 import { Card } from "@build-me/ui";
 import { getAnalyticsConfig } from "@build-me/utils";
+import type { BookingSubmission } from "./bookingConfirmation";
 
 type BookingPackageTier = "beginner" | "intermediate" | "advanced";
 
 const BOOKING_PACKAGE_PRICES: Record<BookingPackageTier, number> = {
-  beginner: 499,
-  intermediate: 999,
-  advanced: 1499,
+  beginner: 1499,
+  intermediate: 3499,
+  advanced: 6999,
 };
 
 interface DeliveryProjectRequest {
@@ -24,7 +25,7 @@ interface DeliveryProjectRequest {
 
 interface DeliveryProjectFormProps {
   onBack: () => void;
-  onSubmitted: (reference: string) => void;
+  onSubmitted: (submission: BookingSubmission) => void;
   selectedPackage: BookingPackageTier;
 }
 
@@ -32,9 +33,11 @@ interface CreateBookingResponse {
   data?: {
     id?: string;
     reference?: string;
-    bookingType?: string;
+    bookingType?: BookingSubmission["bookingType"];
     status?: string;
     createdAt?: string;
+    invoice?: BookingSubmission["invoice"];
+    invoiceEmailStatus?: BookingSubmission["invoiceEmailStatus"];
   };
   error?: string;
 }
@@ -100,8 +103,12 @@ function CustomSelect({
         setIsOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   return (
@@ -279,6 +286,7 @@ export function DeliveryProjectForm({
     }
 
     setErrors(nextErrors);
+
     return Object.keys(nextErrors).length === 0;
   }
 
@@ -297,6 +305,7 @@ export function DeliveryProjectForm({
           },
         }),
       );
+
       return;
     }
 
@@ -355,20 +364,30 @@ export function DeliveryProjectForm({
         );
       }
 
+      const submission: BookingSubmission = {
+        id: result.data?.id,
+        reference,
+        bookingType: result.data?.bookingType ?? "delivery_project",
+        status: result.data?.status,
+        createdAt: result.data?.createdAt,
+        invoice: result.data?.invoice ?? null,
+        invoiceEmailStatus: result.data?.invoiceEmailStatus ?? "not_sent",
+      };
+
       window.dispatchEvent(
         new CustomEvent("build-me:analytics", {
           detail: {
             eventName: "delivery_project.submitted",
             metadata: {
-              reference,
-              bookingType: result.data?.bookingType ?? "delivery_project",
+              reference: submission.reference,
+              bookingType: submission.bookingType,
               packageTier: selectedPackage,
             },
           },
         }),
       );
 
-      onSubmitted(reference);
+      onSubmitted(submission);
     } catch (error) {
       setSubmitError(
         error instanceof Error

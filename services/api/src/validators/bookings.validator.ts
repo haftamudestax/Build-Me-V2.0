@@ -1,4 +1,11 @@
 
+import {
+  BOOKING_PACKAGE_TIERS,
+  getBookingPackage,
+  type BookingPackageSnapshot,
+  type BookingPackageTier,
+} from "../config/pricing";
+
 export const BOOKING_TIMELINES = [
   "ASAP",
   "Within a month",
@@ -21,36 +28,17 @@ export const EXPERIENCE_LEVELS = [
 
 export const MEETING_FORMATS = ["online", "in_person"] as const;
 
-export const BOOKING_PACKAGES = {
-  beginner: {
-    tier: "beginner",
-    name: "Beginner",
-    price: 499,
-    currency: "USD",
-  },
-  intermediate: {
-    tier: "intermediate",
-    name: "Intermediate",
-    price: 999,
-    currency: "USD",
-  },
-  advanced: {
-    tier: "advanced",
-    name: "Advanced",
-    price: 1499,
-    currency: "USD",
-  },
-} as const;
-
 export type BookingType = (typeof BOOKING_TYPES)[number];
 export type BookingTimeline = (typeof BOOKING_TIMELINES)[number];
 export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number];
 export type MeetingFormat = (typeof MEETING_FORMATS)[number];
 
-export type BookingPackageTier = keyof typeof BOOKING_PACKAGES;
+export type BookingPackage = BookingPackageSnapshot;
 
-export type BookingPackage =
-  (typeof BOOKING_PACKAGES)[BookingPackageTier];
+export type {
+  BookingPackageSnapshot,
+  BookingPackageTier,
+};
 
 export interface DeliveryProjectRequestDetails {
   package: BookingPackage;
@@ -98,12 +86,6 @@ export interface CreateBookingInput {
 }
 
 export const COFFEE_MEETING_DURATION_MINUTES = 30;
-
-const BOOKING_PACKAGE_TIERS = [
-  "beginner",
-  "intermediate",
-  "advanced",
-] as const;
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -160,7 +142,7 @@ function isOneOf<T extends readonly string[]>(
 function getRequestDetails(
   input: Record<string, unknown>,
 ): Record<string, unknown> {
-  // Accept either a nested requestDetails object or the existing
+  // Accept either a nested requestDetails object or existing
   // top-level form fields. Nested fields take precedence.
   const nested = isRecord(input.requestDetails)
     ? input.requestDetails
@@ -169,7 +151,14 @@ function getRequestDetails(
   return { ...input, ...nested };
 }
 
+/**
+ * Resolve a package using the server-side pricing configuration.
+ *
+ * The client only selects a tier. Client-supplied package names,
+ * prices, and currencies are deliberately ignored.
+ */
 function validateBookingPackage(
+  bookingType: BookingType,
   value: unknown,
 ): { value: BookingPackage } | { error: string } {
   if (
@@ -181,10 +170,19 @@ function validateBookingPackage(
     };
   }
 
-  // The client only selects a tier.
-  // Name, price, and currency always come from server-side definitions.
+  const selectedPackage = getBookingPackage(
+    bookingType,
+    value.tier as BookingPackageTier,
+  );
+
+  if (!selectedPackage) {
+    return {
+      error: "The selected booking package is not available.",
+    };
+  }
+
   return {
-    value: BOOKING_PACKAGES[value.tier],
+    value: selectedPackage,
   };
 }
 
@@ -207,7 +205,9 @@ function validateAdditionalContext(
   };
 }
 
-export function validateCreateBooking(body: unknown): ValidationResult {
+export function validateCreateBooking(
+  body: unknown,
+): ValidationResult {
   if (!isRecord(body)) {
     return {
       valid: false,
@@ -215,7 +215,12 @@ export function validateCreateBooking(body: unknown): ValidationResult {
     };
   }
 
-  const visitorIdResult = readRequiredString(body, "visitorId", 1, 36);
+  const visitorIdResult = readRequiredString(
+    body,
+    "visitorId",
+    1,
+    36,
+  );
 
   if ("error" in visitorIdResult) {
     return { valid: false, error: visitorIdResult.error };
@@ -252,9 +257,7 @@ export function validateCreateBooking(body: unknown): ValidationResult {
     };
   }
 
-  // Keep compatibility with the existing delivery form, which sends
-  // type: "delivery_project". Older requests without a type remain
-  // delivery-project requests.
+  // Preserve compatibility with existing delivery form requests.
   const rawBookingType =
     body.bookingType ?? body.type ?? "delivery_project";
 
@@ -268,8 +271,11 @@ export function validateCreateBooking(body: unknown): ValidationResult {
   const bookingType = rawBookingType;
   const details = getRequestDetails(body);
 
-  // Every booking must have a valid package selection.
-  const packageResult = validateBookingPackage(details.package);
+  // Resolve package using the booking journey and selected tier.
+  const packageResult = validateBookingPackage(
+    bookingType,
+    details.package,
+  );
 
   if ("error" in packageResult) {
     return {
@@ -323,7 +329,12 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       return { valid: false, error: descriptionResult.error };
     }
 
-    const timelineResult = readRequiredString(body, "timeline", 1, 80);
+    const timelineResult = readRequiredString(
+      body,
+      "timeline",
+      1,
+      80,
+    );
 
     if ("error" in timelineResult) {
       return { valid: false, error: timelineResult.error };
@@ -388,7 +399,12 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       return { valid: false, error: topicResult.error };
     }
 
-    const goalsResult = readRequiredString(details, "goals", 10, 5000);
+    const goalsResult = readRequiredString(
+      details,
+      "goals",
+      10,
+      5000,
+    );
 
     if ("error" in goalsResult) {
       return { valid: false, error: goalsResult.error };
@@ -437,7 +453,12 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       };
     }
 
-    const timezoneResult = readRequiredString(details, "timezone", 1, 100);
+    const timezoneResult = readRequiredString(
+      details,
+      "timezone",
+      1,
+      100,
+    );
 
     if ("error" in timezoneResult) {
       return { valid: false, error: timezoneResult.error };
