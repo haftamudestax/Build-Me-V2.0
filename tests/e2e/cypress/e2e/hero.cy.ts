@@ -1,4 +1,3 @@
-
 describe("Hero Left Section", () => {
   const WEB_BASE_URL = Cypress.env("webBaseUrl");
 
@@ -38,7 +37,7 @@ describe("Hero Left Section", () => {
         "Get a dedicated developer who turns your ideas into polished, high-speed websites and apps.",
       ).should("be.visible");
 
-      cy.contains("h3", "Reliable solutions that help you grow.").should(
+      cy.contains("h2", "Reliable solutions that help you grow.").should(
         "be.visible",
       );
 
