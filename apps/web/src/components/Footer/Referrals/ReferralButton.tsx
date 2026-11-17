@@ -39,7 +39,12 @@ export function ReferralButton() {
           },
         }}
       >
-        <Gift size={30} strokeWidth={1.8} color="#22A653" aria-hidden="true" />
+        <Gift
+          size={30}
+          strokeWidth={1.8}
+          color="var(--color-light-yellow)"
+          aria-hidden="true"
+        />
 
         <Box
           sx={{
@@ -53,10 +58,10 @@ export function ReferralButton() {
           <Typography
             component="span"
             sx={{
-              fontSize: "0.875rem",
+              fontSize: "0.975rem",
               fontWeight: 700,
               lineHeight: 1.3,
-              color: "#22A653",
+              color: "var(--color-dark-yellow)",
             }}
           >
             Give Referrals

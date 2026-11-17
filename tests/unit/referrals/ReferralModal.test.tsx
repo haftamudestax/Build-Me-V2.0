@@ -1,5 +1,3 @@
-import "@testing-library/jest-dom/vitest";
-
 import type React from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -78,6 +76,41 @@ async function completeReferrerStep(user: User) {
   await user.click(screen.getByRole("button", { name: "Continue" }));
 }
 
+async function completeFriendStep(
+  user: User,
+  options?: {
+    referredName?: string;
+    referredEmail?: string;
+    relationship?: boolean;
+  },
+) {
+  await completeReferrerStep(user);
+
+  await user.type(
+    screen.getByLabelText(/their name/i),
+    options?.referredName ?? VALID_REFERRAL.referredName,
+  );
+
+  await user.type(
+    screen.getByLabelText(/their email/i),
+    options?.referredEmail ?? VALID_REFERRAL.referredEmail,
+  );
+
+  if (options?.relationship !== false) {
+    await user.click(
+      screen.getByRole("button", {
+        name: /select relationship/i,
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /^Friend$/,
+      }),
+    );
+  }
+}
+
 beforeEach(() => {
   getAnalyticsConfigMock.mockReturnValue({
     baseUrl: "http://localhost:4000",
@@ -136,12 +169,19 @@ describe("ReferralModal — unit tests", () => {
     expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
 
     expect(screen.getByLabelText(/your email/i)).toBeInTheDocument();
+
+    expect(
+      screen.getByText("Please enter your full name."),
+    ).toBeInTheDocument();
   });
 
   it("validates the referrer's email address", async () => {
     const { user } = renderReferralModal();
 
-    await user.type(screen.getByLabelText(/your name/i), "Alex Tester");
+    await user.type(
+      screen.getByLabelText(/your name/i),
+      VALID_REFERRAL.referrerName,
+    );
 
     await user.type(screen.getByLabelText(/your email/i), "invalid-email");
 
@@ -149,17 +189,13 @@ describe("ReferralModal — unit tests", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Refer Someone",
-      }),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByRole("heading", {
         name: "Your information",
       }),
     ).toBeInTheDocument();
 
-    expect(screen.getByLabelText(/your email/i)).toBeInTheDocument();
+    expect(
+      screen.getByText("Please enter a valid email address."),
+    ).toBeInTheDocument();
   });
 
   it("moves to the friend information step after valid referrer details", async () => {
@@ -179,7 +215,67 @@ describe("ReferralModal — unit tests", () => {
 
     expect(screen.getByLabelText(/their email/i)).toBeInTheDocument();
 
-    expect(screen.getByLabelText(/your relationship/i)).toBeInTheDocument();
+    expect(screen.getByText(/your relationship/i)).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", {
+        name: /select relationship/i,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the relationship dropdown and displays all options", async () => {
+    const { user } = renderReferralModal();
+
+    await completeReferrerStep(user);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /select relationship/i,
+      }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: /^Friend$/ }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", { name: /^Family$/ }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", { name: /^Colleague$/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("selects a relationship from the custom dropdown", async () => {
+    const { user } = renderReferralModal();
+
+    await completeReferrerStep(user);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /select relationship/i,
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /^Friend$/,
+      }),
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: /^Friend$/,
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("button", {
+        name: /^Family$/,
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("validates the referred person's information", async () => {
@@ -187,7 +283,11 @@ describe("ReferralModal — unit tests", () => {
 
     await completeReferrerStep(user);
 
-    await user.click(screen.getByRole("button", { name: "Review referral" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Review referral",
+      }),
+    );
 
     expect(
       screen.getByRole("heading", {
@@ -198,52 +298,56 @@ describe("ReferralModal — unit tests", () => {
     expect(screen.getByLabelText(/their name/i)).toBeInTheDocument();
 
     expect(screen.getByLabelText(/their email/i)).toBeInTheDocument();
+
+    expect(
+      screen.getByText("Please enter the person's name."),
+    ).toBeInTheDocument();
   });
 
   it("does not allow a visitor to refer themselves", async () => {
     const { user } = renderReferralModal();
 
-    await completeReferrerStep(user);
+    await completeFriendStep(user, {
+      referredName: VALID_REFERRAL.referrerName,
+      referredEmail: VALID_REFERRAL.referrerEmail,
+    });
 
-    await user.type(
-      screen.getByLabelText(/their name/i),
-      VALID_REFERRAL.referrerName,
+    await user.click(
+      screen.getByRole("button", {
+        name: "Review referral",
+      }),
     );
-
-    await user.type(
-      screen.getByLabelText(/their email/i),
-      VALID_REFERRAL.referrerEmail,
-    );
-
-    await user.selectOptions(
-      screen.getByLabelText(/your relationship/i),
-      VALID_REFERRAL.relationship,
-    );
-
-    await user.click(screen.getByRole("button", { name: "Review referral" }));
 
     expect(screen.getByText("You cannot refer yourself.")).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Who are you referring?",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("requires a relationship selection", async () => {
     const { user } = renderReferralModal();
 
-    await completeReferrerStep(user);
+    await completeFriendStep(user, {
+      relationship: false,
+    });
 
-    await user.type(
-      screen.getByLabelText(/their name/i),
-      VALID_REFERRAL.referredName,
+    await user.click(
+      screen.getByRole("button", {
+        name: "Review referral",
+      }),
     );
-
-    await user.type(
-      screen.getByLabelText(/their email/i),
-      VALID_REFERRAL.referredEmail,
-    );
-
-    await user.click(screen.getByRole("button", { name: "Review referral" }));
 
     expect(
       screen.getByText("Please select your relationship."),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Who are you referring?",
+      }),
     ).toBeInTheDocument();
   });
 });

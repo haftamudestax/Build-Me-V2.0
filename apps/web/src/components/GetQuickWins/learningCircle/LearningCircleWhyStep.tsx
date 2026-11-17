@@ -89,8 +89,22 @@ export function LearningCircleWhyStep({
           variant="text"
           onClick={onBack}
           sx={{
-            bgcolor: "var(--color-light-yellow)",
+            backgroundColor: "var(--color-light-yellow)",
+            color: "var(--color-black)",
             fontWeight: 700,
+            border: "1.5px solid var(--color-black)",
+            borderRadius: 0,
+            boxShadow: "none",
+            px: 3,
+            py: 1,
+            textTransform: "none",
+            transition: "all 0.2s ease-in-out",
+            "&:hover": {
+              backgroundColor: "var(--color-black)",
+              color: "var(--color-light-yellow)",
+              border: "1.5px solid var(--color-black)",
+              boxShadow: "none",
+            },
           }}
         >
           Back to options
@@ -102,8 +116,22 @@ export function LearningCircleWhyStep({
           onClick={onNext}
           endIcon={<ArrowRight size={18} />}
           sx={{
-            bgcolor: "var(--color-light-yellow)",
+            backgroundColor: "var(--color-white)",
+            color: "var(--color-black)",
             fontWeight: 700,
+            border: "1.5px solid var(--color-black)",
+            borderRadius: 0,
+            boxShadow: "none",
+            px: 3,
+            py: 1,
+            textTransform: "none",
+            transition: "all 0.2s ease-in-out",
+            "&:hover": {
+              backgroundColor: "var(--color-dark-yellow)",
+              color: "var(--color-white)",
+              border: "1.5px solid var(--color-black)",
+              boxShadow: "none",
+            },
           }}
         >
           Continue to registration

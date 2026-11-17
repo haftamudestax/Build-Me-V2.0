@@ -29,15 +29,17 @@ describe("HeroSection", () => {
     expect(heading).toHaveTextContent(/Build Better\s*Digital Experiences/i);
   });
 
-  it("renders the complete Hero-Top, Hero-Left, and Hero-Right content inside the section", () => {
+  it("renders the complete Hero-Top, Hero-Left, Hero-Right, and Hero-Bottom content inside the section", () => {
     render(<HeroSection />);
 
     const hero = screen.getByRole("region", {
       name: heroRegionName,
     });
 
+    // Hero-Top
     expect(within(hero).getByText("TECHNOLOGY OWNERSHIP")).toBeInTheDocument();
 
+    // Hero-Left
     const heading = within(hero).getByRole("heading", { level: 1 });
 
     expect(heading).toHaveTextContent(/Build Better\s*Digital Experiences/i);
@@ -60,9 +62,30 @@ describe("HeroSection", () => {
     expect(description).toHaveTextContent(
       "Get a dedicated developer who turns your ideas into polished, high-speed websites and apps. Designed for simplicity and built to convert, so you can focus on growing your business without technical headaches.",
     );
+
+    // Hero-Bottom (HeroValueStrip)
+    const valueStrip = within(hero).getByRole("region", {
+      name: "Key value propositions",
+    });
+
+    expect(
+      within(valueStrip).getByRole("heading", {
+        level: 2,
+        name: "Reliable solutions that help you grow.",
+      }),
+    ).toBeInTheDocument();
+
+    for (const fact of [
+      "No Stress",
+      "No Confusion",
+      "No Jargons",
+      "Just Simple",
+    ]) {
+      expect(within(valueStrip).getByText(fact)).toBeInTheDocument();
+    }
   });
 
-  it("contains exactly one H1 heading", () => {
+  it("maintains the expected H1 and H2 heading counts", () => {
     render(<HeroSection />);
 
     const hero = screen.getByRole("region", {
@@ -70,5 +93,6 @@ describe("HeroSection", () => {
     });
 
     expect(within(hero).getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(within(hero).getAllByRole("heading", { level: 2 })).toHaveLength(2);
   });
 });

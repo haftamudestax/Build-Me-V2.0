@@ -162,7 +162,7 @@ export function Testimonials() {
               color: "var(--color-dark-yellow)",
             },
             "& .MuiTabs-indicator": {
-              backgroundColor: "#1746B5",
+              backgroundColor: "var(--color-light-yellow)",
             },
           }}
         >

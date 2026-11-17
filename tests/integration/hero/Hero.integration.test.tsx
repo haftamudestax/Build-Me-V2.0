@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { HeroSection } from "../../../apps/web/src/components/Hero/HeroSection";
 
-describe("Hero Left Section integration", () => {
+describe("Hero Section integration", () => {
   it("renders all hero content within the same section", () => {
     render(<HeroSection />);
 
@@ -27,10 +27,23 @@ describe("Hero Left Section integration", () => {
     ).toBeInTheDocument();
 
     expect(
+      within(hero).getByRole("heading", {
+        level: 2,
+        name: "Reliable solutions that help you grow.",
+      }),
+    ).toBeInTheDocument();
+
+    expect(
       within(hero).getByText((content) =>
         content.includes("Get a dedicated developer who turns your ideas"),
       ),
     ).toBeInTheDocument();
+
+    // Verify value strip key facts are rendered
+    expect(within(hero).getByText("No Stress")).toBeInTheDocument();
+    expect(within(hero).getByText("No Confusion")).toBeInTheDocument();
+    expect(within(hero).getByText("No Jargons")).toBeInTheDocument();
+    expect(within(hero).getByText("Just Simple")).toBeInTheDocument();
   });
 
   it("preserves the heading's visual emphasis", () => {
@@ -51,7 +64,9 @@ describe("Hero Left Section integration", () => {
     });
 
     expect(within(hero).getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(within(hero).getAllByRole("heading", { level: 2 })).toHaveLength(1);
-    expect(within(hero).getAllByRole("heading", { level: 3 })).toHaveLength(1);
+    expect(within(hero).getAllByRole("heading", { level: 2 })).toHaveLength(2);
+    expect(within(hero).queryAllByRole("heading", { level: 3 })).toHaveLength(
+      0,
+    );
   });
 });

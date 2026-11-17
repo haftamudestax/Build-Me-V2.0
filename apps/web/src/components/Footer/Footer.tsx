@@ -1,35 +1,40 @@
 import { SocialConnections } from "./SocialConnections";
 import { ShareButton } from "./Share";
 import { ReferralButton } from "./Referrals";
+import { AboutLink } from "./About";
+import { Copyright } from "./Copyright";
+import { LegalLinks } from "./Legal";
 
 export function Footer() {
   return (
-    <footer className="w-full min-w-0 border-t border-gray-200 bg-white">
-      <div className="mx-auto w-full max-w-7xl min-w-0 px-5 py-10 sm:px-8 lg:px-10">
-        <div
-          className="
-            flex w-full min-w-0 flex-col items-stretch gap-6
-            md:flex-row md:items-center md:justify-between md:gap-8
-          "
-        >
-          {/* Social connections */}
-          <div className="flex w-full min-w-0 flex-wrap items-center gap-4 md:w-auto">
+    <footer className="border-t border-gray-200 bg-white">
+      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-10">
+        {/* Footer Components */}
+        <div className="flex flex-col items-stretch gap-5 lg:flex-row lg:gap-0">
+          <div className="min-w-0">
             <SocialConnections />
           </div>
 
-          <div
-            className="
-                flex min-w-0 items-center
-                border-b border-gray-200 pb-4
-                sm:border-b-0 sm:border-r sm:pb-0 sm:pr-6
-              "
-          >
+          <div className="flex items-center border-gray-200 lg:border-r lg:pr-8">
             <ShareButton />
           </div>
+
           <div className="flex min-w-0 items-center">
             <ReferralButton />
           </div>
+
+          <div className="flex min-w-0 items-center">
+            <AboutLink />
+          </div>
+
+          <div className="flex min-w-0 items-center">
+            <Copyright />
+          </div>
         </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-10">
+        <LegalLinks />
       </div>
     </footer>
   );

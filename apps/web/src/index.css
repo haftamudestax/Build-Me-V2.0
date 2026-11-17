@@ -4,9 +4,7 @@
 
 @theme {
     --color-dark-yellow: #D99B16;
-    /* Rich gold / dark amber */
     --color-light-yellow: #F7B733;
-    /* Your bright yellow (#F7B733) */
     --color-black: #000000;
     --color-white: #ffffff;
 }

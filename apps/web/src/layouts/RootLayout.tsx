@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { Navbar } from "../components/Navbar/Navbar";
 import { WorkWithMeModal } from "../components/WorkWithMe/WorkWithMeModal";
 import { GetQuickWinsModal } from "../components/GetQuickWins/GetQuickWinsModal";
+import { Footer } from "../components/Footer";
 
 export default function RootLayout() {
   return (
@@ -11,9 +12,9 @@ export default function RootLayout() {
       <main>
         <Outlet />
       </main>
-
       <WorkWithMeModal />
       <GetQuickWinsModal />
+      <Footer />
     </>
   );
 }

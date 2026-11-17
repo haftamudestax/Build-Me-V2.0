@@ -80,7 +80,7 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
           boxSizing: "border-box",
           bgcolor: "#FAF8F5",
           border: 1,
-          borderColor: "#1746B5",
+          borderColor: "var(--color-light-yellow)",
           borderRadius: 3,
           boxShadow: 1,
           transform: "translateY(0)",

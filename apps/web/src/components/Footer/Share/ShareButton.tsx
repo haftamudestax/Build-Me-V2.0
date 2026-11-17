@@ -15,10 +15,9 @@ export function ShareButton() {
         type="button"
         onClick={() => setIsOpen(true)}
         aria-label="Share this page"
-        className="group inline-flex items-center gap-3 rounded-xl bg-white px-3 py-3 text-left transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+        className="group inline-flex items-center gap-3 rounded-xl bg-white px-3 py-3 text-left transition hover:bg-dark-yellow hover:text-black focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2"
       >
-        {/* Share Icon */}
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center text-blue-800 transition-transform group-hover:scale-110">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
           <svg
             viewBox="0 0 32 32"
             fill="currentColor"
@@ -28,10 +27,8 @@ export function ShareButton() {
             <path d="M28.8 3.4 3.9 13.1c-1.7.7-1.7 1.8-.3 2.2l6.4 2 2.5 7.8c.3.9.2 1.3 1.1 1.3.7 0 1-.3 1.4-.7l3.1-3 6.5 4.8c1.2.7 2.1.3 2.4-1.1l4.3-20.2c.4-1.7-.6-2.5-2.5-1.8ZM12 16.8 25.7 8.2c.7-.4 1.3-.2.8.3L15.2 19.1l-.5 5.1-2.7-7.4Z" />
           </svg>
         </span>
-
-        {/* Share Text */}
         <span className="flex flex-col gap-0.5">
-          <span className="text-sm font-bold leading-tight text-blue-900">
+          <span className="text-sm font-bold leading-tight text-light-yellow hover:text-black">
             Share This Page
           </span>
 

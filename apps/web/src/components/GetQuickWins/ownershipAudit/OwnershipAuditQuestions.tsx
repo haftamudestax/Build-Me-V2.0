@@ -124,13 +124,14 @@ export function OwnershipAuditQuestions({
             height: 6,
             borderRadius: 10,
             overflow: "hidden",
-            bgcolor: "action.hover",
+            bgcolor:
+              "color-mix(in srgb, var(--color-light-yellow) 22%, transparent)",
           }}
         >
           <Stack
             sx={{
               width: `${((currentQuestionIndex + 1) / TOTAL_QUESTIONS) * 100}%`,
-              bgcolor: "primary.main",
+              bgcolor: "var(--color-light-yellow)",
               transition: "width 250ms ease",
             }}
           />
@@ -156,6 +157,9 @@ export function OwnershipAuditQuestions({
             fontWeight: 700,
             fontSize: "1.1rem",
             mb: 1,
+            "&.Mui-focused": {
+              color: "text.primary",
+            },
           }}
         >
           {currentQuestion.question}
@@ -174,26 +178,48 @@ export function OwnershipAuditQuestions({
           }
           onChange={(event) => handleAnswer(Number(event.target.value))}
         >
-          {currentQuestion.answers.map((answer) => (
-            <FormControlLabel
-              key={answer.label}
-              value={String(answer.points)}
-              control={<Radio />}
-              label={answer.label}
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 1.5,
-                mx: 0,
-                my: 0.5,
-                px: 1,
-                py: 0.5,
-                "&:hover": {
-                  bgcolor: "action.hover",
-                },
-              }}
-            />
-          ))}
+          {currentQuestion.answers.map((answer) => {
+            const isSelected = answers[currentQuestion.id] === answer.points;
+
+            return (
+              <FormControlLabel
+                key={answer.label}
+                value={String(answer.points)}
+                control={
+                  <Radio
+                    sx={{
+                      color: "text.secondary",
+                      "&.Mui-checked": {
+                        color: "var(--color-light-yellow)",
+                      },
+                    }}
+                  />
+                }
+                label={answer.label}
+                sx={{
+                  border: "1.5px solid",
+                  borderColor: isSelected
+                    ? "var(--color-light-yellow)"
+                    : "divider",
+                  bgcolor: isSelected
+                    ? "color-mix(in srgb, var(--color-light-yellow) 12%, transparent)"
+                    : "transparent",
+                  borderRadius: 1.5,
+                  mx: 0,
+                  my: 0.5,
+                  px: 1,
+                  py: 0.5,
+                  transition:
+                    "border-color 160ms ease, background-color 160ms ease",
+                  "&:hover": {
+                    borderColor: "var(--color-light-yellow)",
+                    bgcolor:
+                      "color-mix(in srgb, var(--color-light-yellow) 10%, transparent)",
+                  },
+                }}
+              />
+            );
+          })}
         </RadioGroup>
       </FormControl>
 

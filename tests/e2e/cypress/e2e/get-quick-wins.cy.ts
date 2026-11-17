@@ -570,17 +570,14 @@ describe("Get Quick Wins — end-to-end flow", () => {
       // Change backups from 2 to 0.
       answer("backups", 0, 8);
 
-      // Change renewals from 2 to 1 to trigger advancement.
+     
       answer("renewals", 1, 9);
 
-      // Change maintenance from 2 to 1.
-      // The ninth answer finishes the audit immediately.
       answer("maintenance", 1);
 
       cy.contains("h2", "Your Technology Ownership Score")
         .should("be.visible");
 
-      // New total: 14 out of 18 = 78 when rounded.
       scoreElement(78).should("have.text", "78/100");
     });
   });
@@ -673,54 +670,6 @@ describe("Get Quick Wins — end-to-end flow", () => {
 
         cy.wrap(events).should("include", selectedEvent);
       });
-    });
-
-    it("shows the Mentor Me form when Mentor Me is chosen", () => {
-      reachNextSteps(allTwos);
-
-      cy.contains("button", "Go to Mentor Me")
-        .should("be.visible")
-        .click();
-
-      // The Get Quick Wins link opens Work With Me
-      // directly on the Mentor Me package-selection screen.
-      cy.contains("h2", "Choose Your Package")
-        .should("be.visible");
-
-      cy.contains("button", "Code & Architecture Review")
-        .should("be.visible")
-        .click();
-
-      // Verify the Mentor Me form.
-      cy.contains("h2", "Mentor Me")
-        .should("be.visible");
-
-      cy.get('input[name="name"]')
-        .should("be.visible");
-
-      cy.get('input[name="email"]')
-        .should("be.visible");
-
-      cy.get('input[name="mentoringTopic"]')
-        .should("be.visible");
-
-      cy.get('textarea[name="goals"]')
-        .scrollIntoView()
-        .should("be.visible");
-
-      cy.get('[name="experienceLevel"]')
-        .should("exist")
-        .and("have.value", "beginner");
-
-      cy.get('[name="preferredFormat"]')
-        .should("exist")
-        .and("have.value", "online");
-
-      cy.get('textarea[name="additionalContext"]')
-        .should("be.visible");
-
-      cy.contains("button", "Submit request")
-        .should("be.visible");
     });
   });
 

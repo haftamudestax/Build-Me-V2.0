@@ -39,7 +39,6 @@ export function OwnershipAuditScore({
 
   const details = resultDetails[category];
 
-  // Flatten all sections into a single question list.
   const allQuestions = auditSections.flatMap((section) =>
     section.questions.map((question) => ({
       id: question.id,
@@ -57,7 +56,6 @@ export function OwnershipAuditScore({
         description={`Results for ${name}`}
       />
 
-      {/* Score summary */}
       <Box
         sx={{
           border: "1px solid",
@@ -100,7 +98,17 @@ export function OwnershipAuditScore({
           variant="determinate"
           value={Math.min(100, Math.max(0, score))}
           aria-label="Ownership score"
-          sx={{ mt: 1 }}
+          sx={{
+            mt: 1,
+            height: 8,
+            borderRadius: 0,
+            backgroundColor:
+              "color-mix(in srgb, var(--color-dark-yellow) 20%, transparent)",
+            "& .MuiLinearProgress-bar": {
+              backgroundColor: "var(--color-dark-yellow)",
+              borderRadius: 0,
+            },
+          }}
         />
       </Box>
 
@@ -221,13 +229,10 @@ export function OwnershipAuditScore({
         </Collapse>
       </Box>
 
-      {/* Assessment disclaimer */}
       <Alert severity="info">
         This is a self-assessment based on your answers, not a security audit or
         certification.
       </Alert>
-
-      {/* Navigation */}
       <StepFooter
         previous={{
           label: "Previous",

@@ -42,7 +42,7 @@ export function CarouselNavigation({
         aria-label="Previous cards"
         size="small"
         sx={{
-          color: "text.primary",
+          color: "var(--color-dark-yellow)",
           "&.Mui-disabled": {
             opacity: 0.3,
           },
@@ -74,15 +74,17 @@ export function CarouselNavigation({
               border: 0,
               borderRadius: 999,
               bgcolor:
-                currentPage === index ? "primary.main" : "action.disabled",
+                currentPage === index
+                  ? "var(--color-dark-yellow)"
+                  : "color-mix(in srgb, var(--color-dark-yellow) 28%, transparent)",
               cursor: "pointer",
               transition: "all 0.25s ease",
               "&:hover": {
-                bgcolor: "primary.light",
+                bgcolor: "var(--color-dark-yellow)",
               },
               "&:focus-visible": {
                 outline: "2px solid",
-                outlineColor: "primary.main",
+                outlineColor: "var(--color-dark-yellow)",
                 outlineOffset: 3,
               },
             }}
@@ -97,7 +99,7 @@ export function CarouselNavigation({
         aria-label="Next cards"
         size="small"
         sx={{
-          color: "text.primary",
+          color: "var(--color-dark-yellow)",
           "&.Mui-disabled": {
             opacity: 0.3,
           },

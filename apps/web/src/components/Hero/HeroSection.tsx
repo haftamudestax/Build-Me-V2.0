@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Box, Container } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
+import { Card } from "@build-me/ui";
 import { HeroIntro } from "./HeroIntro";
 import { HeroRight } from "./HeroRight";
+import { HeroValueStrip } from "./HeroValueStrip";
 import { useVisibilityAnalytics } from "../../hooks/useTracking/useVisibilityAnalytics";
-import { Card } from "@build-me/ui";
-import { Typography } from "@mui/material";
 
 export function HeroSection() {
   const [heroElement, setHeroElement] = useState<HTMLElement | null>(null);
@@ -38,11 +38,10 @@ export function HeroSection() {
         sx={{
           display: "flex",
           flexDirection: "column",
-          gap: { xs: 6, md: 8 },
         }}
       >
         {/* 1. Hero-Top: Above Left and Right */}
-        <Box sx={{ width: "100%" }}>
+        <Box sx={{ width: "100%", mb: { xs: 4, md: 6 } }}>
           <Card.Header style={{ padding: 0 }}>
             <Typography
               component="p"
@@ -52,7 +51,9 @@ export function HeroSection() {
                 alignItems: "center",
                 px: 1.5,
                 py: 0.5,
-                borderRadius: "999px",
+                borderRadius: 0,
+                border: "1.5px solid var(--color-black)",
+                boxShadow: "none",
                 backgroundColor: "var(--color-black)",
                 color: "var(--color-light-yellow)",
                 fontWeight: 800,
@@ -76,6 +77,7 @@ export function HeroSection() {
             alignItems: "center",
             columnGap: { xs: 4, md: 6, lg: 8 },
             rowGap: { xs: 6, md: 0 },
+            mb: { xs: 3, md: 4 },
           }}
         >
           {/* Hero-Left */}
@@ -97,6 +99,9 @@ export function HeroSection() {
             <HeroRight />
           </Box>
         </Box>
+
+        {/* 3. Hero-Bottom: Full-Width Centered Value Strip */}
+        <HeroValueStrip />
       </Container>
     </Box>
   );

@@ -133,7 +133,7 @@ export function ShareModal({ isOpen, url, title, onClose }: ShareModalProps) {
           <div>
             <h2
               id="share-modal-title"
-              className="text-xl font-bold text-blue-950"
+              className="text-xl font-bold text-dark-yellow"
             >
               Share this page
             </h2>
@@ -150,7 +150,7 @@ export function ShareModal({ isOpen, url, title, onClose }: ShareModalProps) {
             type="button"
             onClick={onClose}
             aria-label="Close share dialog"
-            className="rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="rounded-full p-2 text-light-yellow transition hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-dark-yellow"
           >
             <svg
               viewBox="0 0 24 24"
@@ -170,7 +170,7 @@ export function ShareModal({ isOpen, url, title, onClose }: ShareModalProps) {
             <button
               type="button"
               onClick={handleNativeShare}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-900 px-4 py-3 font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-dark-yellow px-4 py-3 font-semibold text-white transition hover:bg-light-yellow focus:outline-none focus:ring-2 focus:ring-light-yellow focus:ring-offset-2 border-b-4 border-r-4 border-b-black border-r-light-yellow"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -190,7 +190,7 @@ export function ShareModal({ isOpen, url, title, onClose }: ShareModalProps) {
           )}
 
         <div className="mt-6">
-          <h3 className="mb-3 text-sm font-semibold text-gray-800">
+          <h3 className="mb-3 text-sm font-semibold text-black">
             Share through
           </h3>
 
@@ -240,13 +240,13 @@ export function ShareModal({ isOpen, url, title, onClose }: ShareModalProps) {
               type="text"
               readOnly
               value={url}
-              className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-light-yellow"
             />
 
             <button
               type="button"
               onClick={handleCopyLink}
-              className="shrink-0 rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+              className="shrink-0 rounded-lg bg-dark-yellow px-4 py-2 text-sm font-semibold text-white transition hover:bg-light-yellow focus:outline-none focus:ring-2 focus:ring-light-yellow focus:ring-offset-2 border-2 border-black"
             >
               {copied ? "Copied!" : "Copy"}
             </button>
