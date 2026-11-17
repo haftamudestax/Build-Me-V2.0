@@ -59,33 +59,10 @@ describe("HeroIntro", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the Hero-Bottom heading and all four key facts", () => {
-    render(<HeroIntro />);
-
-    expect(
-      screen.getByRole("heading", {
-        level: 3,
-        name: "Reliable solutions that help you grow.",
-      }),
-    ).toBeInTheDocument();
-
-    const expectedFacts = [
-      "No Stress",
-      "No Confusion",
-      "No Jargons",
-      "Just Simple",
-    ];
-
-    for (const fact of expectedFacts) {
-      expect(screen.getByText(fact)).toBeInTheDocument();
-    }
-  });
-
-  it("uses a semantic H1, H2, and H3 hierarchy", () => {
+  it("uses a semantic H1 and H2 hierarchy", () => {
     render(<HeroIntro />);
 
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 3 })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(1);
   });
 });
