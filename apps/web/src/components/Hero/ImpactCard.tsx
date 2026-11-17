@@ -6,36 +6,35 @@ const impactItems = [
     icon: Shield,
     value: "99.9%",
     label: "System Reliability",
-    color: "#1746B5",
-    background: "#dbeafe",
+    color: "var(--color-black)",
+    background: "var(--color-dark-yellow)",
   },
   {
     icon: Rocket,
     value: "Faster",
     label: "Time to Market",
-    color: "#1746B5",
-    background: "#e0e7ff",
+    color: "var(--color-black)",
+    background: "var(--color-dark-yellow)",
   },
   {
     icon: CircleDollarSign,
     value: "Lower",
     label: "Operational Costs",
-    color: "#1746B5",
-    background: "#cffafe",
+    color: "var(--color-black)",
+    background: "var(--color-dark-yellow)",
   },
   {
     icon: Award,
     value: "Stronger",
     label: "Security & Trust",
-    color: "#1746B5",
-    background: "#ccfbf1",
+    color: "var(--color-black)",
+    background: "var(--color-dark-yellow)",
   },
 ];
 
 export function ImpactCard() {
   return (
     <Box sx={{ width: { xs: 260, sm: 280 }, maxWidth: "100%" }}>
-      {/* Header Container with Handwritten Text and Arrow Aligned to the Top-Right */}
       <Box
         sx={{
           display: "flex",

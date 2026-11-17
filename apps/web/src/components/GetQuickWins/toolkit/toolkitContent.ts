@@ -54,7 +54,7 @@ export const toolkitParts: ToolkitPart[] = [
     tools: [
       {
         id: "domain",
-        title: "Domain and DNS checklist",
+        title: "Domain and DNS TODOs",
         purpose:
           "Make sure your business, not a provider, controls your domain name.",
         checklist: [
@@ -82,7 +82,7 @@ export const toolkitParts: ToolkitPart[] = [
       },
       {
         id: "hosting",
-        title: "Hosting and cloud checklist",
+        title: "Hosting and cloud TODOs",
         purpose: "Know where your application runs and who can administer it.",
         checklist: [
           "List every hosting, cloud and platform account your site or app uses.",
@@ -109,7 +109,7 @@ export const toolkitParts: ToolkitPart[] = [
       },
       {
         id: "source_code",
-        title: "Source code checklist",
+        title: "Source code TODOs",
         purpose: "Keep your application's code in a repository you own.",
         checklist: [
           "Find out where the code lives (the repository host and the organisation name).",
@@ -226,7 +226,7 @@ export const toolkitParts: ToolkitPart[] = [
     tools: [
       {
         id: "backups",
-        title: "Backup and recovery checklist",
+        title: "Backup and recovery TODOs",
         purpose: "Know your data is backed up and that you can restore it.",
         checklist: [
           "List the data and systems that must never be lost.",

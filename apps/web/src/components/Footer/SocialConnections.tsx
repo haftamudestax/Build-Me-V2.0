@@ -8,8 +8,8 @@ interface SocialIconProps {
 
 function SocialIcon({ name }: SocialIconProps) {
   const commonProps = {
-    width: 22,
-    height: 22,
+    width: 20,
+    height: 20,
     viewBox: "0 0 24 24",
     fill: "none",
     xmlns: "http://www.w3.org/2000/svg",
@@ -76,19 +76,19 @@ function SocialIcon({ name }: SocialIconProps) {
   }
 }
 
-const socialColors: Record<SocialIconName, string> = {
-  LinkedIn: "bg-[#0A66C2]",
-  X: "bg-black",
-  Facebook: "bg-[#1877F2]",
-  Instagram: "bg-gradient-to-tr from-[#FEDA75] via-[#DD2A7B] to-[#8134AF]",
-  YouTube: "bg-[#FF0000]",
+const socialThemeStyles: Record<SocialIconName, string> = {
+  LinkedIn: "bg-dark-yellow text-black hover:bg-black hover:text-dark-yellow",
+  X: "bg-black text-white hover:bg-white hover:text-black",
+  Facebook: "bg-light-yellow text-black hover:bg-black hover:text-light-yellow",
+  Instagram: "bg-white text-dark-yellow hover:bg-dark-yellow hover:text-black",
+  YouTube: "bg-black text-light-yellow hover:bg-light-yellow hover:text-black",
 };
 
 export function SocialConnections() {
   return (
     <section
       aria-labelledby="social-connections-heading"
-      className="space-y-5 border-r border-gray-200 pr-8"
+      className="space-y-5 border-r border-black pr-8"
     >
       <h2
         id="social-connections-heading"
@@ -109,12 +109,7 @@ export function SocialConnections() {
               rel="noopener noreferrer"
               aria-label={social.label}
               title={social.label}
-              className={`flex h-10 w-10 items-center justify-center
-                rounded-full text-white transition-all duration-200
-                hover:-translate-y-1 hover:scale-110 hover:shadow-lg
-                focus-visible:outline-none focus-visible:ring-2
-                focus-visible:ring-blue-600 focus-visible:ring-offset-2
-                ${socialColors[name]}`}
+              className={`flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-black shadow-none transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 ${socialThemeStyles[name]}`}
             >
               <SocialIcon name={name} />
             </a>

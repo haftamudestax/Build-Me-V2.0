@@ -89,7 +89,17 @@ export function OwnershipLearningCircleFlow({
         variant="determinate"
         value={(STEP_NUMBER[step] / TOTAL_STEPS) * 100}
         aria-label={`Step ${STEP_NUMBER[step]} of ${TOTAL_STEPS}`}
-        sx={{ flexShrink: 0 }}
+        sx={{
+          mt: 1,
+          height: 8,
+          borderRadius: 0,
+          backgroundColor:
+            "color-mix(in srgb, var(--color-dark-yellow) 20%, transparent)",
+          "& .MuiLinearProgress-bar": {
+            backgroundColor: "var(--color-dark-yellow)",
+            borderRadius: 0,
+          },
+        }}
       />
 
       {step === "why" && (

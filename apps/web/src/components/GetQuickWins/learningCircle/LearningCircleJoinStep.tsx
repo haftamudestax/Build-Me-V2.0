@@ -61,7 +61,7 @@ export function LearningCircleJoinStep({
             color: "primary.main",
           }}
         >
-          <Users size={40} aria-hidden="true" />
+          <Users size={40} aria-hidden="true" className="text-light-yellow" />
         </Box>
 
         <Typography variant="h6" component="h3">

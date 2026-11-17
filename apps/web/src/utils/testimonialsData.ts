@@ -42,9 +42,9 @@ export interface ReviewSummaryData {
 }
 
 export const DEFAULT_CATEGORIES: CategoryMetric[] = [
-  { key: "technicalExpertise", label: "Technical Expertise", score: 0 },
+  { key: "technicalExpertise", label: "On-Time Delivery", score: 0 },
   { key: "reliability", label: "Reliability", score: 0 },
-  { key: "collaboration", label: "Collaboration", score: 0 },
+  { key: "collaboration", label: "Communication & Transparency", score: 0 },
   { key: "qualityOfWork", label: "Quality of Work", score: 0 },
 ];
 

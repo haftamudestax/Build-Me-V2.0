@@ -311,8 +311,8 @@ export function GetQuickWinsModal() {
       labelledBy={TITLE_ID}
       describedBy={DESCRIPTION_ID}
       closeOnEscape
+      size="xl"
       closeOnOverlayClick
-      size="lg"
     >
       <div
         style={{
@@ -339,8 +339,8 @@ export function GetQuickWinsModal() {
             top: 4,
             right: 8,
             zIndex: 2,
-            color: "text.secondary",
-            backgroundColor: "background.paper",
+            color: "var(--color-dark-yellow)",
+            backgroundColor: "var(--color-light-yellow)",
             "&:hover": {
               backgroundColor: "action.hover",
               color: "text.primary",
@@ -362,7 +362,17 @@ export function GetQuickWinsModal() {
               variant="determinate"
               value={(currentStepNumber / TOTAL_STEPS) * 100}
               aria-label={`Step ${currentStepNumber} of ${TOTAL_STEPS}`}
-              sx={{ flexShrink: 0 }}
+              sx={{
+                flexShrink: 0,
+                height: 6,
+                borderRadius: 0,
+                backgroundColor:
+                  "color-mix(in srgb, var(--color-dark-yellow) 22%, transparent)",
+                "& .MuiLinearProgress-bar": {
+                  backgroundColor: "var(--color-dark-yellow)",
+                  borderRadius: 0,
+                },
+              }}
             />
           )}
 
@@ -390,21 +400,39 @@ export function GetQuickWinsModal() {
               <OptionCard
                 title="Technology Ownership Audit"
                 description="Assess how well you control your code, infrastructure, access, documentation, and long-term technology decisions."
-                icon={<ShieldCheck size={28} aria-hidden="true" />}
+                icon={
+                  <ShieldCheck
+                    size={28}
+                    aria-hidden="true"
+                    className="text-light-yellow"
+                  />
+                }
                 onSelect={selectAudit}
               />
 
               <OptionCard
                 title="Technology Ownership Toolkit"
                 description="Access practical checklists, templates, and guidance to manage your domains, hosting, source code, accounts, providers, backups, and ongoing maintenance."
-                icon={<BookOpen size={28} aria-hidden="true" />}
+                icon={
+                  <BookOpen
+                    size={28}
+                    aria-hidden="true"
+                    className="text-light-yellow"
+                  />
+                }
                 onSelect={selectToolkit}
               />
 
               <OptionCard
                 title="Technology Ownership Learning Circle"
                 description="Join a learning community to build your understanding of technology ownership, digital assets, providers, access, security, and long-term technology management."
-                icon={<Users size={28} aria-hidden="true" />}
+                icon={
+                  <Users
+                    size={28}
+                    aria-hidden="true"
+                    className="text-light-yellow"
+                  />
+                }
                 onSelect={selectLearningCircle}
               />
             </Stack>
