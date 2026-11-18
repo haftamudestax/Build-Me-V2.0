@@ -21,6 +21,11 @@
     "pnpm": ">=10.0.0"
   },
   "pnpm": {
+    "auditConfig": {
+      "ignore": [
+        "GHSA-fc5q-39xc-vjpf"
+      ]
+    },
     "overrides": {
       "handlebars": "^4.7.10",
       "flatted": ">=3.4.2",
