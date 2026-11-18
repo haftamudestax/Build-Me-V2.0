@@ -75,7 +75,6 @@ interface ScoreSelectorProps {
 }
 
 const TITLE_ID = "feedback-modal-title";
-const DESCRIPTION_ID = "feedback-modal-description";
 
 const INITIAL_FORM: FeedbackFormData = {
   type: "",
@@ -99,33 +98,12 @@ const pageStyle: CSSProperties = {
 const FEEDBACK_TYPES: {
   value: FeedbackType;
   label: string;
-  description: string;
 }[] = [
-  {
-    value: "rating",
-    label: "Rate your experience",
-    description: "Give your experience a rating from 1 to 5.",
-  },
-  {
-    value: "nps",
-    label: "Recommend Me",
-    description: "Tell me how likely you are to recommend me.",
-  },
-  {
-    value: "issue",
-    label: "Report an issue",
-    description: "Tell me about something that is not working correctly.",
-  },
-  {
-    value: "suggestion",
-    label: "Share a suggestion",
-    description: "Suggest an improvement or a new idea.",
-  },
-  {
-    value: "complaint",
-    label: "Make a complaint",
-    description: "Tell me about an experience that needs attention.",
-  },
+  { value: "rating", label: "Rate your experience" },
+  { value: "nps", label: "Recommend Me" },
+  { value: "issue", label: "Report an issue" },
+  { value: "suggestion", label: "Share a suggestion" },
+  { value: "complaint", label: "Make a complaint" },
 ];
 
 const FEEDBACK_CATEGORIES: {
@@ -358,7 +336,6 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
   const [form, setForm] = useState<FeedbackFormData>(INITIAL_FORM);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
-  const [typeError, setTypeError] = useState("");
   const [detailsError, setDetailsError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
@@ -375,24 +352,20 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
       [field]: value,
     }));
 
-    if (field === "type") {
-      setTypeError("");
-      setDetailsError("");
-    } else {
-      setDetailsError("");
-    }
-
+    setDetailsError("");
     setSubmitError("");
   }
 
-  function validateType(): boolean {
-    if (!form.type) {
-      setTypeError("Please select the type of feedback you want to share.");
-      return false;
-    }
+  function handleSelectType(type: FeedbackType): void {
+    setForm((current) => ({
+      ...current,
+      type,
+    }));
 
-    setTypeError("");
-    return true;
+    setDetailsError("");
+    setSubmitError("");
+    setIsCategoryOpen(false);
+    setStep("details");
   }
 
   function validateDetails(): boolean {
@@ -443,13 +416,6 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
     return true;
   }
 
-  function handleNext(): void {
-    if (!validateType()) return;
-
-    setStep("details");
-    setSubmitError("");
-  }
-
   function handleBack(): void {
     if (step === "details") {
       setStep("type");
@@ -457,14 +423,10 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
 
     setIsCategoryOpen(false);
     setSubmitError("");
+    setDetailsError("");
   }
 
   async function handleSubmit(): Promise<void> {
-    if (!validateType()) {
-      setStep("type");
-      return;
-    }
-
     if (!validateDetails()) return;
 
     const visitorId = getAnalyticsConfig()?.visitorId;
@@ -539,7 +501,6 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
     setStep("type");
     setForm(INITIAL_FORM);
     setIsCategoryOpen(false);
-    setTypeError("");
     setDetailsError("");
     setSubmitError("");
     setReference("");
@@ -571,8 +532,6 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
     form.type === "suggestion" ||
     form.type === "complaint";
 
-  const isTypeStepValid = Boolean(form.type);
-
   const isDetailsStepValid = (() => {
     if (!form.type) return false;
     if (!form.name.trim()) return false;
@@ -596,7 +555,7 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
     return true;
   })();
 
-  const stepNumber = step === "type" ? 1 : step === "details" ? 2 : 3;
+  const stepNumber = step === "type" ? 1 : 2;
 
   const nameError =
     detailsError === "Please enter your name." ? detailsError : "";
@@ -627,7 +586,6 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
       isOpen={open}
       onClose={handleClose}
       labelledBy={TITLE_ID}
-      describedBy={DESCRIPTION_ID}
       closeOnEscape
       size="lg"
       closeOnOverlayClick
@@ -733,141 +691,65 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
           )}
 
           {step === "type" && (
-            <Box
-              component="form"
-              noValidate
-              onSubmit={(event) => {
-                event.preventDefault();
-                handleNext();
-              }}
-              sx={{ ...pageStyle, gap: 2 }}
-            >
-              <Stack spacing={0.1}>
-                <Typography
-                  variant="h6"
-                  component="h3"
-                  sx={{ fontWeight: 700 }}
-                >
-                  What would you like to share?
-                </Typography>
-
-                <Typography
-                  id={DESCRIPTION_ID}
-                  variant="body2"
-                  color="text.secondary"
-                >
-                  Select the type of feedback you want to submit.
-                </Typography>
-              </Stack>
-
-              {typeError && <Alert severity="error">{typeError}</Alert>}
+            <Box sx={{ ...pageStyle, gap: 2 }}>
+              <Typography variant="h6" component="h3" sx={{ fontWeight: 700 }}>
+                What would you like to share?
+              </Typography>
 
               <Box
                 sx={{
                   display: "grid",
                   gridTemplateColumns: "1fr",
-                  gap: 0.5,
+                  gap: 0.75,
                 }}
               >
-                {FEEDBACK_TYPES.map((item) => {
-                  const selected = form.type === item.value;
+                {FEEDBACK_TYPES.map((item) => (
+                  <Box
+                    key={item.value}
+                    component="button"
+                    type="button"
+                    onClick={() => handleSelectType(item.value)}
+                    aria-label={item.label}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 1,
+                      width: "100%",
+                      minHeight: 54,
+                      px: 1.5,
+                      py: 1,
+                      border: "1.5px solid var(--color-black)",
+                      borderRadius: 0,
+                      backgroundColor: "background.paper",
+                      color: "var(--color-black)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      font: "inherit",
+                      transition: "background-color 150ms ease",
+                      "&:hover": {
+                        borderColor: "var(--color-black)",
+                        backgroundColor: "rgba(250, 204, 21, 0.12)",
+                      },
+                      "&:focus-visible": {
+                        outline: "2px solid",
+                        outlineColor: "primary.main",
+                        outlineOffset: 2,
+                      },
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                      {item.label}
+                    </Typography>
 
-                  return (
-                    <Box
-                      key={item.value}
-                      component="button"
-                      type="button"
-                      onClick={() => updateForm("type", item.value)}
-                      aria-pressed={selected}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 0.75,
-                        width: "100%",
-                        minHeight: 54,
-                        p: 0.75,
-                        border: "1.5px solid",
-                        borderColor: selected
-                          ? "var(--color-black)"
-                          : "divider",
-                        borderRadius: 1.25,
-                        backgroundColor: selected
-                          ? "rgba(250, 204, 21, 0.14)"
-                          : "background.paper",
-                        color: "text.primary",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        font: "inherit",
-                        transition:
-                          "border-color 150ms ease, background-color 150ms ease",
-                        "&:hover": {
-                          borderColor: "var(--color-black)",
-                          backgroundColor: "rgba(250, 204, 21, 0.12)",
-                        },
-                        "&:focus-visible": {
-                          outline: "2px solid",
-                          outlineColor: "primary.main",
-                          outlineOffset: 2,
-                        },
-                      }}
-                    >
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          {item.label}
-                        </Typography>
-
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ lineHeight: 1.25, display: "block" }}
-                        >
-                          {item.description}
-                        </Typography>
-                      </Box>
-
-                      <Box
-                        sx={{
-                          flexShrink: 0,
-                          width: 17,
-                          height: 17,
-                          borderRadius: "50%",
-                          border: "2px solid",
-                          borderColor: selected
-                            ? "var(--color-black)"
-                            : "text.disabled",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          bgcolor: selected
-                            ? "var(--color-dark-yellow)"
-                            : "transparent",
-                        }}
-                      >
-                        {selected && (
-                          <Check
-                            size={11}
-                            color="var(--color-black)"
-                            aria-hidden="true"
-                          />
-                        )}
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-
-              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  size="medium"
-                  disabled={!isTypeStepValid}
-                  endIcon={<ArrowRight size={16} />}
-                  sx={primaryActionSx}
-                >
-                  Continue
-                </Button>
+                    <ArrowRight
+                      size={18}
+                      strokeWidth={2}
+                      aria-hidden="true"
+                      style={{ flexShrink: 0 }}
+                    />
+                  </Box>
+                ))}
               </Box>
             </Box>
           )}
@@ -882,27 +764,9 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
               }}
               sx={{ ...pageStyle, gap: 3 }}
             >
-              <Stack spacing={0.1}>
-                <Typography
-                  variant="h6"
-                  component="h3"
-                  sx={{ fontWeight: 700 }}
-                >
-                  {selectedType?.label ?? "Feedback details"}
-                </Typography>
-
-                <Typography
-                  id={DESCRIPTION_ID}
-                  variant="body2"
-                  color="text.secondary"
-                >
-                  {form.type === "rating"
-                    ? "Rate your experience with Build Me."
-                    : form.type === "nps"
-                      ? "Tell me how likely you are to recommend me."
-                      : "Tell me more so I can understand and respond to your feedback."}
-                </Typography>
-              </Stack>
+              <Typography variant="h6" component="h3" sx={{ fontWeight: 700 }}>
+                {selectedType?.label ?? "Feedback details"}
+              </Typography>
 
               {detailsError && !nameError && !emailError && (
                 <Alert severity="error">{detailsError}</Alert>
@@ -949,10 +813,6 @@ export function GiveFeedbackModal({ open, onClose }: GiveFeedbackModalProps) {
                   pt: 0.75,
                 }}
               >
-                <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
-                  Contact information
-                </Typography>
-
                 <Box
                   sx={{
                     display: "grid",
