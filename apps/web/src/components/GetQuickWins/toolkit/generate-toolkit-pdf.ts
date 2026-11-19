@@ -1,18 +1,10 @@
 /**
- * Generates the Technology Ownership Toolkit PDF from toolkitContent.ts, the
- * same file the online view reads, so the two stay in step.
- *
+ 
  * Run from the repo root after changing the content:
- *
  *   pnpm --filter @build-me/web generate:toolkit-pdf
- *
  * Output: apps/web/public/downloads/technology-ownership-toolkit.pdf
- * Commit the generated file; the "Download PDF" button links to it.
- *
- * One-time setup: pnpm --filter @build-me/web add -D pdf-lib tsx
- * and add to apps/web/package.json scripts:
- *   "generate:toolkit-pdf": "tsx scripts/generate-toolkit-pdf.ts"
  */
+/// <reference types="node" />
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
@@ -32,7 +24,7 @@ import {
   toolkitIntro,
   toolkitParts,
   type ToolkitTool,
-} from "../src/components/GetQuickWins/toolkit/toolkitContent";
+} from "./toolkitContent";
 
 const PAGE_WIDTH = 595.28; // A4
 const PAGE_HEIGHT = 841.89;
@@ -102,14 +94,19 @@ interface TextOptions {
 }
 
 /** Writes top-down on a page, adding pages when a block does not fit. */
+/** Writes top-down on a page, adding pages when a block does not fit. */
 class Writer {
   y: number;
+  page: PDFPage;
+  private readonly doc: PDFDocument;
 
   constructor(
-    private readonly doc: PDFDocument,
-    public page: PDFPage,
-    startY = PAGE_HEIGHT - MARGIN,
+    doc: PDFDocument,
+    page: PDFPage,
+    startY: number = PAGE_HEIGHT - MARGIN,
   ) {
+    this.doc = doc;
+    this.page = page;
     this.y = startY;
   }
 
@@ -401,6 +398,51 @@ function drawTemplateTable(
   writer.gap(14);
 }
 
+/** A bordered box with a bold heading and wrapped body text. */
+function drawNoteBox(
+  writer: Writer,
+  fonts: Fonts,
+  heading: string,
+  body: string,
+  options: { filled: boolean; italicBody?: boolean },
+): void {
+  const bodyFont = options.italicBody ? fonts.italic : fonts.regular;
+  const lines = wrap(body, bodyFont, 10.5, CONTENT_WIDTH - 24);
+  const boxHeight = lines.length * 15 + 30;
+
+  writer.ensure(boxHeight);
+
+  writer.page.drawRectangle({
+    x: MARGIN,
+    y: writer.y - boxHeight,
+    width: CONTENT_WIDTH,
+    height: boxHeight,
+    color: options.filled ? COLORS.tint : undefined,
+    borderColor: options.filled ? undefined : COLORS.line,
+    borderWidth: options.filled ? undefined : 0.75,
+  });
+
+  writer.page.drawText(heading, {
+    x: MARGIN + 12,
+    y: writer.y - 18,
+    size: 10,
+    font: fonts.bold,
+    color: COLORS.accent,
+  });
+
+  lines.forEach((line, index) => {
+    writer.page.drawText(line, {
+      x: MARGIN + 12,
+      y: writer.y - 33 - index * 15,
+      size: 10.5,
+      font: bodyFont,
+      color: COLORS.text,
+    });
+  });
+
+  writer.y -= boxHeight;
+}
+
 function drawTool(
   doc: PDFDocument,
   fonts: Fonts,
@@ -430,7 +472,7 @@ function drawTool(
     gapAfter: 16,
   });
 
-  writer.text("Checklist", {
+  writer.text("TODOs", {
     font: fonts.bold,
     size: 13,
     color: COLORS.accent,
@@ -441,7 +483,7 @@ function drawTool(
     const lines = wrap(item, fonts.regular, 10.5, CONTENT_WIDTH - 22);
     writer.ensure(lines.length * 15);
 
-    // Empty box to tick once the item is confirmed.
+    // Empty box to tick off once the TODO is confirmed.
     writer.page.drawRectangle({
       x: MARGIN,
       y: writer.y - 10.5,
@@ -463,14 +505,25 @@ function drawTool(
 
   writer.gap(10);
 
-  writer.text(`Template: ${tool.template.title}`, {
+  // A ready-made question the owner can send to their developer or provider.
+  drawNoteBox(
+    writer,
+    fonts,
+    "Question to ask your provider",
+    tool.askThem,
+    { filled: false, italicBody: true },
+  );
+
+  writer.gap(14);
+
+  writer.text(`Write these down: ${tool.template.title}`, {
     font: fonts.bold,
     size: 13,
     color: COLORS.accent,
     gapAfter: 3,
   });
   writer.text(
-    "One entry per row. Record where things are kept, never passwords.",
+    "One row for each item. Write down where things are kept, never passwords.",
     {
       font: fonts.italic,
       size: 9,
@@ -481,38 +534,7 @@ function drawTool(
 
   drawTemplateTable(writer, fonts, tool);
 
-  const doneLines = wrap(tool.doneWhen, fonts.regular, 10.5, CONTENT_WIDTH - 24);
-  const boxHeight = doneLines.length * 15 + 30;
-
-  writer.ensure(boxHeight);
-
-  writer.page.drawRectangle({
-    x: MARGIN,
-    y: writer.y - boxHeight,
-    width: CONTENT_WIDTH,
-    height: boxHeight,
-    color: COLORS.tint,
-  });
-
-  writer.page.drawText("Done when", {
-    x: MARGIN + 12,
-    y: writer.y - 18,
-    size: 10,
-    font: fonts.bold,
-    color: COLORS.accent,
-  });
-
-  doneLines.forEach((line, index) => {
-    writer.page.drawText(line, {
-      x: MARGIN + 12,
-      y: writer.y - 33 - index * 15,
-      size: 10.5,
-      font: fonts.regular,
-      color: COLORS.text,
-    });
-  });
-
-  writer.y -= boxHeight;
+  drawNoteBox(writer, fonts, "Done when", tool.doneWhen, { filled: true });
 }
 
 async function main(): Promise<void> {

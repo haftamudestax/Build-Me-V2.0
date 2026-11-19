@@ -1,12 +1,12 @@
 export const TOOLKIT_TITLE = "Technology Ownership Toolkit";
 
 export const TOOLKIT_TAGLINE =
-  "Nine practical checklists and templates to find, record and secure the technology your business depends on.";
+  "Six simple TODO lists to help you know what your business owns online, and stay in control of it.";
 
 export const TOOLKIT_PDF_PATH = "/downloads/technology-ownership-toolkit.pdf";
 export const TOOLKIT_PDF_FILE_NAME = "Technology-Ownership-Toolkit.pdf";
 
-export const TOOLKIT_VERSION = "1.0";
+export const TOOLKIT_VERSION = "1.1";
 
 export interface ToolkitTemplate {
   title: string;
@@ -19,6 +19,8 @@ export interface ToolkitTool {
   title: string;
   purpose: string;
   checklist: string[];
+  /** A plain question the owner can send to their developer or provider. */
+  askThem: string;
   template: ToolkitTemplate;
   doneWhen: string;
 }
@@ -31,272 +33,206 @@ export interface ToolkitPart {
 }
 
 export const toolkitIntro = {
-  what: "A short pack of nine one-page tools. Each one is a checklist to work through and a template to fill in.",
-  why: "Many businesses only learn who really controls their website or systems when something goes wrong.",
-  who: "Business owners, founders and operations leads who rely on a website, app or system that someone else built or runs for them. ",
+    what: "Six short TODO lists, each with a simple table to fill in. Together they show you what your business owns online and where you depend on someone else.",
+  why: "Many businesses only find out who really controls their website, app or accounts when something goes wrong. This toolkit helps you find out first.",
+  who: "Business owners, founders and managers whose website, app or online accounts were built or are looked after by someone else. You do not need any technical knowledge.",
   format:
-    "Read it online here, or download the PDF to print, fill in and share with your team.",
+    "Read it online first. When you are done, you can download a copy to print and fill in.",
 };
 
 export const toolkitHowToUse = [
-  "Start with Part 1 and work through the parts in order.",
-  "Spend about 20 minutes on each tool. Tick each item you can confirm, and fill in the template as you go.",
-  "Treat any item you cannot confirm as a gap, and give it an owner and a date.",
-  "Never write passwords in the templates. Record where things are kept, not the secrets themselves.",
-  "Review the whole toolkit every six months, or after a change of provider or developer.",
+  "Read one tool at a time. Each one takes about 15 minutes.",
+  "Tick off every TODO you can confirm. Fill in the table as you go.",
+  "If you cannot tick off a TODO, that is a gap. Send the question in the tool to the person who looks after it for you.",
+  "Never write passwords in the tables. Write down where things are kept, not the secrets themselves.",
+  "Come back to the toolkit every six months, or whenever you change provider or developer.",
 ];
 
 export const toolkitParts: ToolkitPart[] = [
   {
     id: "know",
     title: "Know what you own",
-    summary: "Find out what you have and who controls it.",
+    summary: "Find out what you have and whose name it is in.",
     tools: [
       {
         id: "domain",
-        title: "Domain and DNS TODOs",
+        title: "Your website address",
         purpose:
-          "Make sure your business, not a provider, controls your domain name.",
+          "Make sure your business, not your web company, owns your website address (for example yourcompany.com).",
         checklist: [
-          "Find out which registrar holds each domain you use.",
-          "Confirm the registrant and account owner are your business, using an email address you control.",
-          "Check that auto-renew is on and the payment card is current.",
-          "Turn on the registrar lock and two-factor sign-in.",
-          "Record where your DNS records are managed.",
-          "Save a copy of your current DNS records.",
+          "Write down every website address your business uses.",
+          "Find out which company each one is registered with. This is where the yearly fee is paid.",
+          "Check the owner on the account is your business, and the email belongs to someone in your business.",
+          "Check the address renews automatically and the payment card has not expired.",
+          "Make sure you can sign in to that account yourself, or that you are listed as an owner.",
         ],
+        askThem:
+          "Who is listed as the owner of our website address, and can you add me as an owner?",
         template: {
-          title: "Domain register",
+          title: "Website addresses",
           columns: [
-            "Domain",
-            "Registrar",
+            "Website address",
+            "Registered with",
+            "Owner name",
             "Account email",
-            "Renewal date",
-            "Auto-renew",
-            "DNS managed at",
+            "Renews on",
           ],
           rows: 5,
         },
         doneWhen:
-          "You can name the registrar, the account owner and the renewal date for every domain.",
+          "For every website address, you can say who owns it, where it is registered and when it renews.",
       },
       {
         id: "hosting",
-        title: "Hosting and cloud TODOs",
-        purpose: "Know where your application runs and who can administer it.",
+        title: "Your website and app",
+        purpose:
+          "Know where your website or app lives, and who holds the keys to it.",
         checklist: [
-          "List every hosting, cloud and platform account your site or app uses.",
-          "Confirm each account is registered to your business, not to a personal or provider email.",
-          "Make sure at least two trusted people have administrator access.",
-          "Check who receives the billing emails and who pays.",
-          "Note the plan and region of each service.",
-          "Turn on two-factor sign-in for every administrator.",
+          "List the services that run your website or app, such as hosting, a website builder or an app store account.",
+          "Check each one is in your business's name, not a developer's personal account.",
+          "Make sure you are an owner, and that one other trusted person is too.",
+          "Find out where the code is kept (the files your developer wrote) and that the account is yours.",
+          "Check you have something in writing that says the website and its code belong to you.",
+          "Find out who receives the bills and who pays them.",
         ],
+        askThem:
+          "Are all our accounts in our business's name, and can you give me owner access to each one?",
         template: {
-          title: "Hosting accounts",
+          title: "Website and app accounts",
           columns: [
             "Service",
-            "Used for",
+            "What it does",
             "Account owner",
-            "Administrators",
-            "Billing contact",
+            "Other owners",
             "Monthly cost",
           ],
           rows: 5,
         },
         doneWhen:
-          "Every account is held by your business and has at least two administrators.",
-      },
-      {
-        id: "source_code",
-        title: "Source code TODOs",
-        purpose: "Keep your application's code in a repository you own.",
-        checklist: [
-          "Find out where the code lives (the repository host and the organisation name).",
-          "Confirm the repository belongs to your organisation account, not a developer's personal one.",
-          "Check that you have owner-level access and know who else has it.",
-          "Make sure the main branch is protected and changes are reviewed.",
-          "Keep a copy of the code outside your provider's control, such as a mirror or archive.",
-          "Confirm you hold the licence or a written assignment for the code.",
-        ],
-        template: {
-          title: "Code repositories",
-          columns: [
-            "Repository",
-            "Host",
-            "Owner account",
-            "Who has access",
-            "Latest copy",
-            "Licence",
-          ],
-          rows: 5,
-        },
-        doneWhen:
-          "You own the repository and hold a recent copy that you can open yourself.",
+          "Every service is in your business's name, and you and one other person can get in.",
       },
     ],
   },
   {
     id: "control",
-    title: "Stay in control of access and providers",
-    summary: "Make sure no one person or supplier can lock you out.",
+    title: "Stay in control",
+    summary: "Make sure no one person or company can lock you out.",
     tools: [
       {
-        id: "credentials",
-        title: "Critical accounts register",
+        id: "access",
+        title: "Who can get in",
         purpose:
-          "Know every account your business depends on and who can get in.",
+          "Know every online account your business depends on, and who can get into it.",
         checklist: [
-          "List your email, analytics, payment, marketing, domain and hosting accounts.",
-          "Record the owner and at least one backup administrator for each.",
-          "Turn on two-factor sign-in for every critical account.",
-          "Keep recovery codes in a shared, secured place, never in this register.",
-          "Remove access for people and tools that no longer need it.",
-          "Review the list every quarter.",
+          "List the accounts your business needs: email, website, payments, social media and advertising.",
+          "Next to each one, write who owns it and who is the backup.",
+          "Turn on the extra sign-in step (a code sent to a phone) for each account.",
+          "Keep recovery codes in a safe, shared place, never in this list.",
+          "Remove people who have left or no longer need access.",
+          "Check the list again every three months.",
         ],
+        askThem:
+          "Who has access to our accounts today, and who can remove people who should no longer have it?",
         template: {
-          title: "Critical accounts",
+          title: "Important accounts",
           columns: [
             "Account",
-            "Used for",
+            "What it is for",
             "Owner",
-            "Backup administrator",
-            "Two-factor on",
-            "Last reviewed",
-          ],
-          rows: 6,
-        },
-        doneWhen:
-          "No critical account depends on a single person or an unknown login.",
-      },
-      {
-        id: "documentation",
-        title: "Handover pack template",
-        purpose:
-          "Make sure another qualified developer could pick up your setup.",
-        checklist: [
-          "Draw a one-page diagram of the main parts and how they connect.",
-          "Write down how to build, run and deploy the application.",
-          "List the environments (live and test) and their addresses.",
-          "Record where configuration and secrets are kept, but not the secrets themselves.",
-          "List the third-party services you use and what each one does.",
-          "Name who to contact for each part of the system.",
-        ],
-        template: {
-          title: "Handover details",
-          columns: ["Area", "Where it is documented", "Owner", "Last updated"],
-          rows: 6,
-        },
-        doneWhen:
-          "A new developer could set the project up using only your handover pack.",
-      },
-      {
-        id: "providers",
-        title: "Provider exit plan",
-        purpose:
-          "Be able to change provider without losing data, code or time.",
-        checklist: [
-          "Check each contract for notice periods and exit terms.",
-          "Confirm you can export your data, and in what format.",
-          "Confirm you can transfer your domain and DNS without the provider's help.",
-          "List everything that must move: code, data, files, email and certificates.",
-          "Agree the order of the move and a safe switch-over date.",
-          "Ask your current provider for a written handover commitment.",
-        ],
-        template: {
-          title: "Exit plan",
-          columns: [
-            "Provider",
-            "Service",
-            "Notice period",
-            "What can be exported",
-            "Who does the move",
+            "Backup person",
+            "Extra sign-in on",
           ],
           rows: 5,
         },
         doneWhen:
-          "You know what it would take to move each service, and how long it would take.",
+          "No important account depends on one person or on a login nobody knows.",
+      },
+      {
+        id: "exit",
+        title: "If you change provider",
+        purpose:
+          "Be able to switch web company without losing your website, your data or weeks of time.",
+        checklist: [
+          "Check your contract for how much notice you must give.",
+          "Ask what you would receive if you left: website files, data, customer lists and logins.",
+          "Check you could move your website address and hosting without their help.",
+          "List everything that would need to move.",
+          "Ask for a one-page handover note: what your website is made of, how it is updated and who to call.",
+          "Ask for a short written promise to hand everything over if you leave.",
+        ],
+        askThem:
+          "If we ever moved to another company, what would you hand over, and how long would it take?",
+        template: {
+          title: "Providers",
+          columns: [
+            "Provider",
+            "What they do for you",
+            "Notice needed",
+            "What you would receive",
+            "Handover promised",
+          ],
+          rows: 5,
+        },
+        doneWhen:
+          "You know what it would take to move each service, and roughly how long it would take.",
       },
     ],
   },
   {
     id: "recover",
-    title: "Keep running and recover",
-    summary: "Be ready for the day something fails or expires.",
+    title: "Keep running",
+    summary: "Be ready for the day something expires or breaks.",
     tools: [
       {
-        id: "backups",
-        title: "Backup and recovery TODOs",
-        purpose: "Know your data is backed up and that you can restore it.",
-        checklist: [
-          "List the data and systems that must never be lost.",
-          "Check how often each one is backed up and where the copies are kept.",
-          "Make sure at least one copy is stored away from the live system.",
-          "Run a test restore and note how long it took.",
-          "Write down who can restore, and the steps they follow.",
-          "Repeat the restore test at least twice a year.",
-        ],
-        template: {
-          title: "Backups",
-          columns: [
-            "System",
-            "What is backed up",
-            "How often",
-            "Stored where",
-            "Last restore test",
-            "Owner",
-          ],
-          rows: 5,
-        },
-        doneWhen:
-          "You have a recent, successful restore test for every critical system.",
-      },
-      {
         id: "renewals",
-        title: "Renewals and costs calendar",
-        purpose: "Never lose a service to a missed renewal, and know what you pay.",
+        title: "Renewals and costs",
+        purpose:
+          "Never lose a service because a renewal was missed, and know what you pay each year.",
         checklist: [
-          "List your domains, hosting, subscriptions, certificates and licences.",
-          "Record the renewal date, cost and payment method for each.",
-          "Set reminders for 60 and 14 days before each renewal.",
-          "Make sure the billing email goes to an inbox someone monitors.",
+          "List everything you pay for on a schedule: website address, hosting, subscriptions, the security padlock (certificate) and licences.",
+          "Write down the renewal date, the cost and who pays for each one.",
+          "Set a reminder 60 days and 14 days before each renewal.",
+          "Make sure the bills go to an inbox that someone reads.",
           "Cancel anything you no longer use.",
-          "Review the total yearly cost once a year.",
+          "Add up the yearly cost once a year.",
         ],
+        askThem:
+          "Can you send me a list of everything we pay for, with renewal dates and costs?",
         template: {
           title: "Renewals",
-          columns: [
-            "Item",
-            "Provider",
-            "Renewal date",
-            "Cost",
-            "Paid by",
-            "Reminder set",
-          ],
-          rows: 6,
+          columns: ["Item", "Provider", "Renews on", "Cost", "Reminder set"],
+          rows: 5,
         },
         doneWhen: "Every renewal has an owner, a date and a reminder.",
       },
       {
-        id: "maintenance",
-        title: "Maintenance and incident plan",
+        id: "backups",
+        title: "Backups and when things go wrong",
         purpose:
-          "Know who does what when something needs updating or goes wrong.",
+          "Know your information is copied safely, and who to call when something breaks.",
         checklist: [
-          "Decide who applies updates and security patches, and how often.",
-          "Write down who to call first when the site or app is down.",
-          "Agree how quickly each kind of problem should be handled.",
-          "Keep a short contact list: provider, developer and hosting support.",
-          "Note how you will tell customers when there is a problem.",
-          "After any incident, write down what happened and what will change.",
+          "List what you could not afford to lose: customer details, orders, photos and documents.",
+          "Ask how often each is copied and where the copy is kept. At least one copy should be somewhere else.",
+          "Ask to see a copy being restored, to prove it works.",
+          "Write down who to call first if your website goes down.",
+          "Decide how you would tell your customers if there is a problem.",
+          "After any problem, write down what happened and what will change.",
         ],
+        askThem:
+          "How often is our website backed up, and when did you last test restoring it?",
         template: {
-          title: "Contacts and responsibilities",
-          columns: ["Role", "Name", "How to reach them", "Responsible for"],
-          rows: 6,
+          title: "Backups and contacts",
+          columns: [
+            "What to protect",
+            "Copied how often",
+            "Kept where",
+            "Last restore test",
+            "Who to call",
+          ],
+          rows: 5,
         },
         doneWhen:
-          "Anyone on your team can follow the plan the next time something fails.",
+          "You know your information is copied, the copy has been tested, and you know who to call.",
       },
     ],
   },

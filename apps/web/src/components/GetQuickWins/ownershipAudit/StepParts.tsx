@@ -6,7 +6,7 @@ export const DESCRIPTION_ID = "get-quick-wins-description";
 
 interface StepHeaderProps {
   eyebrow?: string;
-  title: string;
+  title?: string;
   description?: string;
 }
 

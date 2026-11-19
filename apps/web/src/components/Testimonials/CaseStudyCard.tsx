@@ -89,9 +89,11 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
 
           "&:hover": {
             transform: "translateY(-6px)",
-            bgcolor: "#F8FAFC",
-            borderColor: "primary.main",
-            boxShadow: 4,
+            bgcolor:
+              "color-mix(in srgb, var(--color-light-yellow) 10%, transparent)",
+            borderColor:
+              "color-mix(in srgb,var(--color-dark-yellow) 80%, transparent)",
+            boxShadow: 8,
           },
         }}
       >
@@ -104,7 +106,7 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
             flexShrink: 0,
             borderRadius: 2,
             bgcolor: "action.selected",
-            color: "primary.main",
+            color: "var(--color-light-yellow)",
             "& svg": {
               fontSize: 26,
             },

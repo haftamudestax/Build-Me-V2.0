@@ -10,8 +10,10 @@ describe("Hero Section integration", () => {
       name: "Build Better Digital Experiences",
     });
 
+    // Hero top
     expect(within(hero).getByText("TECHNOLOGY OWNERSHIP")).toBeInTheDocument();
 
+    // Hero left
     expect(
       within(hero).getByRole("heading", {
         level: 1,
@@ -27,23 +29,39 @@ describe("Hero Section integration", () => {
     ).toBeInTheDocument();
 
     expect(
+      within(hero).getByText((content) =>
+        content.includes(
+          "Get more customers with ease with websites and apps that are",
+        ),
+      ),
+    ).toBeInTheDocument();
+
+    // Hero right
+    expect(
+      within(hero).getAllByRole("img", {
+        name: "Haftamu Desta",
+      }),
+    ).toHaveLength(2);
+
+    expect(within(hero).getAllByText("My Impact in Action")).toHaveLength(2);
+
+    // Hero bottom
+    expect(
       within(hero).getByRole("heading", {
         level: 2,
         name: "Reliable solutions that help you grow.",
       }),
     ).toBeInTheDocument();
 
-    expect(
-      within(hero).getByText((content) =>
-        content.includes("Get a dedicated developer who turns your ideas"),
-      ),
-    ).toBeInTheDocument();
-
-    // Verify value strip key facts are rendered
-    expect(within(hero).getByText("No Stress")).toBeInTheDocument();
-    expect(within(hero).getByText("No Confusion")).toBeInTheDocument();
-    expect(within(hero).getByText("No Jargons")).toBeInTheDocument();
-    expect(within(hero).getByText("Just Simple")).toBeInTheDocument();
+    // Verify value strip key facts
+    for (const fact of [
+      "No Stress",
+      "No Confusion",
+      "No Jargons",
+      "Just Simple",
+    ]) {
+      expect(within(hero).getByText(fact)).toBeInTheDocument();
+    }
   });
 
   it("preserves the heading's visual emphasis", () => {
@@ -53,7 +71,9 @@ describe("Hero Section integration", () => {
     const emphasizedText = within(heading).getByText("Digital Experiences");
 
     expect(emphasizedText.tagName).toBe("SPAN");
-    expect(emphasizedText).toHaveStyle({ color: "var(--color-dark-yellow)" });
+    expect(emphasizedText).toHaveStyle({
+      color: "var(--color-dark-yellow)",
+    });
   });
 
   it("maintains an accessible heading hierarchy", () => {
@@ -64,7 +84,9 @@ describe("Hero Section integration", () => {
     });
 
     expect(within(hero).getAllByRole("heading", { level: 1 })).toHaveLength(1);
+
     expect(within(hero).getAllByRole("heading", { level: 2 })).toHaveLength(2);
+
     expect(within(hero).queryAllByRole("heading", { level: 3 })).toHaveLength(
       0,
     );

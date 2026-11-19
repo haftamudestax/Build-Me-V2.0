@@ -21,7 +21,9 @@ describe("HeroIntro", () => {
     const highlightedText = within(heading).getByText("Digital Experiences");
 
     expect(highlightedText.tagName).toBe("SPAN");
-    expect(highlightedText).toHaveStyle({ color: "var(--color-dark-yellow)" });
+    expect(highlightedText).toHaveStyle({
+      color: "var(--color-dark-yellow)",
+    });
   });
 
   it("renders the exact subheading", () => {
@@ -35,17 +37,17 @@ describe("HeroIntro", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the freelancer value proposition paragraph", () => {
+  it("renders the current freelancer value proposition paragraph", () => {
     render(<HeroIntro />);
 
-    const paragraph = screen.getByText((content) =>
-      content.includes("Get a dedicated developer who turns your ideas"),
+    const paragraph = screen.getByText(
+      (_, element) =>
+        element?.tagName === "P" &&
+        (element.textContent ?? "").replace(/\s+/g, " ").trim() ===
+          "Get more customers with ease with websites and apps that are easy to use, look great, and work fast.",
     );
 
     expect(paragraph).toBeInTheDocument();
-    expect(paragraph).toHaveTextContent(
-      "Get a dedicated developer who turns your ideas into polished, high-speed websites and apps. Designed for simplicity and built to convert, so you can focus on growing your business without technical headaches.",
-    );
   });
 
   it("renders both primary CTA buttons", () => {
@@ -54,6 +56,7 @@ describe("HeroIntro", () => {
     expect(
       screen.getByRole("button", { name: /work with me/i }),
     ).toBeInTheDocument();
+
     expect(
       screen.getByRole("button", { name: /get quick wins/i }),
     ).toBeInTheDocument();

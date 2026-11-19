@@ -7,7 +7,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:toolkit-pdf": "tsx src/components/GetQuickWins/toolkit/generate-toolkit-pdf.ts"
   },
   "dependencies": {
     "@about-me/web": "link:",
@@ -43,6 +44,7 @@
     "globals": "^17.7.0",
     "pdf-lib": "^1.17.1",
     "playwright": "^1.61.1",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.1",
     "vite": "^8.1.3",

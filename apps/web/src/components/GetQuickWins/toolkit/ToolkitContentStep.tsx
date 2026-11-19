@@ -6,10 +6,15 @@ import {
   Box,
   Button,
   Checkbox,
-  Chip,
   FormControlLabel,
   FormGroup,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Typography,
 } from "@mui/material";
 import { ChevronDown, Download } from "lucide-react";
@@ -17,6 +22,7 @@ import { ChevronDown, Download } from "lucide-react";
 import { StepFooter, StepHeader } from "../ownershipAudit/StepParts";
 import { trackToolkit } from "./toolkitAnalytics";
 import {
+  TOOL_COUNT,
   TOOLKIT_PDF_FILE_NAME,
   TOOLKIT_PDF_PATH,
   TOOLKIT_VERSION,
@@ -24,6 +30,9 @@ import {
   toolkitParts,
   type ToolkitTool,
 } from "./toolkitContent";
+
+/** Blank rows shown online. The PDF has the full number to fill in. */
+const ONLINE_TABLE_ROWS = 3;
 
 interface ToolkitContentStepProps {
   name: string;
@@ -35,6 +44,60 @@ interface ToolPanelProps {
   tool: ToolkitTool;
 }
 
+function ToolTable({ tool }: ToolPanelProps) {
+  const { title, columns, rows } = tool.template;
+  const blankRows = Array.from({ length: Math.min(rows, ONLINE_TABLE_ROWS) });
+
+  return (
+    <TableContainer
+      sx={{
+        mt: 1,
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 1,
+      }}
+    >
+      <Table size="small" aria-label={title} sx={{ minWidth: 520 }}>
+        <TableHead>
+          <TableRow
+            sx={{
+              bgcolor:
+                "color-mix(in srgb, var(--color-light-yellow) 18%, var(--color-white))",
+            }}
+          >
+            {columns.map((column) => (
+              <TableCell
+                key={column}
+                sx={{ fontWeight: 700, whiteSpace: "nowrap" }}
+              >
+                {column}
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+
+        <TableBody>
+          {blankRows.map((_, rowIndex) => (
+            <TableRow key={rowIndex}>
+              {columns.map((column) => (
+                <TableCell
+                  key={column}
+                  sx={{
+                    height: 40,
+                    borderRight: "1px solid",
+                    borderColor: "divider",
+                    "&:last-child": { borderRight: 0 },
+                  }}
+                />
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+}
+
 function ToolPanel({ tool }: ToolPanelProps) {
   return (
     <Stack spacing={2}>
@@ -44,7 +107,7 @@ function ToolPanel({ tool }: ToolPanelProps) {
 
       <Box>
         <Typography variant="subtitle2" component="h4" gutterBottom>
-          Checklist
+          TODOs
         </Typography>
 
         <FormGroup>
@@ -59,20 +122,35 @@ function ToolPanel({ tool }: ToolPanelProps) {
         </FormGroup>
       </Box>
 
-      <Box>
+      <Box
+        sx={{
+          p: 1.5,
+          borderRadius: 2,
+          bgcolor:
+            "color-mix(in srgb, var(--color-light-yellow) 18%, var(--color-white))",
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
         <Typography variant="subtitle2" component="h4" gutterBottom>
-          Template: {tool.template.title}
+          Question to ask your provider
+        </Typography>
+        <Typography variant="body2" sx={{ fontStyle: "italic" }}>
+          {tool.askThem}
+        </Typography>
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle2" component="h4">
+          Write these down: {tool.template.title}
         </Typography>
 
         <Typography variant="caption" color="text.secondary" component="p">
-          Record these details. The PDF has a blank table to fill in.
+          One row for each item. The PDF has the same table with more rows to
+          print and fill in.
         </Typography>
 
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
-          {tool.template.columns.map((column) => (
-            <Chip key={column} label={column} size="small" variant="outlined" />
-          ))}
-        </Box>
+        <ToolTable tool={tool} />
       </Box>
 
       <Typography variant="body2">
@@ -87,7 +165,10 @@ export function ToolkitContentStep({
   onPrevious,
   onClose,
 }: ToolkitContentStepProps) {
-  const [openTools, setOpenTools] = useState<Record<string, boolean>>({});
+  // The first tool starts open so the reader lands straight on content.
+  const [openTools, setOpenTools] = useState<Record<string, boolean>>({
+    [toolkitParts[0].tools[0].id]: true,
+  });
 
   function handleToggle(toolId: string, part: number, expanded: boolean): void {
     setOpenTools((current) => ({ ...current, [toolId]: expanded }));
@@ -108,40 +189,6 @@ export function ToolkitContentStep({
         title="Your Technology Ownership Toolkit"
         description={`Prepared for ${name} · Version ${TOOLKIT_VERSION}`}
       />
-
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "stretch", sm: "center" },
-          justifyContent: "space-between",
-          gap: 1.5,
-          p: 2,
-          border: "1px solid",
-          borderColor: "divider",
-          borderRadius: 2,
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          Read the nine tools below, or take them with you as a PDF to print and
-          fill in.
-        </Typography>
-
-        <Button
-          component="a"
-          href={TOOLKIT_PDF_PATH}
-          download={TOOLKIT_PDF_FILE_NAME}
-          variant="contained"
-          startIcon={<Download size={18} aria-hidden="true" />}
-          onClick={handleDownload}
-          sx={{
-            flexShrink: 0,
-            bgcolor: "var(--color-dark-yellow)",
-          }}
-        >
-          Download PDF
-        </Button>
-      </Box>
 
       <Box component="section">
         <Typography variant="subtitle1" component="h3" gutterBottom>
@@ -196,6 +243,49 @@ export function ToolkitContentStep({
           })}
         </Box>
       ))}
+
+      {/* Download comes last: read first, keep a copy if you want one. */}
+      <Box
+        component="section"
+        aria-labelledby="toolkit-download-title"
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "stretch", sm: "center" },
+          justifyContent: "space-between",
+          gap: 1.5,
+          p: 2,
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 2,
+        }}
+      >
+        <Box>
+          <Typography
+            id="toolkit-download-title"
+            variant="subtitle1"
+            component="h3"
+          >
+            Finished reading? Keep a copy.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Download all {TOOL_COUNT} tools as a PDF to print, fill in and share
+            with your team.
+          </Typography>
+        </Box>
+
+        <Button
+          component="a"
+          href={TOOLKIT_PDF_PATH}
+          download={TOOLKIT_PDF_FILE_NAME}
+          variant="contained"
+          startIcon={<Download size={18} aria-hidden="true" />}
+          onClick={handleDownload}
+          className="shrink-0 rounded-lg bg-dark-yellow! font-bold normal-case text-black! hover:bg-light-yellow!"
+        >
+          Download PDF
+        </Button>
+      </Box>
 
       <StepFooter
         previous={{ label: "Previous", onClick: onPrevious }}
