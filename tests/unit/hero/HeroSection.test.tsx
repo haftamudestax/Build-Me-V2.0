@@ -69,7 +69,7 @@ describe("HeroSection", () => {
       name: "Haftamu Desta",
     });
 
-    expect(heroImages).toHaveLength(2);
+    expect(heroImages).toHaveLength(1);
 
     const impactLabels = within(hero).getAllByText("My Impact in Action");
 

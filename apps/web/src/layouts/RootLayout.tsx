@@ -3,6 +3,7 @@ import { Navbar } from "../components/Navbar/Navbar";
 import { WorkWithMeModal } from "../components/WorkWithMe/WorkWithMeModal";
 import { GetQuickWinsModal } from "../components/GetQuickWins/GetQuickWinsModal";
 import { Footer } from "../components/Footer";
+import { featureFlags } from "../config/featureFlags";
 
 export default function RootLayout() {
   return (
@@ -14,7 +15,7 @@ export default function RootLayout() {
       </main>
       <WorkWithMeModal />
       <GetQuickWinsModal />
-      <Footer />
+      {featureFlags.footer && <Footer />}
     </>
   );
 }
