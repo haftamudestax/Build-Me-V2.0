@@ -11,12 +11,17 @@ export function HeroIntro() {
           id="hero-title"
           component="h1"
           sx={{
-            fontSize: { xs: "2.5rem", sm: "3rem", md: "3.75rem" },
+            fontSize: {
+              xs: "2.25rem",
+              sm: "2.75rem",
+              md: "2.9rem",
+              lg: "3.25rem",
+            },
             lineHeight: 1.08,
             fontWeight: 800,
             letterSpacing: "-0.035em",
             color: "#111318",
-            maxWidth: "18ch",
+            maxWidth: "none",
             mb: 2,
           }}
         >
