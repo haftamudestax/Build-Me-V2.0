@@ -43,6 +43,7 @@ describe("HeroSection", () => {
     const heading = within(hero).getByRole("heading", { level: 1 });
 
     expect(heading).toHaveTextContent(/Build Better\s*Digital Experiences/i);
+
     expect(
       within(heading).getByText("Digital Experiences"),
     ).toBeInTheDocument();
@@ -54,14 +55,25 @@ describe("HeroSection", () => {
       }),
     ).toBeInTheDocument();
 
-    const description = within(hero).getByText((content) =>
-      content.includes("Get a dedicated developer who turns your ideas"),
+    const description = within(hero).getByText(
+      (_, element) =>
+        element?.tagName === "P" &&
+        (element.textContent ?? "").replace(/\s+/g, " ").trim() ===
+          "Get more customers with ease with websites and apps that are easy to use, look great, and work fast.",
     );
 
-    expect(description).toBeDefined();
-    expect(description).toHaveTextContent(
-      "Get a dedicated developer who turns your ideas into polished, high-speed websites and apps. Designed for simplicity and built to convert, so you can focus on growing your business without technical headaches.",
-    );
+    expect(description).toBeInTheDocument();
+
+    // Hero-Right
+    const heroImages = within(hero).getAllByRole("img", {
+      name: "Haftamu Desta",
+    });
+
+    expect(heroImages).toHaveLength(2);
+
+    const impactLabels = within(hero).getAllByText("My Impact in Action");
+
+    expect(impactLabels).toHaveLength(2);
 
     // Hero-Bottom (HeroValueStrip)
     const valueStrip = within(hero).getByRole("region", {
@@ -83,6 +95,23 @@ describe("HeroSection", () => {
     ]) {
       expect(within(valueStrip).getByText(fact)).toBeInTheDocument();
     }
+  });
+
+  it("renders the hero background image as a decorative element", () => {
+    render(<HeroSection />);
+
+    const hero = screen.getByRole("region", {
+      name: heroRegionName,
+    });
+
+    const background = hero.querySelector('[aria-hidden="true"]');
+
+    expect(background).toBeInTheDocument();
+    expect(background).toHaveStyle({
+      position: "absolute",
+      backgroundRepeat: "no-repeat",
+      pointerEvents: "none",
+    });
   });
 
   it("maintains the expected H1 and H2 heading counts", () => {

@@ -33,7 +33,7 @@ export function ComingSoonCard({ title, description }: ComingSoonCardProps) {
           height: 48,
           borderRadius: "50%",
           bgcolor: "action.selected",
-          color: "primary.main",
+          color: "var(--color-light-yellow)",
         }}
       >
         <ScheduleOutlinedIcon />

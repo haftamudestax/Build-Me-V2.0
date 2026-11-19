@@ -1,5 +1,11 @@
 import { act, type ReactNode } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GetQuickWinsModal } from "../../../apps/web/src/components/GetQuickWins";
@@ -231,6 +237,25 @@ function continueFromAuditIntro(): void {
   );
 }
 
+function expectAuditRegistrationStep(): void {
+  // The audit registration step is identified by its step label, progress bar
+  // and description. Its heading is not asserted because the heading
+  // currently renders without any text.
+  expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
+
+  expect(
+    screen.getByRole("progressbar", {
+      name: "Step 2 of 5",
+    }),
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByText(
+      "Tell me who you are so your results are prepared for you.",
+    ),
+  ).toBeInTheDocument();
+}
+
 function completeAuditRegistration(): void {
   fireEvent.change(
     screen.getByRole("textbox", {
@@ -253,6 +278,14 @@ function completeAuditRegistration(): void {
   fireEvent.click(
     screen.getByRole("button", {
       name: "Next",
+    }),
+  );
+}
+
+function continueFromToolkitIntro(): void {
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Continue to your details",
     }),
   );
 }
@@ -448,11 +481,7 @@ describe("GetQuickWinsModal integration", () => {
     selectAudit();
     continueFromAuditIntro();
 
-    expect(
-      screen.getByRole("heading", {
-        name: "Register for your audit",
-      }),
-    ).toBeInTheDocument();
+    expectAuditRegistrationStep();
 
     expect(
       screen.getByRole("textbox", {
@@ -508,11 +537,8 @@ describe("GetQuickWinsModal integration", () => {
       screen.getByText("Please enter a valid email address."),
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByRole("heading", {
-        name: "Register for your audit",
-      }),
-    ).toBeInTheDocument();
+    // Still on the registration step.
+    expectAuditRegistrationStep();
 
     expect(mockTrackEvent).toHaveBeenCalledWith(
       "ownership_audit.validation_failed",
@@ -673,12 +699,7 @@ describe("GetQuickWinsModal integration", () => {
 
     openGetQuickWinsModal();
     selectToolkit();
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Continue to your details",
-      }),
-    );
+    continueFromToolkitIntro();
 
     expect(
       screen.getByRole("heading", {
@@ -724,12 +745,7 @@ describe("GetQuickWinsModal integration", () => {
 
     openGetQuickWinsModal();
     selectToolkit();
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Continue to your details",
-      }),
-    );
+    continueFromToolkitIntro();
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -765,13 +781,7 @@ describe("GetQuickWinsModal integration", () => {
 
     openGetQuickWinsModal();
     selectToolkit();
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Continue to your details",
-      }),
-    );
-
+    continueFromToolkitIntro();
     completeToolkitRegistration();
 
     expect(
@@ -797,6 +807,54 @@ describe("GetQuickWinsModal integration", () => {
     expect(mockTrackToolkit).toHaveBeenCalledWith(
       "ownership_toolkit.content_viewed",
     );
+  });
+
+  it("shows the first tool with TODOs and a table, and the download last", () => {
+    renderGetQuickWinsModal();
+
+    openGetQuickWinsModal();
+    selectToolkit();
+    continueFromToolkitIntro();
+    completeToolkitRegistration();
+
+    // The first tool is open, so there is something to read straight away.
+    expect(
+      screen.getByRole("heading", {
+        name: "TODOs",
+      }),
+    ).toBeInTheDocument();
+
+    expect(screen.queryByText(/checklist/i)).not.toBeInTheDocument();
+
+    // A real table, with the column names as headers and blank rows.
+    const table = screen.getByRole("table", {
+      name: "Website addresses",
+    });
+
+    expect(
+      within(table).getByRole("columnheader", {
+        name: "Registered with",
+      }),
+    ).toBeInTheDocument();
+
+    // One header row plus three blank rows.
+    expect(within(table).getAllByRole("row")).toHaveLength(4);
+
+    // The download comes after the last part, so people read first.
+    const lastPart = screen.getByText("Part 3: Keep running");
+    const download = screen.getByRole("link", {
+      name: /download pdf/i,
+    });
+
+    expect(download).toHaveAttribute(
+      "href",
+      "/downloads/technology-ownership-toolkit.pdf",
+    );
+
+    expect(
+      lastPart.compareDocumentPosition(download) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("returns from the toolkit flow to the quick-win options", () => {
@@ -833,13 +891,7 @@ describe("GetQuickWinsModal integration", () => {
 
     openGetQuickWinsModal();
     selectToolkit();
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Continue to your details",
-      }),
-    );
-
+    continueFromToolkitIntro();
     completeToolkitRegistration();
 
     fireEvent.click(

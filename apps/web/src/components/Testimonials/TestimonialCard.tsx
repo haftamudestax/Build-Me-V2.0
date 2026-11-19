@@ -40,8 +40,11 @@ export function TestimonialCard({ testimonial }: TestimonialCardProps) {
           bgcolor: "",
           transition: "border-color 0.2s, box-shadow 0.2s",
           "&:hover": {
-            borderColor: "primary.main",
+            borderColor:
+              "color-mix(in srgb, var(--color-black) 80%, transparent)",
             boxShadow: 2,
+            bgcolor:
+              "color-mix(in srgb, var(--color-dark-yellow) 30%, transparent)",
           },
         }}
       >

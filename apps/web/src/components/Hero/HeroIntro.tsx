@@ -54,10 +54,9 @@ export function HeroIntro() {
             mb: 3,
           }}
         >
-          Get a dedicated developer who turns your ideas into polished,
-          high-speed websites and apps. Designed for simplicity and built to
-          convert, so you can focus on growing your business without technical
-          headaches.
+          Get more customers with ease with websites and apps that are <br />{" "}
+          easy to use, <br />
+          look great, and work fast.
         </Typography>
 
         <Box

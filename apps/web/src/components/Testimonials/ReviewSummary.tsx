@@ -33,9 +33,31 @@ export function ReviewSummary({
         borderRadius: 3,
         bgcolor: (theme) =>
           theme.palette.mode === "dark" ? "grey.900" : "#FAF8F5",
-        border: "1px solid",
+        border: "2px solid",
         borderColor: (theme) =>
-          theme.palette.mode === "dark" ? "divider" : "#1746B5",
+          theme.palette.mode === "dark"
+            ? "divider"
+            : "var(--color-light-yellow)",
+        transition: (theme) =>
+          theme.transitions.create(
+            ["transform", "box-shadow", "border-color"],
+            {
+              duration: theme.transitions.duration.short,
+            },
+          ),
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 12px 24px rgba(0, 0, 0, 0.4)"
+              : "0 12px 24px rgba(0, 0, 0, 0.08)",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark"
+              ? "primary.main"
+              : "var(--color-light-yellow)",
+          bgcolor:
+            "color-mix(in srgb, var(--color-light-yellow) 30%, transparent)",
+        },
       }}
     >
       <Box
