@@ -1,21 +1,36 @@
-import { useState, type FormEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import {
   Alert,
   Box,
   Button,
-  MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import { ArrowRight, ArrowUp, ArrowDown } from "lucide-react";
 import { getAnalyticsConfig } from "@build-me/utils";
+import type { BookingSubmission } from "./bookingConfirmation";
 
+type BookingPackageTier = "beginner" | "intermediate" | "advanced";
 type ExperienceLevel = "beginner" | "intermediate" | "advanced" | "other";
 type MeetingFormat = "online" | "in_person";
 
+const BOOKING_PACKAGE_PRICES: Record<BookingPackageTier, number> = {
+  beginner: 199,
+  intermediate: 799,
+  advanced: 1499,
+};
+
+const packageLabels: Record<BookingPackageTier, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
 interface MentorMeFormProps {
   onBack: () => void;
-  onSubmitted: (reference: string) => void;
+  onSubmitted: (submission: BookingSubmission) => void;
+  selectedPackage: BookingPackageTier;
 }
 
 interface MentorMeFormData {
@@ -23,8 +38,8 @@ interface MentorMeFormData {
   email: string;
   mentoringTopic: string;
   goals: string;
-  experienceLevel: ExperienceLevel;
-  preferredFormat: MeetingFormat;
+  experienceLevel: ExperienceLevel | "";
+  preferredFormat: MeetingFormat | "";
   additionalContext: string;
 }
 
@@ -32,9 +47,11 @@ interface BookingResponse {
   data?: {
     id?: string;
     reference?: string;
-    bookingType?: string;
+    bookingType?: BookingSubmission["bookingType"];
     status?: string;
     createdAt?: string;
+    invoice?: BookingSubmission["invoice"];
+    invoiceEmailStatus?: BookingSubmission["invoiceEmailStatus"];
   };
   error?: string | { message?: string };
   message?: string;
@@ -95,7 +112,191 @@ function getErrorMessage(response: BookingResponse): string {
   );
 }
 
-export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
+interface CustomSelectOption {
+  label: string;
+  value: string;
+}
+
+interface CustomSelectProps {
+  id: string;
+  label: string;
+  value: string;
+  options: CustomSelectOption[];
+  onChange: (value: string) => void;
+  error?: string;
+  required?: boolean;
+  disabled?: boolean;
+}
+
+function CustomSelect({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+  error,
+  required = false,
+  disabled = false,
+}: CustomSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <Box
+      ref={containerRef}
+      sx={{ position: "relative", width: "100%", boxSizing: "border-box" }}
+    >
+      <Typography
+        component="label"
+        htmlFor={id}
+        variant="body2"
+        sx={{ fontWeight: 600, display: "block", mb: 0.4 }}
+      >
+        {label}
+        {required && (
+          <Box component="span" sx={{ color: "error.main", ml: 0.5 }}>
+            *
+          </Box>
+        )}
+      </Typography>
+
+      <Box
+        component="button"
+        type="button"
+        id={id}
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        aria-invalid={Boolean(error)}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          boxSizing: "border-box",
+          border: "1.5px solid",
+          borderColor: error ? "error.main" : "var(--color-black, #000000)",
+          borderRadius: 0,
+          px: 2,
+          py: 1.5,
+          font: "inherit",
+          fontSize: "0.95rem",
+          fontWeight: 700,
+          color: "var(--color-black, #000000)",
+          bgcolor: disabled ? "action.disabledBackground" : "#ffffff",
+          cursor: disabled ? "not-allowed" : "pointer",
+          textAlign: "left",
+          transition: "background-color 150ms ease",
+          "&:hover": {
+            bgcolor: disabled ? undefined : "rgba(0, 0, 0, 0.03)",
+          },
+          "&:focus-visible": {
+            outline: "2px solid var(--color-black, #000000)",
+            outlineOffset: "2px",
+          },
+        }}
+      >
+        <span>
+          {selectedOption
+            ? selectedOption.label
+            : `Select ${label.toLowerCase()}`}
+        </span>
+        {isOpen ? <ArrowUp size={18} /> : <ArrowDown size={18} />}
+      </Box>
+
+      {isOpen && (
+        <Box
+          sx={{
+            position: "relative",
+            mt: "8px",
+            pl: 2.5,
+            borderLeft: "2px solid",
+            borderColor: "var(--color-black, #000000)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            boxSizing: "border-box",
+            zIndex: 99,
+          }}
+        >
+          {options.map((opt) => (
+            <Box
+              key={opt.value}
+              component="button"
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                boxSizing: "border-box",
+                border: "1.5px solid",
+                borderColor: "var(--color-black, #000000)",
+                borderRadius: 0,
+                px: 2,
+                py: 1.5,
+                font: "inherit",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                color: "var(--color-black, #000000)",
+                bgcolor: "#ffffff",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "background-color 150ms ease, transform 150ms ease",
+                "&:hover": {
+                  bgcolor: "rgba(0, 0, 0, 0.05)",
+                  transform: "translateX(2px)",
+                },
+              }}
+            >
+              <span>{opt.label}</span>
+              <ArrowRight size={18} />
+            </Box>
+          ))}
+        </Box>
+      )}
+
+      {error && (
+        <Typography
+          variant="caption"
+          color="error"
+          sx={{ mt: 0.5, display: "block" }}
+        >
+          {error}
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
+export function MentorMeForm({
+  onBack,
+  onSubmitted,
+  selectedPackage,
+}: MentorMeFormProps) {
   const [formData, setFormData] = useState<MentorMeFormData>(initialFormData);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -134,13 +335,19 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
     } else if (goals.length < 10) {
       validationMessage =
         "Please describe your goals using at least 10 characters.";
+    } else if (!formData.experienceLevel) {
+      validationMessage = "Please select your experience level.";
+    } else if (!formData.preferredFormat) {
+      validationMessage = "Please select your preferred meeting format.";
     }
 
     if (validationMessage) {
       setError(validationMessage);
+
       trackBookingEvent("mentor_me.validation_failed", {
         reason: "client_validation",
       });
+
       return;
     }
 
@@ -164,6 +371,7 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
     trackBookingEvent("mentor_me.started", {
       experienceLevel: formData.experienceLevel,
       preferredFormat: formData.preferredFormat,
+      packageTier: selectedPackage,
     });
 
     try {
@@ -179,6 +387,9 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
           name,
           email,
           requestDetails: {
+            package: {
+              tier: selectedPackage,
+            },
             mentoringTopic,
             goals,
             experienceLevel: formData.experienceLevel,
@@ -203,14 +414,25 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
           "Your request may have been received, but no booking reference was returned. Please contact us before submitting again.",
         );
       }
-      console.log("result:", result);
-      trackBookingEvent("mentor_me.booking_submitted", {
+
+      const submission: BookingSubmission = {
+        id: result.data?.id,
         reference,
         bookingType: result.data?.bookingType ?? "mentor_me",
         status: result.data?.status,
+        createdAt: result.data?.createdAt,
+        invoice: result.data?.invoice ?? null,
+        invoiceEmailStatus: result.data?.invoiceEmailStatus ?? "not_sent",
+      };
+
+      trackBookingEvent("mentor_me.booking_submitted", {
+        reference: submission.reference,
+        bookingType: submission.bookingType,
+        status: submission.status,
+        packageTier: selectedPackage,
       });
 
-      onSubmitted(reference);
+      onSubmitted(submission);
     } catch (submissionError) {
       const message =
         submissionError instanceof Error
@@ -236,13 +458,31 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
     >
       <Stack spacing={2.5} sx={{ minWidth: 0 }}>
         <Box>
-          <Typography variant="h5" component="h2" gutterBottom>
+          <Typography
+            variant="h5"
+            component="h2"
+            gutterBottom
+            sx={{ color: "var(--color-dark-yellow)", fontWeight: 700 }}
+          >
             Mentor Me
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
             Tell me what you want to learn, the challenges you are facing, and
             how you would prefer to work together.
+          </Typography>
+
+          <Typography
+            variant="body2"
+            sx={{
+              mt: 1.5,
+              fontWeight: 700,
+              color: "var(--color-light-yellow)",
+            }}
+          >
+            Selected package: {packageLabels[selectedPackage]} — $
+            {BOOKING_PACKAGE_PRICES[selectedPackage].toLocaleString("en-US")}{" "}
+            USD
           </Typography>
         </Box>
 
@@ -303,42 +543,37 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
           disabled={isSubmitting}
         />
 
-        <TextField
-          select
+        <CustomSelect
+          id="experience-level"
           label="Experience level"
-          name="experienceLevel"
+          required
+          disabled={isSubmitting}
           value={formData.experienceLevel}
-          onChange={(event) =>
-            updateField(
-              "experienceLevel",
-              event.target.value as ExperienceLevel,
-            )
+          onChange={(value) =>
+            updateField("experienceLevel", value as ExperienceLevel)
           }
-          required
-          fullWidth
-          disabled={isSubmitting}
-        >
-          <MenuItem value="beginner">Beginner</MenuItem>
-          <MenuItem value="intermediate">Intermediate</MenuItem>
-          <MenuItem value="advanced">Advanced</MenuItem>
-          <MenuItem value="other">Other</MenuItem>
-        </TextField>
+          options={[
+            { label: "Beginner", value: "beginner" },
+            { label: "Intermediate", value: "intermediate" },
+            { label: "Advanced", value: "advanced" },
+            { label: "Other", value: "other" },
+          ]}
+        />
 
-        <TextField
-          select
+        <CustomSelect
+          id="preferred-format"
           label="Preferred meeting format"
-          name="preferredFormat"
-          value={formData.preferredFormat}
-          onChange={(event) =>
-            updateField("preferredFormat", event.target.value as MeetingFormat)
-          }
           required
-          fullWidth
           disabled={isSubmitting}
-        >
-          <MenuItem value="online">Online</MenuItem>
-          <MenuItem value="in_person">In person</MenuItem>
-        </TextField>
+          value={formData.preferredFormat}
+          onChange={(value) =>
+            updateField("preferredFormat", value as MeetingFormat)
+          }
+          options={[
+            { label: "Online", value: "online" },
+            { label: "In person", value: "in_person" },
+          ]}
+        />
 
         <TextField
           label="Additional context (optional)"
@@ -369,7 +604,25 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
             onClick={onBack}
             disabled={isSubmitting}
             fullWidth
-            sx={{ width: { xs: "100%", sm: "auto" } }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              borderColor: "var(--color-dark-yellow)",
+              color: "var(--color-black)",
+              bgcolor: "var(--color-dark-yellow)",
+              py: 1.25,
+              px: 3,
+              borderRadius: "8px",
+              fontWeight: 700,
+              textTransform: "none",
+              boxShadow: "none",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                borderColor: "var(--color-light-yellow)",
+                bgcolor: "var(--color-light-yellow)",
+                boxShadow: "0 4px 12px rgba(247, 183, 51, 0.25)",
+                transform: "translateY(-1px)",
+              },
+            }}
           >
             Back
           </Button>
@@ -379,7 +632,25 @@ export function MentorMeForm({ onBack, onSubmitted }: MentorMeFormProps) {
             variant="contained"
             disabled={isSubmitting}
             fullWidth
-            sx={{ width: { xs: "100%", sm: "auto" } }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              borderColor: "var(--color-dark-yellow)",
+              color: "var(--color-black)",
+              bgcolor: "var(--color-dark-yellow)",
+              py: 1.25,
+              px: 3,
+              borderRadius: "8px",
+              fontWeight: 700,
+              textTransform: "none",
+              boxShadow: "none",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                borderColor: "var(--color-light-yellow)",
+                bgcolor: "var(--color-light-yellow)",
+                boxShadow: "0 4px 12px rgba(247, 183, 51, 0.25)",
+                transform: "translateY(-1px)",
+              },
+            }}
           >
             {isSubmitting ? "Submitting..." : "Submit request"}
           </Button>

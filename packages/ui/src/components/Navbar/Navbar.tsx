@@ -7,7 +7,7 @@ export interface NavbarProps {
 }
 
 const DEFAULT_HEADER_CLASS =
-  "sticky top-0 z-50 w-full border-b border-white/10 bg-blue-900/95 shadow-sm backdrop-blur-md";
+  "sticky top-0 z-50 w-full border-b border-white/10 bg-white shadow-sm backdrop-blur-md";
 
 export function Navbar({ logo, children, className }: NavbarProps) {
   return (

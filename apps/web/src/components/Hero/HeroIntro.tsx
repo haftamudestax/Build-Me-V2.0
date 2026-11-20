@@ -1,110 +1,96 @@
 import { Card } from "@build-me/ui";
-import { Box, Typography } from "@mui/material";
-import { GetQuickWinsModal } from "../GetQuickWins";
-import { WorkWithMeModal } from "../WorkWithMe/WorkWithMeModal";
+import { Box, Typography, Button } from "@mui/material";
+import { openWorkWithMe } from "../WorkWithMe/openWorkWithMe";
+import { openGetQuickWins } from "../GetQuickWins/openGetQuickWins";
 
 export function HeroIntro() {
   return (
-    <main>
-      <Card.Header>
+    <Card.Body style={{ padding: 0 }}>
+      <Box>
         <Typography
-          component="p"
-          variant="overline"
+          id="hero-title"
+          component="h1"
           sx={{
-            display: "inline-flex",
-            alignItems: "center",
-            px: 1.5,
-            py: 0.5,
-            borderRadius: "999px",
-            backgroundColor: "#DCE8FF",
-            color: "#1746A2",
+            fontSize: {
+              xs: "2.25rem",
+              sm: "2.75rem",
+              md: "2.9rem",
+              lg: "3.25rem",
+            },
+            lineHeight: 1.08,
             fontWeight: 800,
-            letterSpacing: "0.04em",
-            lineHeight: 1.5,
+            letterSpacing: "-0.035em",
+            color: "#111318",
+            maxWidth: "none",
+            mb: 2,
           }}
         >
-          TECHNOLOGY OWNERSHIP
-        </Typography>
-      </Card.Header>
-
-      <Card.Body>
-        <Box>
-          <Typography
-            id="hero-title"
-            component="h1"
-            sx={{
-              fontSize: { xs: "2.5rem", sm: "3rem", md: "4rem" },
-              lineHeight: 1.08,
-              fontWeight: 800,
-              letterSpacing: "-0.035em",
-              color: "#111318",
-              maxWidth: "18ch",
-              mb: 2,
-            }}
-          >
-            Build Better{" "}
-            <Box
-              component="span"
-              sx={{
-                display: "block",
-                color: "#1746B5",
-              }}
-            >
-              Digital Experiences
-            </Box>
-          </Typography>
-          <Typography
-            component="h2"
-            sx={{
-              fontSize: { xs: "1.05rem", md: "1.25rem" },
-              fontWeight: 750,
-              lineHeight: 1.5,
-              color: "#111318",
-              maxWidth: "38ch",
-              mb: 2.5,
-            }}
-          >
-            Simple, fast, and beautiful platforms that win and get real results
-          </Typography>
-          <Typography
-            component="p"
-            sx={{
-              maxWidth: "38ch",
-              color: "#30343B",
-              fontSize: { xs: "1rem", md: "1.0625rem" },
-              lineHeight: 1.65,
-            }}
-          >
-            Websites and apps that are easy to use,
-            <br />
-            look great, and work fast.
-            <br />
-            Get more customers with ease.
-            <br />
-            No stress, no confusion — just simple,
-            <br />
-            reliable solutions that help you grow.
-          </Typography>
-
-          {/*
-            Both modals stay mounted together: the last step of Get Quick Wins
-            opens Work With Me through a window event, so WorkWithMeModal must
-            be on the page whenever GetQuickWinsModal is.
-          */}
+          Build Better{" "}
           <Box
+            component="span"
             sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              gap: 1.5,
-              mt: 3,
+              display: "block",
+              color: "var(--color-dark-yellow)",
             }}
           >
-            <WorkWithMeModal />
-            <GetQuickWinsModal />
+            Digital Experiences
           </Box>
+        </Typography>
+        <Typography
+          component="h2"
+          sx={{
+            fontSize: { xs: "1.05rem", md: "1.2rem" },
+            fontWeight: 750,
+            lineHeight: 1.5,
+            color: "#111318",
+            maxWidth: "38ch",
+            mb: 2.5,
+          }}
+        >
+          Simple, fast, and beautiful platforms that win and get real results
+        </Typography>
+        <Typography
+          component="p"
+          sx={{
+            maxWidth: "full",
+            color: "#30343B",
+            fontSize: { xs: "1rem", md: "1.0625rem" },
+            lineHeight: 1.65,
+            mb: 3,
+          }}
+        >
+          Get more customers with ease with websites and apps that are <br />
+          easy to use, look great, and work fast.
+        </Typography>
+
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 1.5,
+          }}
+        >
+          <Button
+            type="button"
+            variant="contained"
+            onClick={() => openWorkWithMe()}
+            aria-haspopup="dialog"
+            className="rounded-lg bg-dark-yellow! px-6 py-3 font-bold normal-case text-black! hover:bg-light-yellow!"
+          >
+            Work with Me
+          </Button>
+          <Button
+            type="button"
+            variant="contained"
+            onClick={openGetQuickWins}
+            aria-haspopup="dialog"
+            className="rounded-lg bg-dark-yellow! px-6 py-3 font-bold normal-case text-black! hover:bg-light-yellow!"
+          >
+            Get Quick Wins
+          </Button>
         </Box>
-      </Card.Body>
-    </main>
+      </Box>
+    </Card.Body>
   );
 }

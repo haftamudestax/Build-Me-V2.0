@@ -24,7 +24,6 @@ export function Navbar() {
     });
   }
 
-  // NAV_LINKS will be implemented soon
   return (
     <SharedNavbar logo={<HDYLogo />}>
       {NAV_LINKS.length > 0 && (

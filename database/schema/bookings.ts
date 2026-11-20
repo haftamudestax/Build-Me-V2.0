@@ -13,9 +13,6 @@ import {
 
 import { visitors } from "./visitors";
 
-/**
- * Supported booking journeys.
- */
 export const BOOKING_TYPES = [
   "delivery_project",
   "mentor_me",
@@ -23,11 +20,15 @@ export const BOOKING_TYPES = [
 ] as const;
 
 export type BookingType = (typeof BOOKING_TYPES)[number];
+export type BookingPackageSnapshot = {
+  tier: "beginner" | "intermediate" | "advanced";
+  name: string;
+  price: number;
+  currency: "USD";
+};
 
-/**
- * Mentoring request details stored in bookings.request_details.
- */
 export type MentorMeRequestDetails = {
+  package: BookingPackageSnapshot;
   mentoringTopic: string;
   goals: string;
   experienceLevel: "beginner" | "intermediate" | "advanced" | "other";
@@ -35,26 +36,18 @@ export type MentorMeRequestDetails = {
   additionalContext?: string;
 };
 
-/**
- * Coffee meeting details stored in bookings.request_details.
- */
 export type CoffeeWithMeRequestDetails = {
+  package: BookingPackageSnapshot;
   preferredFormat: "online" | "in_person";
   timezone: string;
   additionalContext?: string;
 };
 
-/**
- * Delivery project details stored in bookings.request_details when needed.
- */
 export type DeliveryProjectRequestDetails = {
+  package: BookingPackageSnapshot;
   additionalContext?: string;
 };
 
-/**
- * Flexible JSON payload for booking-specific details.
- * Runtime validation must be performed by the API before insertion.
- */
 export type BookingRequestDetails =
   | MentorMeRequestDetails
   | CoffeeWithMeRequestDetails
@@ -63,9 +56,6 @@ export type BookingRequestDetails =
 
 export const COFFEE_MEETING_DURATION_MINUTES = 30;
 
-/**
- * Shared booking table for all Work With Me journeys.
- */
 export const bookings = pgTable(
   "bookings",
   {
@@ -84,36 +74,22 @@ export const bookings = pgTable(
       .notNull()
       .default("pending"),
 
-    /**
-     * A stable client-generated key reused for retries of the same request.
-     * Nullable for compatibility with existing bookings.
-     */
     idempotencyKey: varchar("idempotency_key", { length: 128 }),
 
-    /**
-     * Journey-specific details:
-     * - mentor_me: topic, goals, experience level, format, context
-     * - coffee_with_me: format, timezone, context
-     * - delivery_project: any additional project-specific details
-     */
     requestDetails: jsonb("request_details")
       .$type<BookingRequestDetails>()
       .notNull()
       .default({}),
 
-    // Shared customer information
     name: varchar("name", { length: 120 }),
     email: varchar("email", { length: 254 }),
 
-    // Deliver My Project fields
     projectTitle: varchar("project_title", { length: 160 }),
     projectType: varchar("project_type", { length: 80 }),
     projectDescription: text("project_description"),
     timeline: varchar("timeline", { length: 80 }),
     budget: varchar("budget", { length: 120 }),
 
-    // Coffee With Me scheduling
-    // The API should normalize meeting instants to UTC.
     meetingStartAt: timestamp("meeting_start_at", {
       withTimezone: true,
     }),

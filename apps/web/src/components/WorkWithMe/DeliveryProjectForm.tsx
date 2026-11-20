@@ -1,9 +1,19 @@
-import { useState, type FormEvent } from "react";
-import { Box, Button, MenuItem, TextField, Typography } from "@mui/material";
+import { useState, useRef, useEffect, type FormEvent } from "react";
+import { Box, Button, TextField, Typography } from "@mui/material";
+import { ArrowRight, ArrowUp, ArrowDown } from "lucide-react";
 import { Card } from "@build-me/ui";
 import { getAnalyticsConfig } from "@build-me/utils";
+import type { BookingSubmission } from "./bookingConfirmation";
 
-export interface DeliveryProjectRequest {
+type BookingPackageTier = "beginner" | "intermediate" | "advanced";
+
+const BOOKING_PACKAGE_PRICES: Record<BookingPackageTier, number> = {
+  beginner: 1499,
+  intermediate: 3499,
+  advanced: 6999,
+};
+
+interface DeliveryProjectRequest {
   name: string;
   email: string;
   projectTitle: string;
@@ -15,16 +25,19 @@ export interface DeliveryProjectRequest {
 
 interface DeliveryProjectFormProps {
   onBack: () => void;
-  onSubmitted: (reference: string) => void;
+  onSubmitted: (submission: BookingSubmission) => void;
+  selectedPackage: BookingPackageTier;
 }
 
 interface CreateBookingResponse {
   data?: {
     id?: string;
     reference?: string;
-    bookingType?: string;
+    bookingType?: BookingSubmission["bookingType"];
     status?: string;
     createdAt?: string;
+    invoice?: BookingSubmission["invoice"];
+    invoiceEmailStatus?: BookingSubmission["invoiceEmailStatus"];
   };
   error?: string;
 }
@@ -46,9 +59,189 @@ const timelineLabels: Record<string, string> = {
   flexible: "Flexible",
 };
 
+const packageLabels: Record<BookingPackageTier, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
+interface CustomSelectOption {
+  label: string;
+  value: string;
+}
+
+interface CustomSelectProps {
+  id: string;
+  label: string;
+  value: string;
+  options: CustomSelectOption[];
+  onChange: (value: string) => void;
+  error?: string;
+  required?: boolean;
+}
+
+function CustomSelect({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+  error,
+  required = false,
+}: CustomSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <Box
+      ref={containerRef}
+      sx={{ position: "relative", width: "100%", boxSizing: "border-box" }}
+    >
+      <Typography
+        component="label"
+        htmlFor={id}
+        variant="body2"
+        sx={{ fontWeight: 600, display: "block", mb: 0.4 }}
+      >
+        {label}
+        {required && (
+          <Box component="span" sx={{ color: "error.main", ml: 0.5 }}>
+            *
+          </Box>
+        )}
+      </Typography>
+
+      <Box
+        component="button"
+        type="button"
+        id={id}
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        aria-invalid={Boolean(error)}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          boxSizing: "border-box",
+          border: "1.5px solid",
+          borderColor: error ? "error.main" : "var(--color-black, #000000)",
+          borderRadius: 0,
+          px: 2,
+          py: 1.5,
+          font: "inherit",
+          fontSize: "0.95rem",
+          fontWeight: 700,
+          color: "var(--color-black, #000000)",
+          bgcolor: "#ffffff",
+          cursor: "pointer",
+          textAlign: "left",
+          transition: "background-color 150ms ease",
+          "&:hover": {
+            bgcolor: "rgba(0, 0, 0, 0.03)",
+          },
+          "&:focus-visible": {
+            outline: "2px solid var(--color-black, #000000)",
+            outlineOffset: "2px",
+          },
+        }}
+      >
+        <span>{selectedOption ? selectedOption.label : label}</span>
+        {isOpen ? <ArrowUp size={18} /> : <ArrowDown size={18} />}
+      </Box>
+
+      {isOpen && (
+        <Box
+          sx={{
+            position: "relative",
+            mt: "8px",
+            pl: 2.5,
+            borderLeft: "2px solid",
+            borderColor: "var(--color-black, #000000)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            boxSizing: "border-box",
+            zIndex: 99,
+          }}
+        >
+          {options.map((opt) => (
+            <Box
+              key={opt.value}
+              component="button"
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                boxSizing: "border-box",
+                border: "1.5px solid",
+                borderColor: "var(--color-black, #000000)",
+                borderRadius: 0,
+                px: 2,
+                py: 1.5,
+                font: "inherit",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                color: "var(--color-black, #000000)",
+                bgcolor: "#ffffff",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "background-color 150ms ease, transform 150ms ease",
+                "&:hover": {
+                  bgcolor: "rgba(0, 0, 0, 0.05)",
+                  transform: "translateX(2px)",
+                },
+              }}
+            >
+              <span>{opt.label}</span>
+              <ArrowRight size={18} />
+            </Box>
+          ))}
+        </Box>
+      )}
+
+      {error && (
+        <Typography
+          variant="caption"
+          color="error"
+          sx={{ mt: 0.5, display: "block" }}
+        >
+          {error}
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
 export function DeliveryProjectForm({
   onBack,
   onSubmitted,
+  selectedPackage,
 }: DeliveryProjectFormProps) {
   const [form, setForm] = useState<DeliveryProjectRequest>(initialForm);
   const [errors, setErrors] = useState<
@@ -93,6 +286,7 @@ export function DeliveryProjectForm({
     }
 
     setErrors(nextErrors);
+
     return Object.keys(nextErrors).length === 0;
   }
 
@@ -111,6 +305,7 @@ export function DeliveryProjectForm({
           },
         }),
       );
+
       return;
     }
 
@@ -142,7 +337,12 @@ export function DeliveryProjectForm({
           timeline: timelineLabels[form.timeline],
           budget: form.budget || null,
           visitorId,
-          type: "delivery_project",
+          bookingType: "delivery_project",
+          requestDetails: {
+            package: {
+              tier: selectedPackage,
+            },
+          },
         }),
       });
 
@@ -156,7 +356,6 @@ export function DeliveryProjectForm({
         );
       }
 
-      // The API returns the booking reference inside `data`.
       const reference = result.data?.reference ?? result.data?.id;
 
       if (!reference) {
@@ -165,19 +364,30 @@ export function DeliveryProjectForm({
         );
       }
 
+      const submission: BookingSubmission = {
+        id: result.data?.id,
+        reference,
+        bookingType: result.data?.bookingType ?? "delivery_project",
+        status: result.data?.status,
+        createdAt: result.data?.createdAt,
+        invoice: result.data?.invoice ?? null,
+        invoiceEmailStatus: result.data?.invoiceEmailStatus ?? "not_sent",
+      };
+
       window.dispatchEvent(
         new CustomEvent("build-me:analytics", {
           detail: {
             eventName: "delivery_project.submitted",
             metadata: {
-              reference,
-              bookingType: result.data?.bookingType ?? "delivery_project",
+              reference: submission.reference,
+              bookingType: submission.bookingType,
+              packageTier: selectedPackage,
             },
           },
         }),
       );
 
-      onSubmitted(reference);
+      onSubmitted(submission);
     } catch (error) {
       setSubmitError(
         error instanceof Error
@@ -192,12 +402,24 @@ export function DeliveryProjectForm({
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate>
       <Card.Header>
-        <Typography variant="h5" component="h3" sx={{ fontWeight: 800 }}>
+        <Typography
+          variant="h5"
+          component="h3"
+          sx={{ fontWeight: 800, color: "var(--color-dark-yellow)" }}
+        >
           Deliver My Project
         </Typography>
 
         <Typography color="text.secondary" sx={{ mt: 1 }}>
           Tell me about your project. Required fields are marked below.
+        </Typography>
+
+        <Typography
+          variant="body2"
+          sx={{ mt: 1.5, fontWeight: 700, color: "var(--color-light-yellow)" }}
+        >
+          Selected package: {packageLabels[selectedPackage]} — $
+          {BOOKING_PACKAGE_PRICES[selectedPackage].toLocaleString("en-US")} USD
         </Typography>
       </Card.Header>
 
@@ -238,22 +460,21 @@ export function DeliveryProjectForm({
             helperText={errors.projectTitle}
           />
 
-          <TextField
-            select
+          <CustomSelect
+            id="project-type"
             label="Project type"
             required
-            fullWidth
             value={form.projectType}
-            onChange={(event) => updateField("projectType", event.target.value)}
-            error={Boolean(errors.projectType)}
-            helperText={errors.projectType}
-          >
-            <MenuItem value="website">Website</MenuItem>
-            <MenuItem value="web_application">Web application</MenuItem>
-            <MenuItem value="dashboard">Dashboard or admin portal</MenuItem>
-            <MenuItem value="api_integration">API or integration</MenuItem>
-            <MenuItem value="other">Other</MenuItem>
-          </TextField>
+            onChange={(value) => updateField("projectType", value)}
+            error={errors.projectType}
+            options={[
+              { label: "Website", value: "website" },
+              { label: "Web application", value: "web_application" },
+              { label: "Dashboard or admin portal", value: "dashboard" },
+              { label: "API or integration", value: "api_integration" },
+              { label: "Other", value: "other" },
+            ]}
+          />
 
           <TextField
             label="Project description"
@@ -270,35 +491,34 @@ export function DeliveryProjectForm({
             }
           />
 
-          <TextField
-            select
+          <CustomSelect
+            id="preferred-timeline"
             label="Preferred timeline"
             required
-            fullWidth
             value={form.timeline}
-            onChange={(event) => updateField("timeline", event.target.value)}
-            error={Boolean(errors.timeline)}
-            helperText={errors.timeline}
-          >
-            <MenuItem value="asap">As soon as possible</MenuItem>
-            <MenuItem value="1_month">Within one month</MenuItem>
-            <MenuItem value="1_to_3_months">1–3 months</MenuItem>
-            <MenuItem value="flexible">Flexible</MenuItem>
-          </TextField>
+            onChange={(value) => updateField("timeline", value)}
+            error={errors.timeline}
+            options={[
+              { label: "As soon as possible", value: "asap" },
+              { label: "Within one month", value: "1_month" },
+              { label: "1–3 months", value: "1_to_3_months" },
+              { label: "Flexible", value: "flexible" },
+            ]}
+          />
 
-          <TextField
-            select
+          <CustomSelect
+            id="estimated-budget"
             label="Estimated budget (optional)"
-            fullWidth
             value={form.budget}
-            onChange={(event) => updateField("budget", event.target.value)}
-          >
-            <MenuItem value="not_sure">Not sure yet</MenuItem>
-            <MenuItem value="under_1000">Under $1,000</MenuItem>
-            <MenuItem value="1000_5000">$1,000–$5,000</MenuItem>
-            <MenuItem value="5000_10000">$5,000–$10,000</MenuItem>
-            <MenuItem value="over_10000">Over $10,000</MenuItem>
-          </TextField>
+            onChange={(value) => updateField("budget", value)}
+            options={[
+              { label: "Not sure yet", value: "not_sure" },
+              { label: "Under $1,000", value: "under_1000" },
+              { label: "$1,000–$5,000", value: "1000_5000" },
+              { label: "$5,000–$10,000", value: "5000_10000" },
+              { label: "Over $10,000", value: "over_10000" },
+            ]}
+          />
 
           {submitError && (
             <Typography role="alert" color="error">
@@ -311,7 +531,11 @@ export function DeliveryProjectForm({
             variant="contained"
             disabled={submitting}
             fullWidth
-            sx={{ py: 1.4, fontWeight: 700 }}
+            sx={{
+              py: 1.4,
+              fontWeight: 700,
+              bgcolor: "var(--color-dark-yellow)",
+            }}
           >
             {submitting ? "Submitting request…" : "Submit project request"}
           </Button>
@@ -321,6 +545,7 @@ export function DeliveryProjectForm({
             variant="text"
             disabled={submitting}
             onClick={onBack}
+            sx={{ color: "var(--color-light-yellow)" }}
           >
             Back to project paths
           </Button>

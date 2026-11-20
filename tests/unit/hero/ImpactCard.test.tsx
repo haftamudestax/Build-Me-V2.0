@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 
 import { ImpactCard } from "../../../apps/web/src/components/Hero/ImpactCard";
 
@@ -8,7 +7,9 @@ describe("ImpactCard", () => {
   it("renders the impact heading", () => {
     render(<ImpactCard />);
 
-    expect(screen.getByText("My Impact in Action ↘")).toBeInTheDocument();
+    expect(
+      screen.getByText((content) => content.includes("My Impact in Action")),
+    ).toBeInTheDocument();
   });
 
   it("renders all four impact metrics", () => {

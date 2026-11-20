@@ -15,3 +15,5 @@ export * from './audit-results';
 export * from './analytics-results';
 export * from './product-kpis';
 export * from './technology-kpis';
+export * from "./referrals";
+export * from "./invoices";

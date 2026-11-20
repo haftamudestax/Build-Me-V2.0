@@ -89,8 +89,7 @@ export function OwnershipAuditRegistration({
       <Stack spacing={2.5}>
         <StepHeader
           eyebrow="Step 2 of 5"
-          title="Register for your audit"
-          description="Tell us who you are so your results are prepared for you."
+          description="Tell me who you are so your results are prepared for you."
         />
 
         <TextField

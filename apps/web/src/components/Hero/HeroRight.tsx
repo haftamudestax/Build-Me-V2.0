@@ -1,20 +1,36 @@
+import { useState, useEffect } from "react";
 import { Box } from "@mui/material";
-import heroImage from "../../assets/hero-person.png";
+import heroImage from "../../assets/hero-haftamu-hero.webp";
 import { ImpactCard } from "./ImpactCard";
 
+// Add more cutouts here to bring the crossfade back.
+const images = [heroImage];
+
 export function HeroRight() {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length < 2) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Box
       component="div"
       sx={{
         position: "relative",
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-end", // he stands on the bottom line, like the mockup
         justifyContent: "center",
         width: "100%",
         minWidth: 0,
         pt: { xs: 2, md: 0 },
-        pb: { xs: 2, md: 0 },
+        pb: { xs: 4, md: 0 },
         pr: { xs: 0, sm: 2, lg: 4 },
       }}
     >
@@ -22,34 +38,36 @@ export function HeroRight() {
         sx={{
           position: "relative",
           width: "100%",
-          maxWidth: 440,
-          overflow: "hidden",
-          borderRadius: { xs: 4, md: 5 },
-          boxShadow: "0 25px 60px rgba(15, 23, 42, 0.18)",
+          maxWidth: { xs: 380, sm: 460, md: 600 },
         }}
       >
-        <Box
-          component="img"
-          src={heroImage}
-          alt="Haftamu Desta"
-          sx={{
-            display: "block",
-            width: "100%",
-            height: "auto",
-            maxHeight: { md: 570 },
-            objectFit: "cover",
-            objectPosition: "center",
-          }}
-        />
+        {images.map((img, index) => (
+          <Box
+            key={img}
+            component="img"
+            src={img}
+            alt="Haftamu Desta"
+            sx={{
+              display: "block",
+              width: "100%",
+              height: "auto",
+              position: index === 0 ? "relative" : "absolute",
+              top: 0,
+              left: 0,
+              opacity: currentImageIndex === index ? 1 : 0,
+              transition: "opacity 1s ease-in-out",
+            }}
+          />
+        ))}
       </Box>
 
-      {/* Floating impact card — large desktop only */}
+      {/* Desktop Impact Card: overlaps the laptop, like the mockup */}
       <Box
         sx={{
           position: "absolute",
           zIndex: 2,
-          top: { lg: 48 },
-          right: { lg: -150 },
+          top: { lg: 56 },
+          right: { lg: -82 },
           display: { xs: "none", lg: "block" },
           width: 270,
         }}
@@ -57,7 +75,7 @@ export function HeroRight() {
         <ImpactCard />
       </Box>
 
-      {/* Compact impact card — mobile and iPad */}
+      {/* Mobile/Tablet Impact Card */}
       <Box
         sx={{
           display: { xs: "block", lg: "none" },

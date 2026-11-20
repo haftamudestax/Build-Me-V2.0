@@ -1,4 +1,11 @@
 
+import {
+  BOOKING_PACKAGE_TIERS,
+  getBookingPackage,
+  type BookingPackageSnapshot,
+  type BookingPackageTier,
+} from "../config/pricing";
+
 export const BOOKING_TIMELINES = [
   "ASAP",
   "Within a month",
@@ -26,11 +33,20 @@ export type BookingTimeline = (typeof BOOKING_TIMELINES)[number];
 export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number];
 export type MeetingFormat = (typeof MEETING_FORMATS)[number];
 
+export type BookingPackage = BookingPackageSnapshot;
+
+export type {
+  BookingPackageSnapshot,
+  BookingPackageTier,
+};
+
 export interface DeliveryProjectRequestDetails {
+  package: BookingPackage;
   additionalContext?: string;
 }
 
 export interface MentorMeRequestDetails {
+  package: BookingPackage;
   mentoringTopic: string;
   goals: string;
   experienceLevel: ExperienceLevel;
@@ -39,6 +55,7 @@ export interface MentorMeRequestDetails {
 }
 
 export interface CoffeeWithMeRequestDetails {
+  package: BookingPackage;
   preferredFormat: MeetingFormat;
   timezone: string;
   additionalContext?: string;
@@ -63,7 +80,6 @@ export interface CreateBookingInput {
   timeline?: BookingTimeline;
   budget?: string | null;
 
-  
   requestDetails: BookingRequestDetails;
   meetingStartAt?: string;
   meetingDurationMinutes?: number;
@@ -126,7 +142,7 @@ function isOneOf<T extends readonly string[]>(
 function getRequestDetails(
   input: Record<string, unknown>,
 ): Record<string, unknown> {
-  // Accept either a nested requestDetails object or the existing
+  // Accept either a nested requestDetails object or existing
   // top-level form fields. Nested fields take precedence.
   const nested = isRecord(input.requestDetails)
     ? input.requestDetails
@@ -135,7 +151,63 @@ function getRequestDetails(
   return { ...input, ...nested };
 }
 
-export function validateCreateBooking(body: unknown): ValidationResult {
+/**
+ * Resolve a package using the server-side pricing configuration.
+ *
+ * The client only selects a tier. Client-supplied package names,
+ * prices, and currencies are deliberately ignored.
+ */
+function validateBookingPackage(
+  bookingType: BookingType,
+  value: unknown,
+): { value: BookingPackage } | { error: string } {
+  if (
+    !isRecord(value) ||
+    !isOneOf(BOOKING_PACKAGE_TIERS, value.tier)
+  ) {
+    return {
+      error: "A supported booking package is required.",
+    };
+  }
+
+  const selectedPackage = getBookingPackage(
+    bookingType,
+    value.tier as BookingPackageTier,
+  );
+
+  if (!selectedPackage) {
+    return {
+      error: "The selected booking package is not available.",
+    };
+  }
+
+  return {
+    value: selectedPackage,
+  };
+}
+
+function validateAdditionalContext(
+  value: unknown,
+): { value?: string } | { error: string } {
+  if (
+    value !== undefined &&
+    (typeof value !== "string" || value.trim().length > 5000)
+  ) {
+    return {
+      error: "Additional context must be at most 5000 characters.",
+    };
+  }
+
+  return {
+    ...(typeof value === "string" && value.trim()
+      ? { value: value.trim() }
+      : {}),
+  };
+}
+
+export function validateCreateBooking(
+  body: unknown,
+): ValidationResult {
   if (!isRecord(body)) {
     return {
       valid: false,
@@ -143,7 +215,13 @@ export function validateCreateBooking(body: unknown): ValidationResult {
     };
   }
 
-  const visitorIdResult = readRequiredString(body, "visitorId", 1, 36);
+  const visitorIdResult = readRequiredString(
+    body,
+    "visitorId",
+    1,
+    36,
+  );
+
   if ("error" in visitorIdResult) {
     return { valid: false, error: visitorIdResult.error };
   }
@@ -158,11 +236,13 @@ export function validateCreateBooking(body: unknown): ValidationResult {
   }
 
   const nameResult = readRequiredString(body, "name", 2, 120);
+
   if ("error" in nameResult) {
     return { valid: false, error: nameResult.error };
   }
 
   const emailResult = readRequiredString(body, "email", 1, 254);
+
   if ("error" in emailResult) {
     return { valid: false, error: emailResult.error };
   }
@@ -177,10 +257,9 @@ export function validateCreateBooking(body: unknown): ValidationResult {
     };
   }
 
-  // Keep compatibility with the existing delivery form, which sends
-  // `type: "delivery_project"`. Older requests without a type remain
-  // delivery-project requests.
-  const rawBookingType = body.bookingType ?? body.type ?? "delivery_project";
+  // Preserve compatibility with existing delivery form requests.
+  const rawBookingType =
+    body.bookingType ?? body.type ?? "delivery_project";
 
   if (!isOneOf(BOOKING_TYPES, rawBookingType)) {
     return {
@@ -191,6 +270,21 @@ export function validateCreateBooking(body: unknown): ValidationResult {
 
   const bookingType = rawBookingType;
   const details = getRequestDetails(body);
+
+  // Resolve package using the booking journey and selected tier.
+  const packageResult = validateBookingPackage(
+    bookingType,
+    details.package,
+  );
+
+  if ("error" in packageResult) {
+    return {
+      valid: false,
+      error: packageResult.error,
+    };
+  }
+
+  const selectedPackage = packageResult.value;
 
   let requestDetails: BookingRequestDetails;
   let projectTitle: string | undefined;
@@ -208,6 +302,7 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       3,
       160,
     );
+
     if ("error" in projectTitleResult) {
       return { valid: false, error: projectTitleResult.error };
     }
@@ -218,6 +313,7 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       2,
       80,
     );
+
     if ("error" in projectTypeResult) {
       return { valid: false, error: projectTypeResult.error };
     }
@@ -228,11 +324,18 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       20,
       10000,
     );
+
     if ("error" in descriptionResult) {
       return { valid: false, error: descriptionResult.error };
     }
 
-    const timelineResult = readRequiredString(body, "timeline", 1, 80);
+    const timelineResult = readRequiredString(
+      body,
+      "timeline",
+      1,
+      80,
+    );
+
     if ("error" in timelineResult) {
       return { valid: false, error: timelineResult.error };
     }
@@ -257,31 +360,31 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       };
     }
 
+    const additionalContextResult = validateAdditionalContext(
+      details.additionalContext,
+    );
+
+    if ("error" in additionalContextResult) {
+      return {
+        valid: false,
+        error: additionalContextResult.error,
+      };
+    }
+
     projectTitle = projectTitleResult.value;
     projectType = projectTypeResult.value;
     description = descriptionResult.value;
     timeline = timelineResult.value;
+
     budget =
       typeof rawBudget === "string" && rawBudget.trim()
         ? rawBudget.trim()
         : null;
 
-    const additionalContext = details.additionalContext;
-    if (
-      additionalContext !== undefined &&
-      (typeof additionalContext !== "string" ||
-        additionalContext.trim().length > 5000)
-    ) {
-      return {
-        valid: false,
-        error: "Additional context must be at most 5000 characters.",
-      };
-    }
-
     requestDetails = {
-      ...(typeof additionalContext === "string" &&
-      additionalContext.trim()
-        ? { additionalContext: additionalContext.trim() }
+      package: selectedPackage,
+      ...(additionalContextResult.value
+        ? { additionalContext: additionalContextResult.value }
         : {}),
     };
   } else if (bookingType === "mentor_me") {
@@ -291,11 +394,18 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       3,
       160,
     );
+
     if ("error" in topicResult) {
       return { valid: false, error: topicResult.error };
     }
 
-    const goalsResult = readRequiredString(details, "goals", 10, 5000);
+    const goalsResult = readRequiredString(
+      details,
+      "goals",
+      10,
+      5000,
+    );
+
     if ("error" in goalsResult) {
       return { valid: false, error: goalsResult.error };
     }
@@ -314,26 +424,25 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       };
     }
 
-    const additionalContext = details.additionalContext;
-    if (
-      additionalContext !== undefined &&
-      (typeof additionalContext !== "string" ||
-        additionalContext.trim().length > 5000)
-    ) {
+    const additionalContextResult = validateAdditionalContext(
+      details.additionalContext,
+    );
+
+    if ("error" in additionalContextResult) {
       return {
         valid: false,
-        error: "Additional context must be at most 5000 characters.",
+        error: additionalContextResult.error,
       };
     }
 
     requestDetails = {
+      package: selectedPackage,
       mentoringTopic: topicResult.value,
       goals: goalsResult.value,
       experienceLevel: details.experienceLevel,
       preferredFormat: details.preferredFormat,
-      ...(typeof additionalContext === "string" &&
-      additionalContext.trim()
-        ? { additionalContext: additionalContext.trim() }
+      ...(additionalContextResult.value
+        ? { additionalContext: additionalContextResult.value }
         : {}),
     };
   } else {
@@ -344,7 +453,13 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       };
     }
 
-    const timezoneResult = readRequiredString(details, "timezone", 1, 100);
+    const timezoneResult = readRequiredString(
+      details,
+      "timezone",
+      1,
+      100,
+    );
+
     if ("error" in timezoneResult) {
       return { valid: false, error: timezoneResult.error };
     }
@@ -355,11 +470,13 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       1,
       80,
     );
+
     if ("error" in meetingStartResult) {
       return { valid: false, error: meetingStartResult.error };
     }
 
     const parsedMeetingStart = new Date(meetingStartResult.value);
+
     if (
       Number.isNaN(parsedMeetingStart.getTime()) ||
       !/[zZ]|[+-]\d{2}:\d{2}$/.test(meetingStartResult.value)
@@ -382,15 +499,14 @@ export function validateCreateBooking(body: unknown): ValidationResult {
       };
     }
 
-    const additionalContext = details.additionalContext;
-    if (
-      additionalContext !== undefined &&
-      (typeof additionalContext !== "string" ||
-        additionalContext.trim().length > 5000)
-    ) {
+    const additionalContextResult = validateAdditionalContext(
+      details.additionalContext,
+    );
+
+    if ("error" in additionalContextResult) {
       return {
         valid: false,
-        error: "Additional context must be at most 5000 characters.",
+        error: additionalContextResult.error,
       };
     }
 
@@ -398,11 +514,11 @@ export function validateCreateBooking(body: unknown): ValidationResult {
     meetingDurationMinutes = COFFEE_MEETING_DURATION_MINUTES;
 
     requestDetails = {
+      package: selectedPackage,
       preferredFormat: details.preferredFormat,
       timezone: timezoneResult.value,
-      ...(typeof additionalContext === "string" &&
-      additionalContext.trim()
-        ? { additionalContext: additionalContext.trim() }
+      ...(additionalContextResult.value
+        ? { additionalContext: additionalContextResult.value }
         : {}),
     };
   }

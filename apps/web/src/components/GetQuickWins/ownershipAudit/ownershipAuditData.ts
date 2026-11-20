@@ -12,7 +12,6 @@ export type AuditSection = {
   questions: AuditQuestion[];
 };
 
-/** questionId -> points (0, 1 or 2) */
 export type AuditAnswers = Record<string, number>;
 
 export type ResultCategory = "strong" | "developing" | "high_risk";
@@ -184,7 +183,6 @@ export function getResultCategory(score: number): ResultCategory {
 export interface ResultDetails {
   title: string;
   description: string;
-  /** Continues the sentence "<name>, ..." on the final step. */
   nextStepsIntro: string;
 }
 
