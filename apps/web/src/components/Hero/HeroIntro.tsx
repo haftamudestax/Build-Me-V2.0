@@ -60,8 +60,7 @@ export function HeroIntro() {
           }}
         >
           Get more customers with ease with websites and apps that are <br />{" "}
-          easy to use, <br />
-          look great, and work fast.
+          easy to use,look great, and work fast.
         </Typography>
 
         <Box
