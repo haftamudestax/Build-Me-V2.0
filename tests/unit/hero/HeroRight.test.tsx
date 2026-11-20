@@ -4,20 +4,28 @@ import { render, screen } from "@testing-library/react";
 import { HeroRight } from "../../../apps/web/src/components/Hero/HeroRight";
 
 describe("HeroRight", () => {
-  it("renders the profile images with accessible alternative text", () => {
+  it("renders the profile image with accessible alternative text", () => {
     render(<HeroRight />);
 
-    const images = screen.getAllByRole("img", { name: "Haftamu Desta" });
-    expect(images.length).toBeGreaterThanOrEqual(1);
-    images.forEach((img) => expect(img).toBeInTheDocument());
+    const images = screen.getAllByRole("img", {
+      name: "Haftamu Desta",
+    });
+
+    expect(images).toHaveLength(1);
+
+    images.forEach((img) => {
+      expect(img).toBeInTheDocument();
+    });
   });
 
-  it("renders the desktop and compact impact card variants", () => {
+  it("renders both desktop and compact impact card variants", () => {
     render(<HeroRight />);
 
-    expect(
-      screen.getAllByText((content) => content.includes("My Impact in Action")),
-    ).toHaveLength(2);
+    const impactLabels = screen.getAllByText((content) =>
+      content.includes("My Impact in Action"),
+    );
+
+    expect(impactLabels).toHaveLength(2);
   });
 
   it("includes all four metrics in both card variants", () => {
@@ -28,10 +36,14 @@ describe("HeroRight", () => {
     }
   });
 
-  it("renders the profile images with sources", () => {
+  it("renders the profile image with a valid source", () => {
     render(<HeroRight />);
 
-    const images = screen.getAllByRole("img", { name: "Haftamu Desta" });
+    const images = screen.getAllByRole("img", {
+      name: "Haftamu Desta",
+    });
+
+    expect(images).toHaveLength(1);
 
     images.forEach((image) => {
       expect(image).toHaveAttribute("src");

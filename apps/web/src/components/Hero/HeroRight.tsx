@@ -1,20 +1,23 @@
 import { useState, useEffect } from "react";
 import { Box } from "@mui/material";
-import heroImage from "../../assets/hero-haftamu.png";
-import heroImage1 from "../../assets/hero-haftamu1.png";
+import heroImage from "../../assets/hero-haftamu-hero.webp";
 import { ImpactCard } from "./ImpactCard";
+
+// Add more cutouts here to bring the crossfade back.
+const images = [heroImage];
 
 export function HeroRight() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const images = [heroImage, heroImage1];
 
   useEffect(() => {
+    if (images.length < 2) return;
+
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [images.length]);
+  }, []);
 
   return (
     <Box
@@ -22,12 +25,12 @@ export function HeroRight() {
       sx={{
         position: "relative",
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-end", // he stands on the bottom line, like the mockup
         justifyContent: "center",
         width: "100%",
         minWidth: 0,
         pt: { xs: 2, md: 0 },
-        pb: { xs: 2, md: 0 },
+        pb: { xs: 4, md: 0 },
         pr: { xs: 0, sm: 2, lg: 4 },
       }}
     >
@@ -35,15 +38,12 @@ export function HeroRight() {
         sx={{
           position: "relative",
           width: "100%",
-          maxWidth: 440,
-          overflow: "hidden",
-          borderRadius: { xs: 4, md: 5 },
-          boxShadow: "0 25px 60px rgba(15, 23, 42, 0.18)",
+          maxWidth: { xs: 380, sm: 460, md: 600 },
         }}
       >
         {images.map((img, index) => (
           <Box
-            key={index}
+            key={img}
             component="img"
             src={img}
             alt="Haftamu Desta"
@@ -51,10 +51,6 @@ export function HeroRight() {
               display: "block",
               width: "100%",
               height: "auto",
-              maxHeight: { md: 570 },
-              objectFit: "cover",
-              objectPosition: "center",
-              // Positions images on top of each other and handles smooth crossfade
               position: index === 0 ? "relative" : "absolute",
               top: 0,
               left: 0,
@@ -65,13 +61,13 @@ export function HeroRight() {
         ))}
       </Box>
 
-      {/* Desktop Impact Card Overlay */}
+      {/* Desktop Impact Card: overlaps the laptop, like the mockup */}
       <Box
         sx={{
           position: "absolute",
           zIndex: 2,
-          top: { lg: 48 },
-          right: { lg: -150 },
+          top: { lg: 56 },
+          right: { lg: -82 },
           display: { xs: "none", lg: "block" },
           width: 270,
         }}
@@ -79,7 +75,7 @@ export function HeroRight() {
         <ImpactCard />
       </Box>
 
-      {/* Mobile/Tablet Impact Card Overlay */}
+      {/* Mobile/Tablet Impact Card */}
       <Box
         sx={{
           display: { xs: "block", lg: "none" },

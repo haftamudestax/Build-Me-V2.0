@@ -5,7 +5,7 @@ const Home = () => {
   return (
     <main>
       {featureFlags.heroSection && <HeroSection />}
-      <Testimonials />
+      {featureFlags.footer && <Testimonials />}
     </main>
   );
 };

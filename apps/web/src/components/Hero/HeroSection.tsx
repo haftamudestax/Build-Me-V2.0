@@ -40,7 +40,7 @@ export function HeroSection() {
           position: "absolute",
           top: 0,
           right: 0,
-          bottom: 0,
+          bottom: "250px",
           width: { xs: "100%", md: "62%" },
           backgroundImage: `url(${heroBg})`,
           backgroundSize: "cover",
@@ -103,16 +103,23 @@ export function HeroSection() {
             display: "grid",
             gridTemplateColumns: {
               xs: "minmax(0, 1fr)",
-              md: "minmax(0, 1.05fr) minmax(0, 0.95fr)",
+              md: "minmax(0, 0.9fr) minmax(0, 1.1fr)",
             },
-            alignItems: "center",
+            alignItems: "end",
             columnGap: { xs: 4, md: 6, lg: 8 },
             rowGap: { xs: 6, md: 0 },
             mb: { xs: 3, md: 4 },
           }}
         >
           <Box
-            sx={{ width: "100%", minWidth: 0, position: "relative", zIndex: 1 }}
+            sx={{
+              width: "100%",
+              minWidth: 0,
+              position: "relative",
+              zIndex: 1,
+              alignSelf: "center", // text stays vertically centred
+              pb: { md: 4 },
+            }}
           >
             <HeroIntro />
           </Box>

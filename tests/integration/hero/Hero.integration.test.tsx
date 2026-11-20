@@ -14,12 +14,12 @@ describe("Hero Section integration", () => {
     expect(within(hero).getByText("TECHNOLOGY OWNERSHIP")).toBeInTheDocument();
 
     // Hero left
-    expect(
-      within(hero).getByRole("heading", {
-        level: 1,
-        name: "Build Better Digital Experiences",
-      }),
-    ).toBeInTheDocument();
+    const mainHeading = within(hero).getByRole("heading", {
+      level: 1,
+      name: "Build Better Digital Experiences",
+    });
+
+    expect(mainHeading).toBeInTheDocument();
 
     expect(
       within(hero).getByRole("heading", {
@@ -36,18 +36,34 @@ describe("Hero Section integration", () => {
       ),
     ).toBeInTheDocument();
 
-    // Hero right
-    expect(
-      within(hero).getAllByRole("img", {
-        name: "Haftamu Desta",
-      }),
-    ).toHaveLength(2);
+    // Hero right: profile image
+    const heroImages = within(hero).getAllByRole("img", {
+      name: "Haftamu Desta",
+    });
 
+    expect(heroImages).toHaveLength(1);
+
+    heroImages.forEach((image) => {
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("src");
+      expect(image.getAttribute("src")).not.toBe("");
+    });
+
+    // Hero right: desktop and compact impact card variants
     expect(within(hero).getAllByText("My Impact in Action")).toHaveLength(2);
 
+    // Verify all four metrics appear in both variants
+    for (const metric of ["99.9%", "Faster", "Lower", "Stronger"]) {
+      expect(within(hero).getAllByText(metric)).toHaveLength(2);
+    }
+
     // Hero bottom
+    const valueStrip = within(hero).getByRole("region", {
+      name: "Key value propositions",
+    });
+
     expect(
-      within(hero).getByRole("heading", {
+      within(valueStrip).getByRole("heading", {
         level: 2,
         name: "Reliable solutions that help you grow.",
       }),
@@ -60,7 +76,7 @@ describe("Hero Section integration", () => {
       "No Jargons",
       "Just Simple",
     ]) {
-      expect(within(hero).getByText(fact)).toBeInTheDocument();
+      expect(within(valueStrip).getByText(fact)).toBeInTheDocument();
     }
   });
 
@@ -90,5 +106,40 @@ describe("Hero Section integration", () => {
     expect(within(hero).queryAllByRole("heading", { level: 3 })).toHaveLength(
       0,
     );
+  });
+
+  it("maintains the hero section's accessible identity", () => {
+    render(<HeroSection />);
+
+    const hero = screen.getByRole("region", {
+      name: "Build Better Digital Experiences",
+    });
+
+    expect(hero).toHaveAttribute("id", "hero");
+    expect(hero).toHaveAttribute("aria-labelledby", "hero-title");
+
+    expect(
+      within(hero).getByRole("heading", {
+        level: 1,
+        name: "Build Better Digital Experiences",
+      }),
+    ).toHaveAttribute("id", "hero-title");
+  });
+
+  it("renders the hero background as a decorative element", () => {
+    render(<HeroSection />);
+
+    const hero = screen.getByRole("region", {
+      name: "Build Better Digital Experiences",
+    });
+
+    const background = hero.querySelector('[aria-hidden="true"]');
+
+    expect(background).toBeInTheDocument();
+    expect(background).toHaveStyle({
+      position: "absolute",
+      backgroundRepeat: "no-repeat",
+      pointerEvents: "none",
+    });
   });
 });
