@@ -5,7 +5,7 @@ import { trackAnalyticsEvent } from "@build-me/utils";
 interface UseVisibilityAnalyticsOptions {
   eventName: Extract<
     AnalyticsEventName,
-    "hero.viewed" | "page.viewed"
+    "hero.viewed" | "page.viewed" | "talk_to_us.viewed"
   >;
   enabled?: boolean;
 }
