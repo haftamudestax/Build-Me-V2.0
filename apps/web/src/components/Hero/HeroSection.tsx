@@ -40,8 +40,9 @@ export function HeroSection() {
           position: "absolute",
           top: 0,
           right: 0,
+
           bottom: "250px",
-          width: { xs: "100%", md: "62%" },
+          width: { xs: "100%", sm: "72%", md: "58%" },
           backgroundImage: `url(${heroBg})`,
           backgroundSize: "cover",
           backgroundPosition: "left center",
