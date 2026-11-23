@@ -15,7 +15,7 @@ export function ShareButton() {
         type="button"
         onClick={() => setIsOpen(true)}
         aria-label="Share this page"
-        className="group inline-flex items-center gap-3 rounded-xl bg-white px-3 py-3 text-left transition hover:bg-dark-yellow hover:text-black focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2"
+        className="group inline-flex items-center gap-3 rounded-xl px-3 py-3 text-center transition hover:bg-dark-yellow hover:text-black focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2"
       >
         <span className="flex h-10 w-10 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
           <svg

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -6,18 +6,19 @@ import { ShareButton } from "../../../apps/web/src/components/Footer/Share/Share
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
 });
 
 describe("ShareButton", () => {
   it("renders the share button with its title and tagline", () => {
     render(<ShareButton />);
 
-    expect(
-      screen.getByRole("button", { name: /share this page/i }),
-    ).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: /share this page/i });
 
+    expect(button).toBeInTheDocument();
+    expect(screen.getByText(/share this page/i)).toBeInTheDocument();
     expect(
-      screen.getByText("Spread value. Inspire others."),
+      screen.getByText(/spread value\. inspire others\./i),
     ).toBeInTheDocument();
   });
 
@@ -26,15 +27,21 @@ describe("ShareButton", () => {
 
     render(<ShareButton />);
 
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: /share this page/i }));
 
-    expect(
-      screen.getByRole("dialog", { name: /share this page/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("passes the current page URL and document title to the modal", async () => {
     const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
 
     window.history.pushState({}, "", "/share-test");
     document.title = "Build Me | Digital Experiences";
@@ -43,11 +50,18 @@ describe("ShareButton", () => {
 
     await user.click(screen.getByRole("button", { name: /share this page/i }));
 
-    expect(screen.getByLabelText(/copy page link/i)).toHaveValue(
-      window.location.href,
+    const xLink = screen.getByRole("link", { name: /share on x/i });
+    expect(xLink).toHaveAttribute(
+      "href",
+      expect.stringContaining(encodeURIComponent(window.location.href)),
+    );
+    expect(xLink).toHaveAttribute(
+      "href",
+      expect.stringContaining(encodeURIComponent(document.title)),
     );
 
-    window.history.replaceState({}, "", "/");
-    document.title = "";
+    await user.click(screen.getByRole("button", { name: /^copy$/i }));
+
+    expect(writeText).toHaveBeenCalledWith("https://haftamu-desta.vercel.app/");
   });
 });

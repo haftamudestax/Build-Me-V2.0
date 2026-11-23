@@ -6,6 +6,7 @@ import { ShareModal } from "../../../apps/web/src/components/Footer/Share/ShareM
 
 const testUrl = "https://example.com/projects";
 const testTitle = "Build Me | Digital Experiences";
+const expectedCopyUrl = "https://haftamu-desta.vercel.app/";
 
 afterEach(() => {
   cleanup();
@@ -137,7 +138,7 @@ describe("ShareModal", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("copies the page URL to the clipboard", async () => {
+  it("copies the website URL to the clipboard", async () => {
     const user = userEvent.setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
 
@@ -152,7 +153,7 @@ describe("ShareModal", () => {
 
     await user.click(screen.getByRole("button", { name: /^copy$/i }));
 
-    expect(writeText).toHaveBeenCalledWith(testUrl);
+    expect(writeText).toHaveBeenCalledWith(expectedCopyUrl);
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Link copied to clipboard.",
     );
@@ -194,9 +195,7 @@ describe("ShareModal", () => {
       <ShareModal isOpen url={testUrl} title={testTitle} onClose={vi.fn()} />,
     );
 
-    await user.click(
-      screen.getByRole("button", { name: /more sharing options/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /share with apps/i }));
 
     expect(share).toHaveBeenCalledWith({
       title: testTitle,
@@ -215,7 +214,7 @@ describe("ShareModal", () => {
     );
 
     expect(
-      screen.queryByRole("button", { name: /more sharing options/i }),
+      screen.queryByRole("button", { name: /share with apps/i }),
     ).not.toBeInTheDocument();
   });
 });

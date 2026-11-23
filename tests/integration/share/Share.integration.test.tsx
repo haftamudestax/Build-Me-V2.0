@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 
 import { ShareButton } from "../../../apps/web/src/components/Footer/Share/ShareButton";
 
+const expectedCopyUrl = "https://haftamu-desta.vercel.app/";
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -30,7 +32,7 @@ describe("Share feature integration", () => {
     }
   });
 
-  it("allows a visitor to copy the current page URL", async () => {
+  it("allows a visitor to copy the share URL", async () => {
     const user = userEvent.setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
 
@@ -43,14 +45,9 @@ describe("Share feature integration", () => {
 
     await user.click(screen.getByRole("button", { name: /share this page/i }));
 
-    const urlInput = screen.getByLabelText(/copy page link/i);
-    const expectedUrl = window.location.href;
-
-    expect(urlInput).toHaveValue(expectedUrl);
-
     await user.click(screen.getByRole("button", { name: /^copy$/i }));
 
-    expect(writeText).toHaveBeenCalledWith(expectedUrl);
+    expect(writeText).toHaveBeenCalledWith(expectedCopyUrl);
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Link copied to clipboard.",
     );

@@ -77,11 +77,11 @@ function SocialIcon({ name }: SocialIconProps) {
 }
 
 const socialThemeStyles: Record<SocialIconName, string> = {
-  LinkedIn: "bg-dark-yellow text-black hover:bg-black hover:text-dark-yellow",
-  X: "bg-black text-white hover:bg-white hover:text-black",
-  Facebook: "bg-light-yellow text-black hover:bg-black hover:text-light-yellow",
-  Instagram: "bg-white text-dark-yellow hover:bg-dark-yellow hover:text-black",
-  YouTube: "bg-black text-light-yellow hover:bg-light-yellow hover:text-black",
+  LinkedIn: "bg-black text-white hover:bg-dark-yellow hover:text-black",
+  X: "bg-black text-white hover:bg-dark-yellow hover:text-black",
+  Facebook: "bg-black text-white hover:bg-dark-yellow hover:text-black",
+  Instagram: "bg-black text-white hover:bg-dark-yellow hover:text-black",
+  YouTube: "bg-black text-white hover:bg-light-yellow hover:text-black",
 };
 
 export function SocialConnections() {

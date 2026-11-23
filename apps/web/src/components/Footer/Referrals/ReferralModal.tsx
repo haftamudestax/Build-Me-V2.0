@@ -65,7 +65,7 @@ const INITIAL_FORM: ReferralFormData = {
 const pageStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 6,
+  gap: 4,
   width: "100%",
   minWidth: 0,
   minHeight: 0,
@@ -606,24 +606,6 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                 Share the opportunity
               </Typography>
             </Box>
-
-            <Typography
-              id={TITLE_ID}
-              variant="h5"
-              component="h2"
-              sx={{ fontWeight: 700 }}
-            >
-              Refer Someone
-            </Typography>
-
-            <Typography
-              id={DESCRIPTION_ID}
-              variant="body2"
-              color="text.secondary"
-            >
-              Know someone who could benefit from working together? Send a
-              referral.
-            </Typography>
           </Stack>
 
           {step !== "confirmed" && (
@@ -675,19 +657,6 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
               }}
               sx={{ ...pageStyle, mt: 1 }}
             >
-              <Stack spacing={0.15}>
-                <Typography
-                  variant="h6"
-                  component="h3"
-                  sx={{ fontWeight: 700 }}
-                >
-                  Your information
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  First, tell us who is making the referral.
-                </Typography>
-              </Stack>
-
               {referrerError && <Alert severity="error">{referrerError}</Alert>}
 
               <ReferralField
@@ -744,7 +713,16 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                 event.preventDefault();
                 handleNext();
               }}
-              sx={{ ...pageStyle, mt: 1 }}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                mt: 1,
+                width: "100%",
+                minWidth: 0,
+                minHeight: 0,
+                boxSizing: "border-box",
+              }}
             >
               <Stack spacing={0.25}>
                 <Typography
@@ -753,9 +731,6 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                   sx={{ fontWeight: 700 }}
                 >
                   Who are you referring?
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Share the person's contact details and how you know them.
                 </Typography>
               </Stack>
 
@@ -946,6 +921,15 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                   onClick={handleBack}
                   disabled={isSubmitting}
                   startIcon={<ArrowLeft size={16} />}
+                  sx={{
+                    bgcolor: "var(--color-black)",
+                    color: "var(--color-white)",
+                    transition: "background-color 200ms ease, color 200ms ease",
+                    "&:hover": {
+                      bgcolor: "var(--color-dark-yellow)",
+                      color: "var(--color-black)",
+                    },
+                  }}
                 >
                   Back
                 </Button>
@@ -956,6 +940,15 @@ export function ReferralModal({ open, onClose }: ReferralModalProps) {
                   size="medium"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
+                  sx={{
+                    bgcolor: "var(--color-dark-yellow)",
+                    color: "var(--color-white)",
+                    transition: "background-color 200ms ease, color 200ms ease",
+                    "&:hover": {
+                      bgcolor: "var(--color-dark-yellow)",
+                      color: "var(--color-black)",
+                    },
+                  }}
                 >
                   {isSubmitting ? "Submitting..." : "Submit referral"}
                 </Button>
