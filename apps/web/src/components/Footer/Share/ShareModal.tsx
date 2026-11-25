@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Box, Button, IconButton, Typography } from "@mui/material";
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -8,7 +9,7 @@ interface ShareModalProps {
 }
 
 type ShareChannel = "x" | "facebook" | "linkedin" | "whatsapp" | "telegram";
-
+const webUrl = "https://haftamu-desta.vercel.app/";
 const shareChannels: {
   id: ShareChannel;
   label: string;
@@ -93,7 +94,7 @@ export function ShareModal({ isOpen, url, title, onClose }: ShareModalProps) {
 
   async function handleCopyLink() {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(webUrl);
       setCopied(true);
       setError("");
     } catch {
@@ -116,68 +117,179 @@ export function ShareModal({ isOpen, url, title, onClose }: ShareModalProps) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
+    <Box
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
+      sx={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "rgba(0, 0, 0, 0.5)",
+        px: 2,
+        py: 3,
+      }}
     >
-      <section
+      <Box
+        component="section"
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-modal-title"
         aria-describedby="share-modal-description"
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+        sx={{
+          width: "100%",
+          maxWidth: "28rem",
+          borderRadius: "1rem",
+          p: 3,
+          boxShadow: 24,
+          bgcolor: "#ffffff",
+        }}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography
               id="share-modal-title"
-              className="text-xl font-bold text-dark-yellow"
+              component="h2"
+              sx={{ fontSize: "1.25rem", fontWeight: 700, color: "#000000" }}
             >
               Share this page
-            </h2>
-            <p
-              id="share-modal-description"
-              className="mt-1 text-sm text-gray-600"
-            >
-              Share this page with your network.
-            </p>
-          </div>
-
-          <button
+            </Typography>
+          </Box>
+          <IconButton
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
             aria-label="Close share dialog"
-            className="rounded-full p-2 text-light-yellow transition hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-dark-yellow"
+            sx={{
+              borderRadius: "9999px",
+              p: 1,
+              color: "var(--color-light-yellow)",
+              transition: "all 150ms",
+              "&:hover": {
+                bgcolor: "#f3f4f6",
+                color: "#111827",
+              },
+              "&:focus-visible": {
+                outline: "none",
+                boxShadow: "0 0 0 2px var(--color-dark-yellow)",
+              },
+            }}
           >
             <svg
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              className="h-5 w-5"
+              style={{ width: "1.25rem", height: "1.25rem" }}
               aria-hidden="true"
             >
               <path d="m18 6-12 12M6 6l12 12" />
             </svg>
-          </button>
-        </div>
+          </IconButton>
+        </Box>
+        <Box sx={{ mt: 3 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gap: 1.5,
+            }}
+          >
+            {shareChannels.map((channel) => (
+              <Box
+                key={channel.id}
+                component="a"
+                href={channel.getUrl(url, title)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={channel.description}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 1,
+                  borderRadius: "0.75rem",
+                  p: 1.5,
+                  textAlign: "center",
+                  textDecoration: "none",
+                  transition: "all 150ms",
+                  border: "2px solid currentColor",
+                  borderColor: "#000000",
+                  bgcolor:
+                    "color-mix(in srgb, var(--color-dark-yellow) 40%, transparent)",
+                  "&:hover": {
+                    bgcolor: "var(--color-light-yellow)",
+                  },
+                  "&:focus-visible": {
+                    outline: "none",
+                    boxShadow: "0 0 0 2px #2563eb",
+                  },
+                }}
+              >
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: "0.75rem",
+                    fontWeight: 500,
+                    color: "#374151",
+                  }}
+                >
+                  {channel.label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
 
         {typeof navigator !== "undefined" &&
           typeof navigator.share === "function" && (
-            <button
+            <Button
               type="button"
               onClick={handleNativeShare}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-dark-yellow px-4 py-3 font-semibold text-white transition hover:bg-light-yellow focus:outline-none focus:ring-2 focus:ring-light-yellow focus:ring-offset-2 border-b-4 border-r-4 border-b-black border-r-light-yellow"
+              disableElevation
+              sx={{
+                mt: 3,
+                display: "flex",
+                width: "100%",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                borderRadius: "0.75rem",
+                bgcolor: "var(--color-dark-yellow)",
+                px: 2,
+                py: 1.5,
+                fontWeight: 600,
+                textTransform: "none",
+                color: "#ffffff",
+                transition: "all 150ms",
+                borderBottom: "4px solid #000000",
+                borderRight: "4px solid var(--color-light-yellow)",
+                "&:hover": {
+                  bgcolor: "var(--color-light-yellow)",
+                },
+                "&:focus-visible": {
+                  outline: "none",
+                  boxShadow:
+                    "0 0 0 2px #ffffff, 0 0 0 4px var(--color-light-yellow)",
+                },
+              }}
             >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
-                className="h-5 w-5"
+                style={{ width: "1.25rem", height: "1.25rem" }}
                 aria-hidden="true"
               >
                 <circle cx="18" cy="5" r="3" />
@@ -185,86 +297,62 @@ export function ShareModal({ isOpen, url, title, onClose }: ShareModalProps) {
                 <circle cx="18" cy="19" r="3" />
                 <path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4" />
               </svg>
-              More sharing options
-            </button>
+              Share with Apps
+            </Button>
           )}
 
-        <div className="mt-6">
-          <h3 className="mb-3 text-sm font-semibold text-black">
-            Share through
-          </h3>
-
-          <div className="grid grid-cols-3 gap-3">
-            {shareChannels.map((channel) => (
-              <a
-                key={channel.id}
-                href={channel.getUrl(url, title)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={channel.description}
-                className="flex flex-col items-center gap-2 rounded-xl p-3 text-center transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-600"
-              >
-                <span
-                  className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold ${channel.className}`}
-                  aria-hidden="true"
-                >
-                  {channel.label === "WhatsApp"
-                    ? "W"
-                    : channel.label === "Telegram"
-                      ? "T"
-                      : channel.label === "LinkedIn"
-                        ? "in"
-                        : channel.label === "Facebook"
-                          ? "f"
-                          : "𝕏"}
-                </span>
-                <span className="text-xs font-medium text-gray-700">
-                  {channel.label}
-                </span>
-              </a>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6 border-t border-gray-200 pt-5">
-          <label
-            htmlFor="share-page-url"
-            className="mb-2 block text-sm font-semibold text-gray-800"
-          >
-            Or copy page link
-          </label>
-
-          <div className="flex gap-2">
-            <input
-              id="share-page-url"
-              type="text"
-              readOnly
-              value={url}
-              className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-light-yellow"
-            />
-
-            <button
+        <Box sx={{ mt: 1, pt: 2 }}>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
               type="button"
               onClick={handleCopyLink}
-              className="shrink-0 rounded-lg bg-dark-yellow px-4 py-2 text-sm font-semibold text-white transition hover:bg-light-yellow focus:outline-none focus:ring-2 focus:ring-light-yellow focus:ring-offset-2 border-2 border-black"
+              disableElevation
+              sx={{
+                flexShrink: 0,
+                borderRadius: "0.5rem",
+                bgcolor: "var(--color-dark-yellow)",
+                px: 2,
+                py: 1,
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                textTransform: "none",
+                color: "#ffffff",
+                width: "100%",
+                transition: "all 150ms",
+                border: "2px solid #000000",
+                "&:hover": {
+                  bgcolor: "var(--color-light-yellow)",
+                },
+                "&:focus-visible": {
+                  outline: "none",
+                  boxShadow:
+                    "0 0 0 2px #ffffff, 0 0 0 4px var(--color-light-yellow)",
+                },
+              }}
             >
               {copied ? "Copied!" : "Copy"}
-            </button>
-          </div>
+            </Button>
+          </Box>
 
           {copied && (
-            <p role="status" className="mt-2 text-sm text-green-700">
+            <Typography
+              role="status"
+              sx={{ mt: 1, fontSize: "0.875rem", color: "#15803d" }}
+            >
               Link copied to clipboard.
-            </p>
+            </Typography>
           )}
 
           {error && (
-            <p role="alert" className="mt-2 text-sm text-red-600">
+            <Typography
+              role="alert"
+              sx={{ mt: 1, fontSize: "0.875rem", color: "#dc2626" }}
+            >
               {error}
-            </p>
+            </Typography>
           )}
-        </div>
-      </section>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }

@@ -93,6 +93,15 @@ const eventTypeByName: Record<string, AnalyticsEventType> = {
   "ownership_learning_circle.join_clicked": "click",
   "ownership_learning_circle.telegram_opened": "click",
   "ownership_learning_circle.back_to_paths": "click",
+
+  // Talk To Us
+  "talk_to_us.viewed": "view",
+  "talk_to_us.whatsapp_clicked": "click",
+  "talk_to_us.call_clicked": "click",
+  "talk_to_us.validation_failed": "feature_use",
+  "talk_to_us.message_sent": "feature_use",
+  "talk_to_us.message_failed": "feature_use",
+  "talk_to_us.message_blocked": "feature_use",
 };
 
 interface CustomAnalyticsEventDetail {

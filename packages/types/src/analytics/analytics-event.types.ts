@@ -23,7 +23,8 @@ export type AnalyticsEventName =
   | "mentor_me.validation_failed"
   | "mentor_me.booking_submitted"
   | "mentor_me.confirmation_viewed"
-  | "mentor_me.submission_failed";
+  | "mentor_me.submission_failed"
+  |"talk_to_us.viewed";
 
 export interface AnalyticsEventPayload {
   visitorId?: string;

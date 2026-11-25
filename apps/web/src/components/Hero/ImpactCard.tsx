@@ -6,28 +6,28 @@ const impactItems = [
     icon: Shield,
     value: "99.9%",
     label: "System Reliability",
-    color: "var(--color-dark-yellow)",
+    color: "var(--color-black)",
     background: "color-mix(in srgb, var(--color-dark-yellow) 10%, transparent)",
   },
   {
     icon: Rocket,
     value: "Faster",
     label: "Time to Market",
-    color: "var(--color-dark-yellow)",
+    color: "var(--color-black)",
     background: "color-mix(in srgb, var(--color-dark-yellow) 10%, transparent)",
   },
   {
     icon: CircleDollarSign,
     value: "Lower",
     label: "Operational Costs",
-    color: "var(--color-dark-yellow)",
+    color: "var(--color-black)",
     background: "color-mix(in srgb, var(--color-dark-yellow) 10%, transparent)",
   },
   {
     icon: Award,
     value: "Stronger",
     label: "Security & Trust",
-    color: "var(--color-dark-yellow)",
+    color: "var(--color-black)",
     background: "color-mix(in srgb, var(--color-dark-yellow) 10%, transparent)",
   },
 ];
@@ -47,7 +47,7 @@ export function ImpactCard() {
       >
         <span
           style={{ fontFamily: "'Caveat', cursive, sans-serif" }}
-          className="text-xl font-semibold text-light-yellow transform -rotate-2 select-none"
+          className="text-xl font-semibold text-black transform -rotate-2 select-none"
         >
           My Impact in Action
         </span>
@@ -124,7 +124,7 @@ export function ImpactCard() {
                         lineHeight: 1.3,
                         fontWeight: 800,
                         font: "bold",
-                        color: "var(--color-light-yellow)",
+                        color: "var(--color-black)",
                       }}
                     >
                       {item.value}

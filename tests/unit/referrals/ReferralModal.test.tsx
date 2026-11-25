@@ -1,9 +1,6 @@
 import type React from "react";
-
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { cleanup, render, screen } from "@testing-library/react";
-
 import userEvent from "@testing-library/user-event";
 
 const { getAnalyticsConfigMock } = vi.hoisted(() => ({
@@ -54,10 +51,10 @@ const VALID_REFERRAL = {
 
 type User = ReturnType<typeof userEvent.setup>;
 
-function renderReferralModal(onClose = vi.fn()) {
+function renderReferralModal(onClose = vi.fn(), open = true) {
   const user = userEvent.setup();
 
-  render(<ReferralModal open onClose={onClose} />);
+  render(<ReferralModal open={open} onClose={onClose} />);
 
   return { user, onClose };
 }
@@ -73,7 +70,7 @@ async function completeReferrerStep(user: User) {
     VALID_REFERRAL.referrerEmail,
   );
 
-  await user.click(screen.getByRole("button", { name: "Continue" }));
+  await user.click(screen.getByRole("button", { name: /^continue$/i }));
 }
 
 async function completeFriendStep(
@@ -132,42 +129,27 @@ describe("ReferralModal — unit tests", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Refer Someone",
+        name: /share the opportunity/i,
       }),
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByRole("heading", {
-        name: "Your information",
-      }),
-    ).toBeInTheDocument();
-
-    expect(screen.getByText(/step/i)).toBeInTheDocument();
-
+    expect(screen.getByText(/step\s*1\s*of\s*3/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
-
     expect(screen.getByLabelText(/your email/i)).toBeInTheDocument();
   });
 
   it("does not continue when the referrer information is invalid", async () => {
     const { user } = renderReferralModal();
 
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
     expect(
       screen.getByRole("heading", {
-        name: "Refer Someone",
-      }),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByRole("heading", {
-        name: "Your information",
+        name: /share the opportunity/i,
       }),
     ).toBeInTheDocument();
 
     expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
-
     expect(screen.getByLabelText(/your email/i)).toBeInTheDocument();
 
     expect(
@@ -185,11 +167,11 @@ describe("ReferralModal — unit tests", () => {
 
     await user.type(screen.getByLabelText(/your email/i), "invalid-email");
 
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
     expect(
       screen.getByRole("heading", {
-        name: "Your information",
+        name: /share the opportunity/i,
       }),
     ).toBeInTheDocument();
 
@@ -205,18 +187,14 @@ describe("ReferralModal — unit tests", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Who are you referring?",
+        name: /who are you referring\?/i,
       }),
     ).toBeInTheDocument();
 
     expect(screen.getByText(/step/i)).toBeInTheDocument();
-
     expect(screen.getByLabelText(/their name/i)).toBeInTheDocument();
-
     expect(screen.getByLabelText(/their email/i)).toBeInTheDocument();
-
     expect(screen.getByText(/your relationship/i)).toBeInTheDocument();
-
     expect(
       screen.getByRole("button", {
         name: /select relationship/i,
@@ -238,11 +216,9 @@ describe("ReferralModal — unit tests", () => {
     expect(
       screen.getByRole("button", { name: /^Friend$/ }),
     ).toBeInTheDocument();
-
     expect(
       screen.getByRole("button", { name: /^Family$/ }),
     ).toBeInTheDocument();
-
     expect(
       screen.getByRole("button", { name: /^Colleague$/ }),
     ).toBeInTheDocument();
@@ -285,18 +261,17 @@ describe("ReferralModal — unit tests", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Review referral",
+        name: /review referral/i,
       }),
     );
 
     expect(
       screen.getByRole("heading", {
-        name: "Who are you referring?",
+        name: /who are you referring\?/i,
       }),
     ).toBeInTheDocument();
 
     expect(screen.getByLabelText(/their name/i)).toBeInTheDocument();
-
     expect(screen.getByLabelText(/their email/i)).toBeInTheDocument();
 
     expect(
@@ -314,7 +289,7 @@ describe("ReferralModal — unit tests", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Review referral",
+        name: /review referral/i,
       }),
     );
 
@@ -322,7 +297,7 @@ describe("ReferralModal — unit tests", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Who are you referring?",
+        name: /who are you referring\?/i,
       }),
     ).toBeInTheDocument();
   });
@@ -336,7 +311,7 @@ describe("ReferralModal — unit tests", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Review referral",
+        name: /review referral/i,
       }),
     );
 
@@ -346,7 +321,7 @@ describe("ReferralModal — unit tests", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Who are you referring?",
+        name: /who are you referring\?/i,
       }),
     ).toBeInTheDocument();
   });
