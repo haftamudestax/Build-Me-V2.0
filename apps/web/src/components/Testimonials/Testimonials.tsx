@@ -147,22 +147,36 @@ export function Testimonials() {
       <Box sx={{ mb: 3 }}>
         <ReviewSummary summary={summary} />
       </Box>
-      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+      <Box sx={{ mb: 3, display: "flex", justifyContent: "center" }}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
           aria-label="Testimonials and case studies"
-          variant="fullWidth"
           sx={{
+            "& .MuiTabs-flexContainer": {
+              justifyContent: "center",
+              flexWrap: "wrap",
+              gap: "16px !important",
+            },
             "& .MuiTab-root": {
               fontWeight: 700,
-              font: "bold",
+              bgcolor: "white",
+              color: "var(--color-black)",
+              border: "2px solid var(--color-black)",
+              borderRadius: "0.5rem",
+              px: 3,
+              mx: 1, // adds 8px on each side -> 16px total space between the two tabs
+              "&:hover": {
+                bgcolor: "var(--color-light-yellow)",
+                color: "var(--color-black)",
+              },
             },
             "& .MuiTab-root.Mui-selected": {
-              color: "var(--color-dark-yellow)",
+              bgcolor: "var(--color-dark-yellow)",
+              color: "var(--color-black)",
             },
             "& .MuiTabs-indicator": {
-              backgroundColor: "var(--color-light-yellow)",
+              display: "none",
             },
           }}
         >

@@ -122,7 +122,7 @@ function SectionHeading({
   description?: string;
 }) {
   return (
-    <Stack spacing={1.5} className="mb-10">
+    <Stack spacing={0.5} className="mb-10">
       {eyebrow && (
         <Typography
           variant="overline"
@@ -162,7 +162,7 @@ function About() {
   return (
     <Box
       component="main"
-      className="min-h-screen text-slate-900"
+      className=" text-slate-900"
       sx={{ backgroundColor: "#F7F6F2" }}
     >
       <Box
@@ -192,11 +192,11 @@ function About() {
       </Box>
       <Box
         component="section"
-        className="border-b border-stone-200 px-5 py-20 sm:px-8 md:py-28"
+        className=" px-5 py-40 sm:px-8 md:py-35"
         sx={{ backgroundColor: "#FAF8F5" }}
       >
         <Stack
-          spacing={3}
+          spacing={1}
           className="mx-auto max-w-4xl items-center text-center"
         >
           <Typography

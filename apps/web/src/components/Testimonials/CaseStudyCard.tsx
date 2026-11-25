@@ -176,7 +176,7 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
               width: 44,
               height: 44,
               bgcolor: "action.selected",
-              color: "primary.main",
+              color: "var(--color-dark)",
               "& svg": {
                 fontSize: 24,
               },
@@ -209,7 +209,7 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
         <DialogContent dividers>
           <Typography
             variant="body1"
-            color="text.secondary"
+            color="var(--color-light-yellow)"
             sx={{
               lineHeight: 1.9,
               whiteSpace: "pre-wrap",
@@ -231,7 +231,6 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
             <Button
               type="button"
               variant="contained"
-              color="primary"
               endIcon={<ArrowForwardIcon />}
               onClick={handleCtaClick}
               sx={{
@@ -241,6 +240,7 @@ function CaseStudyItem({ service }: CaseStudyItemProps) {
                 fontWeight: 700,
                 textTransform: "none",
                 boxShadow: "none",
+                bgcolor: "var(--color-light-yellow)",
                 "&:hover": {
                   boxShadow: 2,
                 },
