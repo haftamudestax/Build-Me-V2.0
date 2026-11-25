@@ -18,10 +18,11 @@ const allowedEndpoints = {
   mentorMeEvents: "/api/analytics/mentor-me/events",
   coffeeWithMeSummary: "/api/analytics/coffee-with-me/summary",
   coffeeWithMeEvents: "/api/analytics/coffee-with-me/events",
-  ownershipAuditSummary:
-  "/api/analytics/ownership-audit/summary",
-  ownershipAuditEvents:
-  "/api/analytics/ownership-audit/events",
+  ownershipAuditSummary: "/api/analytics/ownership-audit/summary",
+  ownershipAuditEvents: "/api/analytics/ownership-audit/events",
+  talkToUsSummary: "/api/analytics/talk-to-us/summary",
+  talkToUsBreakdown: "/api/analytics/talk-to-us/breakdown",
+  talkToUsEvents: "/api/analytics/talk-to-us/events",
 } as const;
 
 type EndpointKey = keyof typeof allowedEndpoints;
@@ -39,6 +40,9 @@ const allowedQueryParams: Record<EndpointKey, string[]> = {
   coffeeWithMeEvents: ["limit", "offset", "event_name"],
   ownershipAuditSummary: ["days"],
   ownershipAuditEvents: ["limit", "offset", "event_name"],
+  talkToUsSummary: ["days"],
+  talkToUsBreakdown: ["days"],
+  talkToUsEvents: ["limit", "offset", "event_name"],
 };
 
 async function proxyAnalytics(
@@ -138,12 +142,25 @@ router.get("/coffee-with-me/summary", (req, res) =>
 router.get("/coffee-with-me/events", (req, res) =>
   proxyAnalytics(req, res, "coffeeWithMeEvents"),
 );
+
 router.get("/ownership-audit/summary", (req, res) =>
   proxyAnalytics(req, res, "ownershipAuditSummary"),
 );
 
 router.get("/ownership-audit/events", (req, res) =>
   proxyAnalytics(req, res, "ownershipAuditEvents"),
+);
+
+router.get("/talk-to-us/summary", (req, res) =>
+  proxyAnalytics(req, res, "talkToUsSummary"),
+);
+
+router.get("/talk-to-us/breakdown", (req, res) =>
+  proxyAnalytics(req, res, "talkToUsBreakdown"),
+);
+
+router.get("/talk-to-us/events", (req, res) =>
+  proxyAnalytics(req, res, "talkToUsEvents"),
 );
 
 export default router;

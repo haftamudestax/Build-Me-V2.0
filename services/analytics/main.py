@@ -28,6 +28,8 @@ from src.reporting.ownership_learning_circle import (
     router as ownership_learning_circle_analytics_router,
 )
 
+from src.reporting.talk_to_us import router as talk_to_us_reporting_router
+
 load_dotenv()
 
 logging.basicConfig(
@@ -73,8 +75,8 @@ app.include_router(mentor_me_reporting_router)
 app.include_router(coffee_with_me_reporting_router)
 app.include_router(ownership_audit_reporting_router)
 app.include_router(ownership_learning_circle_analytics_router)
+app.include_router(talk_to_us_reporting_router)
 app.include_router(visitors_router)
-
 
 @app.get("/", tags=["Health"])
 async def root():

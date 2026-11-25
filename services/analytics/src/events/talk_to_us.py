@@ -1,0 +1,55 @@
+from datetime import datetime
+from typing import Literal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+TalkToUsEventName = Literal[
+    "talk_to_us.viewed",
+    "talk_to_us.whatsapp_clicked",
+    "talk_to_us.call_clicked",
+    "talk_to_us.validation_failed",
+    "talk_to_us.message_sent",
+    "talk_to_us.message_failed",
+    "talk_to_us.message_blocked",
+]
+
+TalkToUsEventType = Literal[
+    "click",
+    "feature_use",
+    "view",
+]
+
+
+class TalkToUsEventIn(BaseModel):
+    """Incoming Talk To Us analytics event."""
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
+
+    visitor_id: UUID = Field(alias="visitorId")
+    session_id: UUID | None = Field(default=None, alias="sessionId")
+
+    event_name: TalkToUsEventName = Field(alias="eventName")
+    event_type: TalkToUsEventType = Field(alias="eventType")
+
+    source_route: str = Field(
+        alias="sourceRoute",
+        min_length=1,
+        max_length=2048,
+    )
+    destination_route: str | None = Field(
+        default=None,
+        alias="destinationRoute",
+        max_length=2048,
+    )
+
+    timestamp: datetime | None = None
+    metadata: dict = Field(default_factory=dict)
+
+    # Accepted for compatibility, but not trusted for persistence.
+    feature: str | None = None
+    journey: str | None = None
