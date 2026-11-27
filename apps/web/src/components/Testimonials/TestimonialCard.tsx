@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Avatar, Box, Button, Rating, Typography } from "@mui/material";
+import { Avatar, Box, Button, Chip, Rating, Typography } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 import {
@@ -13,6 +13,12 @@ import { TestimonialDetails } from "./TestimonialDetails";
 interface TestimonialCardProps {
   testimonial: Testimonial;
 }
+
+const testimonialCategories = [
+  "Project Client",
+  "Business Owner",
+  "Technology Partner",
+];
 
 export function TestimonialCard({ testimonial }: TestimonialCardProps) {
   const [open, setOpen] = useState(false);
@@ -36,76 +42,48 @@ export function TestimonialCard({ testimonial }: TestimonialCardProps) {
           p: 2.5,
           border: 1,
           borderColor: "var(--color-dark-yellow)",
-          borderRadius: 3,
-          bgcolor: "",
+          borderRadius: 2,
+          bgcolor: "#FFFFFF",
           transition: "border-color 0.2s, box-shadow 0.2s",
           "&:hover": {
-            borderColor:
-              "color-mix(in srgb, var(--color-black) 80%, transparent)",
+            borderColor: "var(--color-black)",
             boxShadow: 2,
-            bgcolor:
-              "color-mix(in srgb, var(--color-dark-yellow) 30%, transparent)",
+            bgcolor: "#FAF8F5",
           },
         }}
       >
-        {rating !== undefined && (
-          <Rating value={rating} readOnly size="small" />
-        )}
-
-        <Typography
-          component="blockquote"
-          variant="body2"
-          sx={{
-            m: 0,
-            lineHeight: 1.7,
-            overflowWrap: "anywhere",
-            display: "-webkit-box",
-            WebkitLineClamp: 4,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          &ldquo;{quote}&rdquo;
-        </Typography>
-
-        <Button
-          variant="text"
-          size="small"
-          onClick={() => setOpen(true)}
-          endIcon={<ArrowForwardIcon />}
-          aria-label={`Read full review from ${author}`}
-          sx={{
-            alignSelf: "flex-start",
-            px: 0,
-            textTransform: "none",
-            fontWeight: 700,
-            color: "var(--color-light-yellow)",
-          }}
-        >
-          Read full review
-        </Button>
-
+        {/* Author information */}
         <Box
-          component="footer"
           sx={{
             display: "flex",
             alignItems: "center",
             gap: 1.5,
-            mt: "auto",
-            pt: 1.5,
-            borderTop: 1,
-            borderColor: "divider",
+            minWidth: 0,
           }}
         >
           <Avatar
             aria-hidden="true"
-            sx={{ width: 40, height: 40, fontSize: "0.95rem" }}
+            sx={{
+              width: 50,
+              height: 50,
+              borderRadius: 0,
+              bgcolor: "var(--color-light-yellow)",
+              color: "var(--color-black)",
+              fontWeight: 700,
+            }}
           >
             {getInitials(author)}
           </Avatar>
 
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle2" sx={{ overflowWrap: "anywhere" }}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: 700,
+                lineHeight: 1.3,
+                overflowWrap: "anywhere",
+              }}
+            >
               {author}
             </Typography>
 
@@ -129,6 +107,81 @@ export function TestimonialCard({ testimonial }: TestimonialCardProps) {
             )}
           </Box>
         </Box>
+
+        {/* Three professional categories */}
+        <Box
+          role="group"
+          aria-label="Professional categories"
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 0.75,
+          }}
+        >
+          {testimonialCategories.map((category) => (
+            <Chip
+              key={category}
+              label={category}
+              size="small"
+              sx={{
+                borderRadius: 0,
+                bgcolor: "#FAF3E5",
+                color: "var(--color-black)",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                "& .MuiChip-label": {
+                  px: 1.25,
+                },
+              }}
+            />
+          ))}
+        </Box>
+
+        {/* Star rating */}
+        <Rating
+          value={rating ?? 5}
+          readOnly
+          size="small"
+          aria-label={`${rating ?? 5} out of 5 stars`}
+          sx={{
+            color: "#F59E0B",
+          }}
+        />
+
+        {/* Testimonial content */}
+        <Typography
+          component="blockquote"
+          variant="body1"
+          sx={{
+            m: 0,
+            lineHeight: 1.7,
+            overflowWrap: "anywhere",
+            display: "-webkit-box",
+            WebkitLineClamp: 4,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          &ldquo;{quote}&rdquo;
+        </Typography>
+
+        {/* Read full review */}
+        <Button
+          variant="text"
+          size="small"
+          onClick={() => setOpen(true)}
+          endIcon={<ArrowForwardIcon />}
+          aria-label={`Read full review from ${author}`}
+          sx={{
+            alignSelf: "flex-start",
+            px: 0,
+            textTransform: "none",
+            fontWeight: 700,
+            color: "var(--color-dark-yellow)",
+          }}
+        >
+          Read full review
+        </Button>
       </Box>
 
       <TestimonialDetails

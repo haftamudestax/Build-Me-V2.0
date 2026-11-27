@@ -14,7 +14,7 @@ export function ReviewSummary({
   summary,
   categories = summary.categories || DEFAULT_CATEGORIES,
 }: ReviewSummaryProps) {
-  const { average, displayReviewText } = summary;
+  const { average, displayReviewText, displayCustomerText } = summary;
 
   return (
     <Box
@@ -101,6 +101,14 @@ export function ReviewSummary({
           data-testid="review-count"
         >
           {displayReviewText ?? "0.0 Reviews"}
+        </Typography>
+        <Typography
+          component="span"
+          variant="body2"
+          sx={{ fontWeight: 700, mt: 0.5 }}
+          data-testid="review-count"
+        >
+          {displayCustomerText}
         </Typography>
       </Box>
 

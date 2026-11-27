@@ -15,26 +15,26 @@ export function Footer() {
             {!featureFlags.footer && <SocialConnections />}
           </div>
 
-          <div className="flex items-center pl-2  lg:border-r lg:pr-8">
+          <div className="flex items-center lg:border-r lg:pr-8">
             {!featureFlags.footer && <ShareButton />}
           </div>
 
-          <div className="flex min-w-0 items-center">
+          <div className="flex min-w-0 items-center lg:border-r lg:pr-8">
             {!featureFlags.footer && <ReferralButton />}
           </div>
 
-          <div className="flex min-w-0 items-center">
-            {featureFlags.footer && <AboutLink />}
+          <div className="flex min-w-0 items-center lg:border-r lg:pr-8">
+            {!featureFlags.footer && <AboutLink />}
           </div>
 
-          <div className="flex min-w-0 flex-1 items-center justify-end">
+          <div className="flex min-w-0 flex-1 items-center">
             {!featureFlags.footer && <Copyright />}
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-10">
-        {featureFlags.footer && <LegalLinks />}
+        {!featureFlags.footer && <LegalLinks />}
       </div>
     </footer>
   );

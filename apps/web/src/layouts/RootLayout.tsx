@@ -17,7 +17,7 @@ export default function RootLayout() {
       <WorkWithMeModal />
       <GetQuickWinsModal />
 
-      {featureFlags.footer && <GiveFeedbackButton />}
+      {!featureFlags.footer && <GiveFeedbackButton />}
       {!featureFlags.footer && <Footer />}
     </>
   );

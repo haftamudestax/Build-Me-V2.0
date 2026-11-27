@@ -6,8 +6,8 @@ const Home = () => {
   return (
     <main>
       {featureFlags.heroSection && <HeroSection />}
+      {!featureFlags.footer && <Testimonials />}
       {featureFlags.footer && <TalkToUsSection />}
-      {featureFlags.footer && <Testimonials />}
     </main>
   );
 };
