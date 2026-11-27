@@ -7,6 +7,7 @@ import { CaseStudyCard } from "./CaseStudyCard";
 import { caseStudies } from "./caseStudiesData";
 import { ComingSoonCard } from "./ComingSoonCard";
 import { CarouselNavigation } from "./CarouselNavigation";
+import { TestimonialsNavigation } from "./TestimonialsNavigation";
 
 import { summarizeReviews, testimonials } from "../../utils/testimonialsData";
 
@@ -108,10 +109,11 @@ export function Testimonials() {
         maxWidth: 1200,
         mx: "auto",
         px: { xs: 2, sm: 3 },
-        py: { xs: 6, md: 8 },
+        py: { xs: 2, md: 2 },
         boxSizing: "border-box",
       }}
     >
+      <TestimonialsNavigation />
       <Box component="header" sx={{ mb: 4, textAlign: "center" }}>
         <Typography
           id="testimonials-title"
@@ -125,7 +127,7 @@ export function Testimonials() {
             mb: 1.5,
           }}
         >
-          Trusted Words. Real Experiences.
+          Real Projects. Real Progress. Real Results.
         </Typography>
 
         <Typography
@@ -139,8 +141,9 @@ export function Testimonials() {
             textAlign: "left",
           }}
         >
-          Genuine feedback and experiences from the people and teams I've had
-          the pleasure of working with.
+          Discover how I helps individuals and businesses turn ideas into
+          impactful digital experiences through software development,
+          engineering, and technology solutions.
         </Typography>
       </Box>
 
@@ -165,7 +168,7 @@ export function Testimonials() {
               border: "2px solid var(--color-black)",
               borderRadius: "0.5rem",
               px: 3,
-              mx: 1, // adds 8px on each side -> 16px total space between the two tabs
+              mx: 1,
               "&:hover": {
                 bgcolor: "var(--color-light-yellow)",
                 color: "var(--color-black)",

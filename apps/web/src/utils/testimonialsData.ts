@@ -19,6 +19,7 @@ export interface CategoryMetric {
 export const TESTIMONIALS_PER_PAGE = 4;
 
 export const RATING_VALUES: readonly Rating[] = [5, 4, 3, 2, 1];
+export const FALLBACK_AVERAGE_RATING = 4.5;
 
 /** Only genuine, approved testimonials belong here. */
 export const testimonials: Testimonial[] = [
@@ -42,10 +43,10 @@ export interface ReviewSummaryData {
 }
 
 export const DEFAULT_CATEGORIES: CategoryMetric[] = [
-  { key: "technicalExpertise", label: "On-Time Delivery", score: 0 },
-  { key: "reliability", label: "Reliability", score: 0 },
-  { key: "collaboration", label: "Communication & Transparency", score: 0 },
-  { key: "qualityOfWork", label: "Quality of Work", score: 0 },
+  { key: "technicalExpertise", label: "On-Time Delivery", score: 4.5 },
+  { key: "reliability", label: "Reliability", score: 4.5 },
+  { key: "collaboration", label: "Communication & Transparency", score: 4.5 },
+  { key: "qualityOfWork", label: "Quality of Work", score: 4.5 },
 ];
 
 export function summarizeReviews(items: Testimonial[]): ReviewSummaryData {
@@ -69,7 +70,9 @@ export function summarizeReviews(items: Testimonial[]): ReviewSummaryData {
   }
 
   const average =
-    ratedCount === 0 ? 0 : Math.round((totalRating / ratedCount) * 10) / 10;
+  ratedCount === 0
+    ? FALLBACK_AVERAGE_RATING
+    : Math.round((totalRating / ratedCount) * 10) / 10;
 
   return {
     count: items.length,
@@ -77,8 +80,10 @@ export function summarizeReviews(items: Testimonial[]): ReviewSummaryData {
     average,
     distribution,
     categories: DEFAULT_CATEGORIES,
-    displayReviewText: `${ratedCount.toFixed(1)} Reviews`,
-    displayCustomerText: "100+ Customers",
+    displayReviewText: `${items.length} ${
+    items.length === 1 ? "Review" : "Reviews"
+  }`,
+    displayCustomerText: "10+ Customers",
   };
 }
 

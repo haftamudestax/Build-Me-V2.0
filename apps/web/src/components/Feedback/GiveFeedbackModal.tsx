@@ -100,7 +100,7 @@ const FEEDBACK_TYPES: {
   label: string;
 }[] = [
   { value: "rating", label: "Rate your experience" },
-  { value: "nps", label: "Recommend Me" },
+  { value: "nps", label: "Score Me" },
   { value: "issue", label: "Report an issue" },
   { value: "suggestion", label: "Share a suggestion" },
   { value: "complaint", label: "Make a complaint" },

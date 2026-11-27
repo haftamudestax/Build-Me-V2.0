@@ -42,7 +42,7 @@ vi.mock("@build-me/ui", async () => {
 
 const feedbackOptions = [
   "Rate your experience",
-  "Recommend Me",
+  "Score Me",
   "Report an issue",
   "Share a suggestion",
   "Make a complaint",
